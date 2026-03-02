@@ -1,37 +1,23 @@
-import { type User, type InsertUser } from "@shared/schema";
-import { randomUUID } from "crypto";
-
-// modify the interface with any CRUD methods
-// you might need
+import type { SiteAnalysis } from "@shared/schema";
 
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  getAnalysis(key: string): Promise<SiteAnalysis | undefined>;
+  saveAnalysis(key: string, analysis: SiteAnalysis): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<string, User>;
+  private analyses: Map<string, SiteAnalysis>;
 
   constructor() {
-    this.users = new Map();
+    this.analyses = new Map();
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+  async getAnalysis(key: string): Promise<SiteAnalysis | undefined> {
+    return this.analyses.get(key);
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+  async saveAnalysis(key: string, analysis: SiteAnalysis): Promise<void> {
+    this.analyses.set(key, analysis);
   }
 }
 

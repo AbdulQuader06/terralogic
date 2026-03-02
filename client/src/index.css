@@ -138,17 +138,8 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
   
-  /* ArcGIS Map View overrides for styling */
-  .esri-view {
-    @apply rounded-xl overflow-hidden shadow-sm border border-border;
-  }
-  
-  .esri-ui-corner {
-    @apply p-2;
-  }
-  
-  .esri-widget {
-    @apply font-sans rounded-md shadow-md !important;
+  .leaflet-container {
+    font-family: 'Inter', sans-serif;
   }
 }
 
