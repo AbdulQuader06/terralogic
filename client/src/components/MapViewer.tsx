@@ -411,6 +411,7 @@ const POLYGON_LAYERS = new Set(["elevation", "soil", "flood", "landuse", "parks"
 export default function MapViewer({ onLocationSelect, arcgisApiKey, activeLayers, onLayerLoading, selectedLocation }: MapViewerProps) {
   const [position, setPosition] = useState<[number, number]>([37.7749, -122.4194]);
   const [layerData, setLayerData] = useState<LayerData>({});
+  const layerDataRef = useRef<LayerData>({});
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -420,6 +421,7 @@ export default function MapViewer({ onLocationSelect, arcgisApiKey, activeLayers
         if (abortRef.current) abortRef.current.abort();
         setPosition(newPos);
         setLayerData({});
+        layerDataRef.current = {};
       }
     }
   }, [selectedLocation?.lat, selectedLocation?.lon]);
@@ -428,6 +430,7 @@ export default function MapViewer({ onLocationSelect, arcgisApiKey, activeLayers
     if (abortRef.current) abortRef.current.abort();
     setPosition([lat, lon]);
     setLayerData({});
+    layerDataRef.current = {};
     onLocationSelect(lat, lon, name);
   }, [onLocationSelect]);
 
@@ -439,8 +442,9 @@ export default function MapViewer({ onLocationSelect, arcgisApiKey, activeLayers
 
     activeLayers.forEach(async (layerId) => {
       const cacheKey = `${layerId}-${lat.toFixed(3)}-${lon.toFixed(3)}`;
-      if (layerData[cacheKey]) return;
+      if (layerDataRef.current[cacheKey]) return;
 
+      layerDataRef.current[cacheKey] = "loading";
       onLayerLoading?.(layerId, true);
       try {
         const params = new URLSearchParams({ lat: lat.toString(), lon: lon.toString(), radius: "5000" });
@@ -448,11 +452,17 @@ export default function MapViewer({ onLocationSelect, arcgisApiKey, activeLayers
         if (resp.ok) {
           const data = await resp.json();
           if (!controller.signal.aborted) {
+            layerDataRef.current[cacheKey] = data;
             setLayerData(prev => ({ ...prev, [cacheKey]: data }));
           }
+        } else {
+          delete layerDataRef.current[cacheKey];
         }
       } catch (e: any) {
-        if (e.name !== "AbortError") console.error(`Layer fetch error (${layerId}):`, e);
+        if (e.name !== "AbortError") {
+          console.error(`Layer fetch error (${layerId}):`, e);
+          delete layerDataRef.current[cacheKey];
+        }
       } finally {
         if (!controller.signal.aborted) onLayerLoading?.(layerId, false);
       }

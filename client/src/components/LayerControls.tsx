@@ -83,6 +83,7 @@ export default function LayerControls({ activeLayers, onToggleLayer, loadingLaye
                 <Switch
                   checked={isActive}
                   onCheckedChange={() => onToggleLayer(layer.id)}
+                  onClick={(e) => e.stopPropagation()}
                   className="scale-90"
                 />
               </div>
