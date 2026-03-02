@@ -1,98 +1,121 @@
-import { useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
-import { Layers, Mountain, Droplets, Trees, Building, Map as MapIcon, ChevronDown, ChevronRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  Layers, Mountain, Droplets, Trees, Building, GraduationCap,
+  Bus, Building2, MapPin, Waves, Loader2
+} from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-export default function LayerControls() {
-  const [layers, setLayers] = useState([
-    { id: "elevation", name: "Elevation & Terrain", icon: Mountain, active: true, opacity: 80 },
-    { id: "flood", name: "Flood Risk Zones", icon: Droplets, active: false, opacity: 50 },
-    { id: "soil", name: "Soil Composition", icon: Trees, active: false, opacity: 60 },
-    { id: "zoning", name: "Land Use / Zoning", icon: MapIcon, active: true, opacity: 70 },
-    { id: "infrastructure", name: "Urban Infrastructure", icon: Building, active: true, opacity: 100 },
-  ]);
+interface LayerConfig {
+  id: string;
+  name: string;
+  description: string;
+  icon: any;
+  source: string;
+  color: string;
+  category: "environmental" | "infrastructure" | "risk";
+}
 
-  const toggleLayer = (id: string) => {
-    setLayers(layers.map(l => l.id === id ? { ...l, active: !l.active } : l));
-  };
+const LAYERS: LayerConfig[] = [
+  { id: "elevation", name: "Elevation & Terrain", description: "USGS elevation contour data", icon: Mountain, source: "USGS", color: "#059669", category: "environmental" },
+  { id: "flood", name: "Flood Risk Zones", description: "FEMA National Flood Hazard Layer", icon: Droplets, source: "FEMA", color: "#DC2626", category: "risk" },
+  { id: "soil", name: "Soil Composition", description: "USDA soil survey data", icon: Trees, source: "USDA", color: "#A16207", category: "environmental" },
+  { id: "landuse", name: "Land Use / Zoning", description: "OpenStreetMap land use data", icon: MapPin, source: "OSM", color: "#7C3AED", category: "environmental" },
+  { id: "water", name: "Water Bodies", description: "Rivers, lakes, and waterways", icon: Waves, source: "OSM", color: "#06B6D4", category: "environmental" },
+  { id: "schools", name: "Schools & Education", description: "Schools, colleges, universities", icon: GraduationCap, source: "OSM", color: "#8B5CF6", category: "infrastructure" },
+  { id: "hospitals", name: "Healthcare Facilities", description: "Hospitals, clinics, doctors", icon: Building2, source: "OSM", color: "#EF4444", category: "infrastructure" },
+  { id: "transit", name: "Transit & Transport", description: "Bus stops, train stations", icon: Bus, source: "OSM", color: "#3B82F6", category: "infrastructure" },
+  { id: "parks", name: "Parks & Green Spaces", description: "Parks, gardens, nature reserves", icon: Trees, source: "OSM", color: "#22C55E", category: "infrastructure" },
+  { id: "infrastructure", name: "Civil Infrastructure", description: "Roads, fire stations, police", icon: Building, source: "OSM", color: "#F59E0B", category: "infrastructure" },
+];
 
-  const updateOpacity = (id: string, value: number[]) => {
-    setLayers(layers.map(l => l.id === id ? { ...l, opacity: value[0] } : l));
-  };
+interface LayerControlsProps {
+  activeLayers: string[];
+  onToggleLayer: (id: string) => void;
+  loadingLayers: string[];
+}
+
+export default function LayerControls({ activeLayers, onToggleLayer, loadingLayers }: LayerControlsProps) {
+  const envLayers = LAYERS.filter(l => l.category === "environmental" || l.category === "risk");
+  const infraLayers = LAYERS.filter(l => l.category === "infrastructure");
+
+  const renderLayerGroup = (title: string, layers: LayerConfig[]) => (
+    <div className="mb-4">
+      <h3 className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-2 px-1">{title}</h3>
+      <div className="space-y-1">
+        {layers.map((layer) => {
+          const isActive = activeLayers.includes(layer.id);
+          const isLoading = loadingLayers.includes(layer.id);
+          return (
+            <div
+              key={layer.id}
+              className={`flex items-center justify-between p-2.5 rounded-lg border transition-all cursor-pointer ${
+                isActive
+                  ? "bg-card border-border shadow-sm"
+                  : "bg-transparent border-transparent hover:bg-muted/50"
+              }`}
+              onClick={() => onToggleLayer(layer.id)}
+              data-testid={`layer-toggle-${layer.id}`}
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div
+                  className="p-1.5 rounded-md shrink-0"
+                  style={{
+                    backgroundColor: isActive ? `${layer.color}15` : "transparent",
+                    color: isActive ? layer.color : "hsl(var(--muted-foreground))",
+                  }}
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <layer.icon className="w-4 h-4" />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <Label className="font-medium text-sm cursor-pointer block truncate">
+                    {layer.name}
+                  </Label>
+                  <p className="text-[10px] text-muted-foreground truncate">{layer.description}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-mono">
+                  {layer.source}
+                </Badge>
+                <Switch
+                  checked={isActive}
+                  onCheckedChange={() => onToggleLayer(layer.id)}
+                  className="scale-75"
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 
   return (
     <div className="flex flex-col h-full w-full">
       <div className="p-4 border-b border-border bg-muted/30">
-        <h2 className="font-semibold flex items-center gap-2">
+        <h2 className="font-semibold flex items-center gap-2 text-sm">
           <Layers className="w-4 h-4 text-primary" />
           Data Layers
         </h2>
-        <p className="text-xs text-muted-foreground mt-1">Configure active map visualizations</p>
+        <p className="text-[11px] text-muted-foreground mt-1">
+          Toggle GIS overlays from real data sources
+        </p>
+        {activeLayers.length > 0 && (
+          <Badge variant="secondary" className="mt-2 text-[10px]">
+            {activeLayers.length} active
+          </Badge>
+        )}
       </div>
 
-      <ScrollArea className="flex-1 p-2">
-        <div className="space-y-2 pb-4">
-          {layers.map((layer) => (
-            <Collapsible key={layer.id} className="border border-border rounded-lg bg-card overflow-hidden">
-              <div className="flex items-center justify-between p-3">
-                <div className="flex items-center gap-3">
-                  <div className={`p-1.5 rounded-md ${layer.active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                    <layer.icon className="w-4 h-4" />
-                  </div>
-                  <Label htmlFor={`switch-${layer.id}`} className="font-medium cursor-pointer">
-                    {layer.name}
-                  </Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Switch 
-                    id={`switch-${layer.id}`} 
-                    checked={layer.active} 
-                    onCheckedChange={() => toggleLayer(layer.id)} 
-                  />
-                  <CollapsibleTrigger asChild>
-                    <button className="p-1 hover:bg-muted rounded text-muted-foreground">
-                      <ChevronDown className="w-4 h-4" />
-                    </button>
-                  </CollapsibleTrigger>
-                </div>
-              </div>
-              
-              <CollapsibleContent>
-                <div className="px-4 pb-4 pt-1 bg-muted/20 border-t border-border/50">
-                  <div className="space-y-3">
-                    <div>
-                      <div className="flex justify-between text-xs mb-2">
-                        <span className="text-muted-foreground">Opacity</span>
-                        <span className="font-mono">{layer.opacity}%</span>
-                      </div>
-                      <Slider 
-                        value={[layer.opacity]} 
-                        min={0} max={100} step={1} 
-                        onValueChange={(v) => updateOpacity(layer.id, v)}
-                        disabled={!layer.active}
-                      />
-                    </div>
-                    
-                    {/* Mock Legend specific to layers */}
-                    {layer.active && layer.id === "flood" && (
-                      <div className="mt-2 text-xs">
-                        <p className="text-muted-foreground mb-1.5">Legend</p>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-blue-500/50"></div> Low Risk</div>
-                          <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-orange-500/50"></div> Moderate</div>
-                          <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-red-500/50"></div> High Risk</div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          ))}
-        </div>
+      <ScrollArea className="flex-1 p-3">
+        {renderLayerGroup("Environmental & Risk", envLayers)}
+        {renderLayerGroup("Infrastructure & Amenities", infraLayers)}
       </ScrollArea>
     </div>
   );

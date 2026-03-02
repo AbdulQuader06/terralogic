@@ -19,7 +19,6 @@ function renderMarkdown(text: string) {
   const lines = text.split("\n");
   const elements: JSX.Element[] = [];
   let i = 0;
-
   while (i < lines.length) {
     const line = lines[i];
     if (line.startsWith("### ")) {
@@ -48,15 +47,9 @@ function renderMarkdown(text: string) {
 function renderInline(text: string) {
   const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g);
   return parts.map((part, i) => {
-    if (part.startsWith("**") && part.endsWith("**")) {
-      return <strong key={i}>{part.slice(2, -2)}</strong>;
-    }
-    if (part.startsWith("*") && part.endsWith("*")) {
-      return <em key={i}>{part.slice(1, -1)}</em>;
-    }
-    if (part.startsWith("`") && part.endsWith("`")) {
-      return <code key={i} className="bg-background/50 px-1 py-0.5 rounded text-xs font-mono">{part.slice(1, -1)}</code>;
-    }
+    if (part.startsWith("**") && part.endsWith("**")) return <strong key={i}>{part.slice(2, -2)}</strong>;
+    if (part.startsWith("*") && part.endsWith("*")) return <em key={i}>{part.slice(1, -1)}</em>;
+    if (part.startsWith("`") && part.endsWith("`")) return <code key={i} className="bg-background/50 px-1 py-0.5 rounded text-xs font-mono">{part.slice(1, -1)}</code>;
     return part;
   });
 }
@@ -66,7 +59,7 @@ export default function ChatPanel({ location }: ChatPanelProps) {
     {
       id: "1",
       role: "assistant",
-      content: "Hello! I'm **Aino**, your spatial AI assistant. Select a location on the map, and I can help analyze its suitability for construction — evaluating flood risk, soil types, nearby infrastructure, climate, and more."
+      content: "Hello! I'm **TerraLogic AI**, your spatial analysis assistant. Select a location on the map, and I can analyze its suitability for construction — evaluating flood risk, soil types, nearby infrastructure, climate, and more.\n\nToggle the **data layers** on the left to see real GIS overlays on the map."
     }
   ]);
   const [input, setInput] = useState("");
@@ -84,18 +77,15 @@ export default function ChatPanel({ location }: ChatPanelProps) {
 
   useEffect(() => {
     if (location) {
-      const locKey = `${location.lat},${location.lon}`;
+      const locKey = `${location.lat.toFixed(4)},${location.lon.toFixed(4)}`;
       if (prevLocationRef.current !== locKey) {
         prevLocationRef.current = locKey;
         if (messages.length <= 2) {
-          setMessages(prev => [
-            ...prev,
-            {
-              id: Date.now().toString(),
-              role: "assistant",
-              content: `I see you've selected **${location.name}** (${location.lat.toFixed(2)}, ${location.lon.toFixed(2)}). What would you like to know about this site?\n\n* Flood risks and elevation analysis\n* Proximity to schools and infrastructure\n* Land use and zoning insights\n* Overall construction suitability`
-            }
-          ]);
+          setMessages(prev => [...prev, {
+            id: Date.now().toString(),
+            role: "assistant",
+            content: `I see you've selected **${location.name}** (${location.lat.toFixed(4)}, ${location.lon.toFixed(4)}). What would you like to know?\n\n* Flood risks and elevation analysis\n* Proximity to schools and infrastructure\n* Soil composition and drainage\n* Overall construction suitability`
+          }]);
         }
       }
     }
@@ -103,16 +93,13 @@ export default function ChatPanel({ location }: ChatPanelProps) {
 
   const handleSend = async () => {
     if (!input.trim()) return;
-
     const userMessage: Message = { id: Date.now().toString(), role: "user", content: input };
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
     setInput("");
     setIsLoading(true);
-
     try {
       const history = newMessages.slice(1).map(m => ({ role: m.role, content: m.content }));
-
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -124,30 +111,13 @@ export default function ChatPanel({ location }: ChatPanelProps) {
           history,
         }),
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to get response");
-      }
-
+      if (!response.ok) throw new Error("Failed to get response");
       const data = await response.json();
-
-      setMessages(prev => [...prev, {
-        id: Date.now().toString(),
-        role: "assistant",
-        content: data.content,
-      }]);
+      setMessages(prev => [...prev, { id: Date.now().toString(), role: "assistant", content: data.content }]);
     } catch (error) {
       console.error("Chat error:", error);
-      toast({
-        title: "Analysis Failed",
-        description: "Could not generate AI insights. Please try again.",
-        variant: "destructive"
-      });
-      setMessages(prev => [...prev, {
-        id: Date.now().toString(),
-        role: "assistant",
-        content: "I couldn't reach the analysis service right now. Please try again in a moment."
-      }]);
+      toast({ title: "Analysis Failed", description: "Could not generate AI insights. Please try again.", variant: "destructive" });
+      setMessages(prev => [...prev, { id: Date.now().toString(), role: "assistant", content: "I couldn't reach the analysis service right now. Please try again in a moment." }]);
     } finally {
       setIsLoading(false);
     }
@@ -156,38 +126,27 @@ export default function ChatPanel({ location }: ChatPanelProps) {
   return (
     <div className="flex flex-col h-full w-full">
       <div className="p-4 border-b border-border bg-muted/30">
-        <h2 className="font-semibold flex items-center gap-2 text-primary" data-testid="text-chat-title">
+        <h2 className="font-semibold flex items-center gap-2 text-primary text-sm" data-testid="text-chat-title">
           <Sparkles className="w-4 h-4 text-[hsl(204,70%,53%)]" />
-          AI Spatial Analyst
+          TerraLogic AI Assistant
         </h2>
         {location ? (
-          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1 truncate" data-testid="text-chat-location">
-            <MapPin className="w-3 h-3" /> {location.name}
+          <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-1 truncate" data-testid="text-chat-location">
+            <MapPin className="w-3 h-3 shrink-0" /> {location.name}
           </p>
         ) : (
-          <p className="text-xs text-muted-foreground mt-1">Select a location to begin</p>
+          <p className="text-[11px] text-muted-foreground mt-1">Select a location to begin</p>
         )}
       </div>
 
       <ScrollArea className="flex-1 p-4" ref={scrollRef}>
         <div className="flex flex-col gap-4 pb-4">
           {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
-              data-testid={`chat-message-${msg.role}-${msg.id}`}
-            >
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
-                msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-[hsl(204,70%,53%)] text-white'
-              }`}>
+            <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`} data-testid={`chat-message-${msg.role}-${msg.id}`}>
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-[hsl(204,70%,53%)] text-white'}`}>
                 {msg.role === 'user' ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
               </div>
-
-              <div className={`p-3 rounded-lg max-w-[85%] text-sm leading-relaxed ${
-                msg.role === 'user'
-                  ? 'bg-primary text-primary-foreground rounded-tr-none'
-                  : 'bg-muted border border-border rounded-tl-none'
-              }`}>
+              <div className={`p-3 rounded-lg max-w-[85%] text-sm leading-relaxed ${msg.role === 'user' ? 'bg-primary text-primary-foreground rounded-tr-none' : 'bg-muted border border-border rounded-tl-none'}`}>
                 {msg.role === 'user' ? msg.content : renderMarkdown(msg.content)}
               </div>
             </div>
@@ -208,10 +167,7 @@ export default function ChatPanel({ location }: ChatPanelProps) {
       </ScrollArea>
 
       <div className="p-4 border-t border-border bg-background">
-        <form
-          onSubmit={(e) => { e.preventDefault(); handleSend(); }}
-          className="flex gap-2"
-        >
+        <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex gap-2">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}

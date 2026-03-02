@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import MapViewer from "@/components/MapViewer";
 import ChatPanel from "@/components/ChatPanel";
 import InsightsPanel from "@/components/InsightsPanel";
@@ -11,6 +11,8 @@ export default function Home() {
   const [activeRightPanel, setActiveRightPanel] = useState<"insights" | "chat" | null>("insights");
   const [activeLeftPanel, setActiveLeftPanel] = useState<"layers" | null>("layers");
   const [arcgisApiKey, setArcgisApiKey] = useState("");
+  const [activeLayers, setActiveLayers] = useState<string[]>([]);
+  const [loadingLayers, setLoadingLayers] = useState<string[]>([]);
 
   const [selectedLocation, setSelectedLocation] = useState<{lat: number, lon: number, name: string} | null>({
     lat: 37.7749,
@@ -25,19 +27,31 @@ export default function Home() {
       .catch(() => {});
   }, []);
 
-  const handleLocationSelect = (lat: number, lon: number, name: string) => {
+  const handleLocationSelect = useCallback((lat: number, lon: number, name: string) => {
     setSelectedLocation({ lat, lon, name });
-  };
+  }, []);
+
+  const handleToggleLayer = useCallback((id: string) => {
+    setActiveLayers(prev =>
+      prev.includes(id) ? prev.filter(l => l !== id) : [...prev, id]
+    );
+  }, []);
+
+  const handleLayerLoading = useCallback((layerId: string, loading: boolean) => {
+    setLoadingLayers(prev =>
+      loading ? [...prev.filter(l => l !== layerId), layerId] : prev.filter(l => l !== layerId)
+    );
+  }, []);
 
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden flex-col">
-      <header className="h-14 border-b border-border bg-card flex items-center px-4 justify-between z-10">
+      <header className="h-14 border-b border-border bg-card flex items-center px-4 justify-between z-10 shrink-0">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm" data-testid="logo">
-            A
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-xs tracking-tight" data-testid="logo">
+            TL
           </div>
           <h1 className="font-semibold text-base text-foreground tracking-tight">
-            Aino <span className="font-light text-muted-foreground">Spatial Analysis</span>
+            TerraLogic <span className="font-light text-muted-foreground">AI</span>
           </h1>
         </div>
 
@@ -79,21 +93,30 @@ export default function Home() {
         <ResizablePanelGroup direction="horizontal">
           {activeLeftPanel === "layers" && (
             <>
-              <ResizablePanel defaultSize={18} minSize={14} maxSize={28} className="bg-card border-r border-border z-10 flex flex-col h-full">
-                <LayerControls />
+              <ResizablePanel defaultSize={20} minSize={16} maxSize={30} className="bg-card border-r border-border z-10 flex flex-col h-full">
+                <LayerControls
+                  activeLayers={activeLayers}
+                  onToggleLayer={handleToggleLayer}
+                  loadingLayers={loadingLayers}
+                />
               </ResizablePanel>
               <ResizableHandle />
             </>
           )}
 
-          <ResizablePanel defaultSize={activeRightPanel ? 57 : 82} className="relative z-0">
-            <MapViewer onLocationSelect={handleLocationSelect} arcgisApiKey={arcgisApiKey} />
+          <ResizablePanel defaultSize={activeRightPanel ? 55 : 80} className="relative z-0">
+            <MapViewer
+              onLocationSelect={handleLocationSelect}
+              arcgisApiKey={arcgisApiKey}
+              activeLayers={activeLayers}
+              onLayerLoading={handleLayerLoading}
+            />
 
             {selectedLocation && (
               <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-card/90 backdrop-blur-md border border-border p-3 px-5 rounded-xl shadow-lg z-[500] flex items-center gap-4 animate-in slide-in-from-bottom-5" data-testid="card-selected-location">
                 <div>
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Selected Area</p>
-                  <h3 className="font-medium text-sm">{selectedLocation.name}</h3>
+                  <h3 className="font-medium text-sm max-w-[200px] truncate">{selectedLocation.name}</h3>
                 </div>
                 <div className="h-8 w-px bg-border"></div>
                 <div className="flex gap-4">
