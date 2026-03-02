@@ -5,8 +5,8 @@ import "leaflet/dist/leaflet.css";
 
 const markerIcon = new L.DivIcon({
   className: "custom-marker",
-  html: `<div style="width:20px;height:20px;background:#2C3E50;border:3px solid white;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.35);transform:translate(-50%,-50%)"></div>`,
-  iconSize: [20, 20],
+  html: `<div style="width:18px;height:18px;background:#00C853;border:3px solid #0B1010;border-radius:50%;box-shadow:0 0 8px rgba(0,200,83,0.5);transform:translate(-50%,-50%)"></div>`,
+  iconSize: [18, 18],
   iconAnchor: [0, 0],
 });
 
@@ -19,6 +19,7 @@ interface MapViewerProps {
   arcgisApiKey: string;
   activeLayers: string[];
   onLayerLoading?: (layerId: string, loading: boolean) => void;
+  selectedLocation?: { lat: number; lon: number; name: string } | null;
 }
 
 const LAYER_COLORS: Record<string, string> = {
@@ -79,91 +80,176 @@ function ClickHandler({ onLocationSelect }: { onLocationSelect: (lat: number, lo
   return null;
 }
 
-function SearchControl({ onLocationSelect, arcgisApiKey }: { onLocationSelect: (lat: number, lon: number, name: string) => void; arcgisApiKey: string }) {
+function FlyToLocation({ lat, lon }: { lat: number; lon: number }) {
   const map = useMap();
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState<any[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
+  const prevRef = useRef(`${lat},${lon}`);
+  useEffect(() => {
+    const key = `${lat},${lon}`;
+    if (prevRef.current !== key) {
+      prevRef.current = key;
+      map.flyTo([lat, lon], 13, { duration: 1.5 });
+    }
+  }, [lat, lon, map]);
+  return null;
+}
 
-  const search = async () => {
-    if (!query.trim()) return;
-    setIsSearching(true);
-    try {
-      const response = await fetch(
-        `https://geocode-api.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?f=json&singleLine=${encodeURIComponent(query)}&maxLocations=5&token=${arcgisApiKey}`
-      );
-      const data = await response.json();
-      setResults(data.candidates || []);
-    } catch (err) {
-      console.error("Geocode error:", err);
-    } finally {
-      setIsSearching(false);
+function MapControls({ position }: { position: [number, number] }) {
+  const map = useMap();
+  const [zoom, setZoom] = useState(map.getZoom());
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useMapEvents({
+    zoomend() {
+      setZoom(map.getZoom());
+    },
+  });
+
+  const handleZoomIn = () => map.zoomIn();
+  const handleZoomOut = () => map.zoomOut();
+
+  const toggleFullscreen = () => {
+    const container = map.getContainer().closest('[data-testid="map-container"]');
+    if (!container) return;
+    if (!document.fullscreenElement) {
+      container.requestFullscreen?.();
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen?.();
+      setIsFullscreen(false);
     }
   };
 
-  const selectResult = (result: any) => {
-    const { x, y } = result.location;
-    map.flyTo([y, x], 14, { duration: 1.5 });
-    onLocationSelect(y, x, result.address);
-    setResults([]);
-    setQuery(result.address);
-  };
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handler);
+    return () => document.removeEventListener("fullscreenchange", handler);
+  }, []);
+
+  const lat = position[0];
+  const lon = position[1];
+  const latDir = lat >= 0 ? "N" : "S";
+  const lonDir = lon >= 0 ? "E" : "W";
 
   return (
-    <div className="leaflet-top leaflet-right" style={{ pointerEvents: "auto" }}>
-      <div style={{ margin: "10px", zIndex: 1000, position: "relative" }}>
-        <div style={{ display: "flex", gap: "4px" }}>
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && search()}
-            placeholder="Search location..."
-            data-testid="input-search-location"
-            style={{
-              padding: "8px 12px", borderRadius: "8px", border: "1px solid #d1d5db",
-              fontSize: "13px", width: "280px", outline: "none",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.12)", fontFamily: "Inter, sans-serif", background: "white",
-            }}
-          />
-          <button
-            onClick={search}
-            data-testid="button-search"
-            style={{
-              padding: "8px 16px", borderRadius: "8px", border: "none",
-              background: "#2C3E50", color: "white", fontSize: "13px", cursor: "pointer",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.12)", fontFamily: "Inter, sans-serif", fontWeight: 500,
-            }}
-          >
-            {isSearching ? "..." : "Search"}
-          </button>
-        </div>
-        {results.length > 0 && (
-          <div style={{
-            marginTop: "4px", background: "white", borderRadius: "8px",
-            border: "1px solid #e5e7eb", boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-            overflow: "hidden", maxHeight: "240px", overflowY: "auto",
-          }}>
-            {results.map((r, i) => (
-              <div
-                key={i}
-                onClick={() => selectResult(r)}
-                data-testid={`search-result-${i}`}
-                style={{
-                  padding: "10px 12px", cursor: "pointer", fontSize: "13px",
-                  borderBottom: i < results.length - 1 ? "1px solid #f3f4f6" : "none",
-                  fontFamily: "Inter, sans-serif", transition: "background 0.15s",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "#f0f4f8")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "white")}
-              >
-                {r.address}
-              </div>
-            ))}
-          </div>
-        )}
+    <>
+      <div
+        className="absolute top-3 left-3 z-[1000]"
+        data-testid="zoom-indicator"
+        style={{
+          background: "hsl(150 19% 8% / 0.9)",
+          border: "1px solid hsl(150 20% 14%)",
+          borderRadius: "6px",
+          padding: "4px 10px",
+          fontSize: "12px",
+          fontFamily: "Inter, sans-serif",
+          color: "hsl(150 12% 92%)",
+          fontWeight: 500,
+          backdropFilter: "blur(8px)",
+        }}
+      >
+        Zoom: {zoom}
       </div>
-    </div>
+
+      <div
+        className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000]"
+        data-testid="coordinate-display"
+        style={{
+          background: "hsl(145 100% 39% / 0.15)",
+          border: "1px solid hsl(145 100% 39% / 0.4)",
+          borderRadius: "20px",
+          padding: "5px 14px",
+          fontSize: "12px",
+          fontFamily: "'Inter', monospace",
+          color: "#00C853",
+          fontWeight: 600,
+          backdropFilter: "blur(8px)",
+          letterSpacing: "0.02em",
+        }}
+      >
+        {Math.abs(lat).toFixed(4)}°{latDir} / {Math.abs(lon).toFixed(4)}°{lonDir}
+      </div>
+
+      <div
+        className="absolute top-3 right-3 z-[1000] flex flex-col gap-1"
+        data-testid="map-zoom-controls"
+      >
+        <button
+          onClick={handleZoomIn}
+          data-testid="button-zoom-in"
+          style={{
+            width: "32px",
+            height: "32px",
+            background: "hsl(150 19% 8% / 0.9)",
+            border: "1px solid hsl(150 20% 14%)",
+            borderRadius: "6px",
+            color: "hsl(150 12% 92%)",
+            fontSize: "18px",
+            fontWeight: 600,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backdropFilter: "blur(8px)",
+            lineHeight: 1,
+          }}
+        >
+          +
+        </button>
+        <button
+          onClick={handleZoomOut}
+          data-testid="button-zoom-out"
+          style={{
+            width: "32px",
+            height: "32px",
+            background: "hsl(150 19% 8% / 0.9)",
+            border: "1px solid hsl(150 20% 14%)",
+            borderRadius: "6px",
+            color: "hsl(150 12% 92%)",
+            fontSize: "18px",
+            fontWeight: 600,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backdropFilter: "blur(8px)",
+            lineHeight: 1,
+          }}
+        >
+          −
+        </button>
+        <button
+          onClick={toggleFullscreen}
+          data-testid="button-fullscreen"
+          style={{
+            width: "32px",
+            height: "32px",
+            background: "hsl(150 19% 8% / 0.9)",
+            border: "1px solid hsl(150 20% 14%)",
+            borderRadius: "6px",
+            color: "hsl(150 12% 92%)",
+            fontSize: "14px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backdropFilter: "blur(8px)",
+            marginTop: "4px",
+          }}
+        >
+          {isFullscreen ? (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="4 14 10 14 10 20" /><polyline points="20 10 14 10 14 4" />
+              <line x1="14" y1="10" x2="21" y2="3" /><line x1="3" y1="21" x2="10" y2="14" />
+            </svg>
+          ) : (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 3 21 3 21 9" /><polyline points="9 21 3 21 3 15" />
+              <line x1="21" y1="3" x2="14" y2="10" /><line x1="3" y1="21" x2="10" y2="14" />
+            </svg>
+          )}
+        </button>
+      </div>
+    </>
   );
 }
 
@@ -309,7 +395,7 @@ function PointLayerRenderer({ layerData, layerId }: { layerData: any; layerId: s
             <Tooltip sticky>
               <div style={{ fontFamily: "Inter, sans-serif", fontSize: "12px" }}>
                 <strong>{feature.properties?.name || "Unknown"}</strong>
-                {feature.properties?.type && <div style={{ color: "#666", fontSize: "11px" }}>{feature.properties.type}</div>}
+                {feature.properties?.type && <div style={{ color: "#999", fontSize: "11px" }}>{feature.properties.type}</div>}
               </div>
             </Tooltip>
           </CircleMarker>
@@ -322,10 +408,21 @@ function PointLayerRenderer({ layerData, layerId }: { layerData: any; layerId: s
 const POINT_LAYERS = new Set(["schools", "hospitals", "transit", "infrastructure"]);
 const POLYGON_LAYERS = new Set(["elevation", "soil", "flood", "landuse", "parks", "water"]);
 
-export default function MapViewer({ onLocationSelect, arcgisApiKey, activeLayers, onLayerLoading }: MapViewerProps) {
+export default function MapViewer({ onLocationSelect, arcgisApiKey, activeLayers, onLayerLoading, selectedLocation }: MapViewerProps) {
   const [position, setPosition] = useState<[number, number]>([37.7749, -122.4194]);
   const [layerData, setLayerData] = useState<LayerData>({});
   const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    if (selectedLocation) {
+      const newPos: [number, number] = [selectedLocation.lat, selectedLocation.lon];
+      if (newPos[0] !== position[0] || newPos[1] !== position[1]) {
+        if (abortRef.current) abortRef.current.abort();
+        setPosition(newPos);
+        setLayerData({});
+      }
+    }
+  }, [selectedLocation?.lat, selectedLocation?.lon]);
 
   const handleLocationSelect = useCallback((lat: number, lon: number, name: string) => {
     if (abortRef.current) abortRef.current.abort();
@@ -370,17 +467,14 @@ export default function MapViewer({ onLocationSelect, arcgisApiKey, activeLayers
         center={position}
         zoom={13}
         style={{ width: "100%", height: "100%" }}
-        zoomControl={true}
+        zoomControl={false}
         attributionControl={true}
       >
         <TileLayer
-          url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}"
-          attribution='&copy; <a href="https://www.esri.com">Esri</a>'
-          maxZoom={19}
-        />
-        <TileLayer
-          url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}"
-          maxZoom={19}
+          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
+          maxZoom={20}
+          subdomains="abcd"
         />
 
         {activeLayers.filter(id => POLYGON_LAYERS.has(id)).map(layerId => {
@@ -399,25 +493,53 @@ export default function MapViewer({ onLocationSelect, arcgisApiKey, activeLayers
 
         <Marker position={position} icon={markerIcon} />
         <ClickHandler onLocationSelect={handleLocationSelect} />
-        <SearchControl onLocationSelect={handleLocationSelect} arcgisApiKey={arcgisApiKey} />
+        <MapControls position={position} />
+        {selectedLocation && <FlyToLocation lat={selectedLocation.lat} lon={selectedLocation.lon} />}
       </MapContainer>
 
       {activeLayers.length > 0 && (
-        <div className="absolute bottom-4 left-4 z-[500] bg-white/90 backdrop-blur-sm rounded-lg border border-gray-200 p-3 shadow-lg" data-testid="map-legend">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-2">Active Layers</p>
-          <div className="space-y-1.5">
+        <div
+          className="absolute bottom-4 left-4 z-[500]"
+          data-testid="map-legend"
+          style={{
+            background: "hsl(150 19% 8% / 0.9)",
+            border: "1px solid hsl(150 20% 14%)",
+            borderRadius: "8px",
+            padding: "10px 12px",
+            backdropFilter: "blur(8px)",
+            boxShadow: "0 4px 16px rgb(0 0 0 / 0.4)",
+          }}
+        >
+          <p style={{
+            fontSize: "10px",
+            fontWeight: 600,
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+            color: "hsl(150 7% 51%)",
+            marginBottom: "8px",
+            fontFamily: "Inter, sans-serif",
+          }}>
+            Active Layers
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             {activeLayers.map(id => {
               const cacheKey = `${id}-${position[0].toFixed(3)}-${position[1].toFixed(3)}`;
               const data = layerData[cacheKey];
               return (
-                <div key={id} className="flex items-center gap-2 text-xs">
+                <div key={id} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", fontFamily: "Inter, sans-serif" }}>
                   <div
-                    className="w-3 h-3 rounded-full border border-white shadow-sm"
-                    style={{ background: LAYER_COLORS[id] || "#666" }}
+                    style={{
+                      width: "10px",
+                      height: "10px",
+                      borderRadius: "50%",
+                      background: LAYER_COLORS[id] || "#666",
+                      border: "1.5px solid hsl(150 20% 14%)",
+                      boxShadow: `0 0 4px ${LAYER_COLORS[id] || "#666"}40`,
+                    }}
                   />
-                  <span className="capitalize text-gray-700">{id}</span>
+                  <span style={{ color: "hsl(150 12% 92%)", textTransform: "capitalize" }}>{id}</span>
                   {data?.features && (
-                    <span className="text-gray-400 text-[10px]">({data.features.length})</span>
+                    <span style={{ color: "hsl(150 7% 51%)", fontSize: "10px" }}>({data.features.length})</span>
                   )}
                 </div>
               );

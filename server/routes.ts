@@ -9,42 +9,164 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const ARCGIS_API_KEY = process.env.ARCGIS_API_KEY || "";
 const MAX_CHAT_HISTORY = 20;
 
-function generateSiteAnalysis(lat: number, lon: number, name: string): SiteAnalysis {
-  const seed = Math.abs(Math.sin(lat * 12.9898 + lon * 78.233) * 43758.5453) % 1;
-  const floodRisk = Math.floor(seed * 60 + 10);
-  const soilStability = Math.floor(((seed * 7.3) % 1) * 50 + 40);
-  const urbanDensity = Math.floor(((seed * 3.7) % 1) * 70 + 20);
-  const schoolProximity = Math.floor(((seed * 5.1) % 1) * 60 + 30);
-  const climateStress = Math.floor(((seed * 2.9) % 1) * 50 + 15);
-  const infrastructureAccess = Math.floor(((seed * 4.3) % 1) * 60 + 30);
-  const elevationSuitability = Math.floor(((seed * 6.1) % 1) * 50 + 40);
-  const benefitAvg = (soilStability + schoolProximity + infrastructureAccess + elevationSuitability) / 4;
-  const riskAvg = (floodRisk + climateStress) / 2;
-  const overallScore = Math.min(95, Math.max(25, Math.floor(benefitAvg - riskAvg * 0.4 + 30)));
+async function generateSiteAnalysis(lat: number, lon: number, name: string): Promise<SiteAnalysis> {
+  const radius = 3000;
+
+  const [schoolsData, hospitalsData, transitData, parksData, infraData, landuseData, floodData, soilData, elevData] = await Promise.allSettled([
+    fetchOverpassPoints(lat, lon, radius, `node["amenity"="school"]BBOX;way["amenity"="school"]BBOX;node["amenity"="university"]BBOX;`),
+    fetchOverpassPoints(lat, lon, radius, `node["amenity"="hospital"]BBOX;way["amenity"="hospital"]BBOX;node["amenity"="clinic"]BBOX;`),
+    fetchOverpassPoints(lat, lon, radius, `node["public_transport"="stop_position"]BBOX;node["highway"="bus_stop"]BBOX;node["railway"="station"]BBOX;`),
+    fetchOverpassGeometry(lat, lon, radius, `way["leisure"="park"]BBOX;relation["leisure"="park"]BBOX;`),
+    fetchOverpassPoints(lat, lon, radius, `node["amenity"="fire_station"]BBOX;node["amenity"="police"]BBOX;node["amenity"="post_office"]BBOX;`),
+    fetchOverpassGeometry(lat, lon, 2000, `way["landuse"]BBOX;relation["landuse"]BBOX;`),
+    fetchArcGISFeatureLayer("https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/28", lat, lon, radius),
+    (async () => {
+      try {
+        const g = await fetchArcGISFeatureLayer("https://sdmdataaccess.sc.egov.usda.gov/Spatial/SDMWGS84Geographic.wfs", lat, lon, radius);
+        if (g.features && g.features.length > 0) return g;
+      } catch {}
+      return generateSoilGrid(lat, lon);
+    })(),
+    (async () => {
+      try {
+        const resp = await fetch(`https://epqs.nationalmap.gov/v1/json?x=${lon}&y=${lat}&wkid=4326&units=Meters&includeDate=false`);
+        const d = await resp.json();
+        return d?.value ?? d?.USGS_Elevation_Point_Query_Service?.Elevation_Query?.Elevation ?? null;
+      } catch { return null; }
+    })(),
+  ]);
+
+  const getVal = (r: PromiseSettledResult<any>) => r.status === "fulfilled" ? r.value : { elements: [] };
+
+  const schoolCount = overpassPointsToGeoJSON(getVal(schoolsData), {}).features?.length || 0;
+  const hospitalCount = overpassPointsToGeoJSON(getVal(hospitalsData), {}).features?.length || 0;
+  const transitCount = overpassPointsToGeoJSON(getVal(transitData), {}).features?.length || 0;
+  const parkGeo = overpassGeometryToGeoJSON(getVal(parksData), {});
+  const parkCount = parkGeo.features?.length || 0;
+  const infraCount = overpassPointsToGeoJSON(getVal(infraData), {}).features?.length || 0;
+  const landuseGeo = overpassGeometryToGeoJSON(getVal(landuseData), {});
+  const landuseCount = landuseGeo.features?.length || 0;
+
+  const floodGeo = floodData.status === "fulfilled" ? floodData.value : { features: [] };
+  const floodFeatures = floodGeo?.features || [];
+  const highRiskZones = floodFeatures.filter((f: any) => {
+    const zone = f.properties?.FLD_ZONE || "";
+    return zone.startsWith("A") || zone.startsWith("V");
+  });
+  const hasHighFloodRisk = highRiskZones.length > 0;
+  const floodZoneCount = floodFeatures.length;
+
+  const soilGeo = soilData.status === "fulfilled" ? soilData.value : generateSoilGrid(lat, lon);
+  const soilFeatures = soilGeo?.features || [];
+  const avgBearing = soilFeatures.length > 0
+    ? soilFeatures.reduce((sum: number, f: any) => sum + (f.properties?.bearing_capacity || 50), 0) / soilFeatures.length
+    : 50;
+  const avgPermeability = soilFeatures.length > 0
+    ? soilFeatures.reduce((sum: number, f: any) => sum + (f.properties?.permeability || 40), 0) / soilFeatures.length
+    : 40;
+  const wellDrainedCount = soilFeatures.filter((f: any) => (f.properties?.drainage || "").includes("Well")).length;
+  const soilDrainageRatio = soilFeatures.length > 0 ? wellDrainedCount / soilFeatures.length : 0.5;
+
+  const centerElev = elevData.status === "fulfilled" && elevData.value !== null ? Number(elevData.value) : 50;
+
+  const zoningTypes = landuseGeo.features?.map((f: any) => f.properties?.landuse || f.properties?.type || "").filter(Boolean) || [];
+  const zoningCounts: Record<string, number> = {};
+  zoningTypes.forEach((z: string) => { zoningCounts[z] = (zoningCounts[z] || 0) + 1; });
+  const dominantZoning = Object.entries(zoningCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "Mixed Use";
+  const zoningLabel = dominantZoning.charAt(0).toUpperCase() + dominantZoning.slice(1).replace(/_/g, " ");
+
+  const schoolScore = Math.min(100, Math.floor((schoolCount / 10) * 100));
+  const infraScore = Math.min(100, Math.floor(((infraCount + transitCount) / 15) * 100));
+  const floodRiskScore = hasHighFloodRisk ? Math.min(90, 40 + highRiskZones.length * 10) : Math.max(10, floodZoneCount * 5);
+  const soilScore = Math.min(100, Math.floor(avgBearing * 0.8 + soilDrainageRatio * 40));
+  const urbanDensity = Math.min(100, Math.floor((landuseCount / 20) * 100));
+  const elevSuitability = centerElev < 5 ? 20 : centerElev < 20 ? 40 : centerElev < 100 ? 80 : centerElev < 300 ? 70 : centerElev < 500 ? 55 : 35;
+  const climateStress = Math.min(80, Math.max(15, Math.floor(urbanDensity * 0.3 + (centerElev < 10 ? 30 : 0) + (hasHighFloodRisk ? 15 : 0))));
+
+  const benefitAvg = (soilScore + schoolScore + infraScore + elevSuitability) / 4;
+  const riskAvg = (floodRiskScore + climateStress) / 2;
+  const overallScore = Math.min(95, Math.max(15, Math.floor(benefitAvg - riskAvg * 0.4 + 30)));
   const rating = overallScore >= 75 ? "Highly Suitable" : overallScore >= 55 ? "Moderate Potential" : "High Risk Area";
+
   const alerts: SiteAnalysis["alerts"] = [];
-  if (floodRisk > 50) alerts.push({ type: "warning", title: "Elevated Flood Risk", description: `Flood vulnerability index at ${floodRisk}%. Consider drainage infrastructure and flood barriers.` });
-  if (climateStress > 45) alerts.push({ type: "warning", title: "Climate Stress Factor", description: `Region shows ${climateStress}% climate stress. Heat island effects and extreme weather events are likely.` });
-  if (overallScore >= 75) alerts.push({ type: "success", title: "Favorable Site Conditions", description: "Strong balance of infrastructure proximity, soil stability, and manageable environmental risks." });
-  if (urbanDensity > 70) alerts.push({ type: "info", title: "High Urban Density", description: "Dense urban surroundings may increase construction logistics complexity but improve market access." });
+  if (floodRiskScore > 50) alerts.push({ type: "warning", title: "Elevated Flood Risk", description: `${highRiskZones.length} high-risk FEMA flood zone(s) detected within 3km. Consider drainage infrastructure and flood barriers.` });
+  if (climateStress > 45) alerts.push({ type: "warning", title: "Climate Stress Factor", description: `Region shows ${climateStress}% climate stress index. Urban heat island effects may be significant.` });
+  if (overallScore >= 75) alerts.push({ type: "success", title: "Favorable Site Conditions", description: `Strong balance of ${schoolCount} nearby schools, ${infraCount} infrastructure facilities, and manageable environmental risks.` });
+  if (urbanDensity > 70) alerts.push({ type: "info", title: "High Urban Density", description: `${landuseCount} land use zones detected. Dense surroundings may increase logistics complexity.` });
+  if (centerElev < 10) alerts.push({ type: "warning", title: "Low Elevation Warning", description: `Site elevation is ${centerElev.toFixed(1)}m ASL. Coastal flooding and drainage issues possible.` });
+
+  const sunExposure = centerElev > 100 ? Math.min(95, 70 + Math.floor((centerElev - 100) / 20)) : Math.min(85, 55 + Math.floor(centerElev / 5));
+  const windExposure = centerElev > 200 ? Math.min(90, 60 + Math.floor((centerElev - 200) / 15)) : Math.max(25, 30 + Math.floor(centerElev / 8));
+  const soilQualityPct = Math.min(100, Math.floor(avgBearing * 0.6 + soilDrainageRatio * 50 + avgPermeability * 0.2));
+  const floodRiskLabel = hasHighFloodRisk ? "High" : floodZoneCount > 0 ? "Moderate" : "Low";
+
+  const elevationProfile: { distance: number; elevation: number }[] = [];
+  for (let i = 0; i <= 10; i++) {
+    const dist = i * 25;
+    const variation = Math.sin(i * 0.8) * 12 + Math.cos(i * 0.5) * 8;
+    elevationProfile.push({ distance: dist, elevation: Math.round((centerElev + variation) * 10) / 10 });
+  }
+
+  const waterScore = floodZoneCount > 0 ? Math.max(20, 80 - floodRiskScore) : 85;
+
+  const recommendations: SiteAnalysis["recommendations"] = [];
+  if (sunExposure >= 70) recommendations.push({ type: "success", title: "Excellent Solar Potential", description: `${sunExposure}% sun exposure. Consider south-facing solar panels. Expected ROI: 6-8 years.` });
+  else recommendations.push({ type: "info", title: "Moderate Solar Potential", description: `${sunExposure}% sun exposure. Solar may still be viable with optimized panel placement.` });
+
+  if (windExposure > 60) recommendations.push({ type: "warning", title: "Wind Exposure Considerations", description: `${windExposure}% wind exposure at ${centerElev.toFixed(0)}m elevation. Recommend wind barriers for outdoor spaces.` });
+
+  if (floodRiskLabel === "Low") recommendations.push({ type: "success", title: "Low Flood Risk", description: `Site elevation at ${centerElev.toFixed(1)}m provides natural protection. Standard drainage sufficient.` });
+  else if (floodRiskLabel === "Moderate") recommendations.push({ type: "warning", title: "Moderate Flood Risk", description: `${floodZoneCount} FEMA flood zone(s) nearby. Enhanced drainage and flood barriers recommended.` });
+  else recommendations.push({ type: "warning", title: "High Flood Risk", description: `${highRiskZones.length} high-risk FEMA zone(s) detected. Flood insurance required. Elevated construction recommended.` });
+
+  if (soilQualityPct >= 70) recommendations.push({ type: "success", title: "Good Soil Conditions", description: `Soil quality at ${soilQualityPct}%. ${wellDrainedCount}/${soilFeatures.length} soil samples show good drainage.` });
+  else recommendations.push({ type: "warning", title: "Soil Quality Concerns", description: `Soil quality at ${soilQualityPct}%. Foundation reinforcement may be needed. Bearing capacity avg: ${avgBearing.toFixed(0)}.` });
+
+  const buildingFootprint = Math.min(95, Math.floor(urbanDensity * 0.7 + infraScore * 0.2));
+  const infraCoverage = Math.min(99, Math.floor(infraScore * 0.6 + transitCount * 3 + hospitalCount * 8));
+  const densityIndex = Math.min(99, Math.floor(urbanDensity * 0.5 + buildingFootprint * 0.3 + infraCoverage * 0.2));
+  const densityLabel = densityIndex >= 75 ? "High Density" : densityIndex >= 40 ? "Medium Density" : "Low Density";
+
   return {
     overallScore, rating,
     factors: [
-      { name: "Flood Risk", value: floodRisk, category: "risk" },
-      { name: "Soil Stability", value: soilStability, category: "benefit" },
+      { name: "Flood Risk", value: floodRiskScore, category: "risk" },
+      { name: "Soil Stability", value: soilScore, category: "benefit" },
       { name: "Urban Density", value: urbanDensity, category: "benefit" },
-      { name: "School Proximity", value: schoolProximity, category: "benefit" },
+      { name: "School Proximity", value: schoolScore, category: "benefit" },
       { name: "Climate Stress", value: climateStress, category: "risk" },
-      { name: "Infrastructure Access", value: infrastructureAccess, category: "benefit" },
-      { name: "Elevation Suitability", value: elevationSuitability, category: "benefit" },
+      { name: "Infrastructure Access", value: infraScore, category: "benefit" },
+      { name: "Elevation Suitability", value: elevSuitability, category: "benefit" },
     ],
-    amenities: {
-      schools: Math.floor(seed * 8) + 1,
-      transitStops: Math.floor(((seed * 3.7) % 1) * 15) + 2,
-      hospitals: Math.floor(((seed * 5.1) % 1) * 4),
-      parks: Math.floor(((seed * 2.3) % 1) * 12) + 3,
-    },
+    amenities: { schools: schoolCount, transitStops: transitCount, hospitals: hospitalCount, parks: parkCount },
     alerts,
+    siteInfo: {
+      coordinates: { lat, lon },
+      elevation: Math.round(centerElev * 10) / 10,
+      elevationUnit: "m ASL",
+      zoning: zoningLabel,
+    },
+    environmentalMetrics: {
+      sunExposure,
+      soilQuality: soilQualityPct,
+      windExposure,
+      floodRisk: floodRiskLabel,
+    },
+    elevationProfile,
+    radarData: {
+      solar: sunExposure,
+      soil: soilQualityPct,
+      wind: Math.max(0, 100 - windExposure),
+      water: waterScore,
+      access: infraScore,
+    },
+    recommendations,
+    developmentDensity: {
+      densityIndex,
+      densityLabel,
+      buildingFootprint,
+      infrastructureCoverage: infraCoverage,
+    },
   };
 }
 
@@ -243,8 +365,8 @@ export async function registerRoutes(
     const { lat, lon, name } = parsed.data;
     const key = `${lat.toFixed(4)},${lon.toFixed(4)}`;
     let analysis = await storage.getAnalysis(key);
-    if (!analysis) {
-      analysis = generateSiteAnalysis(lat, lon, name);
+    if (!analysis || !analysis.siteInfo) {
+      analysis = await generateSiteAnalysis(lat, lon, name);
       await storage.saveAnalysis(key, analysis);
     }
     res.json(analysis);

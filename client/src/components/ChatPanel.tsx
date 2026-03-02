@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Bot, User, MapPin, Sparkles, Loader2 } from "lucide-react";
+import { Send, Bot, User, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface ChatPanelProps {
@@ -22,22 +22,22 @@ function renderMarkdown(text: string) {
   while (i < lines.length) {
     const line = lines[i];
     if (line.startsWith("### ")) {
-      elements.push(<h3 key={i} className="font-semibold text-sm mt-2 mb-1">{line.slice(4)}</h3>);
+      elements.push(<h3 key={i} className="font-semibold text-xs mt-2 mb-1 text-foreground">{line.slice(4)}</h3>);
     } else if (line.startsWith("## ")) {
-      elements.push(<h2 key={i} className="font-semibold text-sm mt-2 mb-1">{line.slice(3)}</h2>);
+      elements.push(<h2 key={i} className="font-semibold text-sm mt-2 mb-1 text-foreground">{line.slice(3)}</h2>);
     } else if (line.startsWith("# ")) {
-      elements.push(<h1 key={i} className="font-bold text-base mt-2 mb-1">{line.slice(2)}</h1>);
+      elements.push(<h1 key={i} className="font-bold text-sm mt-2 mb-1 text-foreground">{line.slice(2)}</h1>);
     } else if (line.startsWith("* ") || line.startsWith("- ")) {
       elements.push(
-        <div key={i} className="flex gap-1.5 ml-2">
+        <div key={i} className="flex gap-1.5 ml-2 text-[11px]">
           <span className="text-muted-foreground mt-0.5">•</span>
           <span>{renderInline(line.slice(2))}</span>
         </div>
       );
     } else if (line.trim() === "") {
-      elements.push(<div key={i} className="h-2" />);
+      elements.push(<div key={i} className="h-1.5" />);
     } else {
-      elements.push(<p key={i} className="leading-relaxed">{renderInline(line)}</p>);
+      elements.push(<p key={i} className="leading-relaxed text-[11px]">{renderInline(line)}</p>);
     }
     i++;
   }
@@ -47,9 +47,9 @@ function renderMarkdown(text: string) {
 function renderInline(text: string) {
   const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g);
   return parts.map((part, i) => {
-    if (part.startsWith("**") && part.endsWith("**")) return <strong key={i}>{part.slice(2, -2)}</strong>;
+    if (part.startsWith("**") && part.endsWith("**")) return <strong key={i} className="text-foreground">{part.slice(2, -2)}</strong>;
     if (part.startsWith("*") && part.endsWith("*")) return <em key={i}>{part.slice(1, -1)}</em>;
-    if (part.startsWith("`") && part.endsWith("`")) return <code key={i} className="bg-background/50 px-1 py-0.5 rounded text-xs font-mono">{part.slice(1, -1)}</code>;
+    if (part.startsWith("`") && part.endsWith("`")) return <code key={i} className="bg-muted px-1 py-0.5 rounded text-[10px] font-mono text-primary">{part.slice(1, -1)}</code>;
     return part;
   });
 }
@@ -59,7 +59,7 @@ export default function ChatPanel({ location }: ChatPanelProps) {
     {
       id: "1",
       role: "assistant",
-      content: "Hello! I'm **TerraLogic AI**, your spatial analysis assistant. Select a location on the map, and I can analyze its suitability for construction — evaluating flood risk, soil types, nearby infrastructure, climate, and more.\n\nToggle the **data layers** on the left to see real GIS overlays on the map."
+      content: "Hello! I'm **TerraLogic AI**, your spatial analysis assistant. Select a location on the map, and I can analyze its suitability for construction.\n\nToggle **data layers** to see real GIS overlays."
     }
   ]);
   const [input, setInput] = useState("");
@@ -84,7 +84,7 @@ export default function ChatPanel({ location }: ChatPanelProps) {
           setMessages(prev => [...prev, {
             id: Date.now().toString(),
             role: "assistant",
-            content: `I see you've selected **${location.name}** (${location.lat.toFixed(4)}, ${location.lon.toFixed(4)}). What would you like to know?\n\n* Flood risks and elevation analysis\n* Proximity to schools and infrastructure\n* Soil composition and drainage\n* Overall construction suitability`
+            content: `Analyzing **${location.name}** (${location.lat.toFixed(4)}, ${location.lon.toFixed(4)}).\n\n* Flood risks and elevation\n* Infrastructure proximity\n* Soil composition\n* Construction suitability`
           }]);
         }
       }
@@ -115,9 +115,8 @@ export default function ChatPanel({ location }: ChatPanelProps) {
       const data = await response.json();
       setMessages(prev => [...prev, { id: Date.now().toString(), role: "assistant", content: data.content }]);
     } catch (error) {
-      console.error("Chat error:", error);
-      toast({ title: "Analysis Failed", description: "Could not generate AI insights. Please try again.", variant: "destructive" });
-      setMessages(prev => [...prev, { id: Date.now().toString(), role: "assistant", content: "I couldn't reach the analysis service right now. Please try again in a moment." }]);
+      toast({ title: "Analysis Failed", description: "Could not generate AI insights.", variant: "destructive" });
+      setMessages(prev => [...prev, { id: Date.now().toString(), role: "assistant", content: "I couldn't reach the analysis service. Please try again." }]);
     } finally {
       setIsLoading(false);
     }
@@ -125,59 +124,49 @@ export default function ChatPanel({ location }: ChatPanelProps) {
 
   return (
     <div className="flex flex-col h-full w-full">
-      <div className="p-4 border-b border-border bg-muted/30">
-        <h2 className="font-semibold flex items-center gap-2 text-primary text-sm" data-testid="text-chat-title">
-          <Sparkles className="w-4 h-4 text-[hsl(204,70%,53%)]" />
-          TerraLogic AI Assistant
-        </h2>
-        {location ? (
-          <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-1 truncate" data-testid="text-chat-location">
-            <MapPin className="w-3 h-3 shrink-0" /> {location.name}
-          </p>
-        ) : (
-          <p className="text-[11px] text-muted-foreground mt-1">Select a location to begin</p>
-        )}
-      </div>
-
-      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-        <div className="flex flex-col gap-4 pb-4">
+      <ScrollArea className="flex-1 px-3 pt-2" ref={scrollRef}>
+        <div className="flex flex-col gap-3 pb-3">
           {messages.map((msg) => (
-            <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`} data-testid={`chat-message-${msg.role}-${msg.id}`}>
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-[hsl(204,70%,53%)] text-white'}`}>
-                {msg.role === 'user' ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
+            <div key={msg.id} className={`flex gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`} data-testid={`chat-message-${msg.role}-${msg.id}`}>
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-muted' : 'bg-primary/20'}`}>
+                {msg.role === 'user' ? <User className="w-3 h-3 text-muted-foreground" /> : <Bot className="w-3 h-3 text-primary" />}
               </div>
-              <div className={`p-3 rounded-lg max-w-[85%] text-sm leading-relaxed ${msg.role === 'user' ? 'bg-primary text-primary-foreground rounded-tr-none' : 'bg-muted border border-border rounded-tl-none'}`}>
+              <div className={`p-2.5 rounded-lg max-w-[85%] text-xs leading-relaxed ${
+                msg.role === 'user'
+                  ? 'bg-primary/15 text-foreground rounded-tr-none'
+                  : 'bg-muted/50 border border-border rounded-tl-none text-foreground'
+              }`}>
                 {msg.role === 'user' ? msg.content : renderMarkdown(msg.content)}
               </div>
             </div>
           ))}
           {isLoading && (
-            <div className="flex gap-3 flex-row">
-              <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-[hsl(204,70%,53%)] text-white">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            <div className="flex gap-2 flex-row">
+              <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 bg-primary/20">
+                <Loader2 className="w-3 h-3 animate-spin text-primary" />
               </div>
-              <div className="p-3 rounded-lg bg-muted border border-border rounded-tl-none flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-[hsl(204,70%,53%)] animate-bounce" style={{ animationDelay: "0ms" }}></span>
-                <span className="w-1.5 h-1.5 rounded-full bg-[hsl(204,70%,53%)] animate-bounce" style={{ animationDelay: "150ms" }}></span>
-                <span className="w-1.5 h-1.5 rounded-full bg-[hsl(204,70%,53%)] animate-bounce" style={{ animationDelay: "300ms" }}></span>
+              <div className="p-2.5 rounded-lg bg-muted/50 border border-border rounded-tl-none flex items-center gap-1.5">
+                <span className="w-1 h-1 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }} />
+                <span className="w-1 h-1 rounded-full bg-primary animate-bounce" style={{ animationDelay: "150ms" }} />
+                <span className="w-1 h-1 rounded-full bg-primary animate-bounce" style={{ animationDelay: "300ms" }} />
               </div>
             </div>
           )}
         </div>
       </ScrollArea>
 
-      <div className="p-4 border-t border-border bg-background">
-        <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex gap-2">
+      <div className="p-3 border-t border-border">
+        <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex gap-1.5">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about site suitability..."
-            className="flex-1 bg-muted/50"
+            className="flex-1 bg-input border-border text-xs h-8"
             disabled={isLoading}
             data-testid="input-chat-message"
           />
-          <Button type="submit" size="icon" disabled={!input.trim() || isLoading} data-testid="button-send-message">
-            <Send className="w-4 h-4" />
+          <Button type="submit" size="icon" disabled={!input.trim() || isLoading} className="h-8 w-8 bg-primary hover:bg-primary/90" data-testid="button-send-message">
+            <Send className="w-3 h-3" />
           </Button>
         </form>
       </div>

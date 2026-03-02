@@ -42,4 +42,35 @@ export interface SiteAnalysis {
     title: string;
     description: string;
   }[];
+  siteInfo: {
+    coordinates: { lat: number; lon: number };
+    elevation: number;
+    elevationUnit: string;
+    zoning: string;
+  };
+  environmentalMetrics: {
+    sunExposure: number;
+    soilQuality: number;
+    windExposure: number;
+    floodRisk: string;
+  };
+  elevationProfile: { distance: number; elevation: number }[];
+  radarData: {
+    solar: number;
+    soil: number;
+    wind: number;
+    water: number;
+    access: number;
+  };
+  recommendations: {
+    type: "success" | "warning" | "info";
+    title: string;
+    description: string;
+  }[];
+  developmentDensity: {
+    densityIndex: number;
+    densityLabel: string;
+    buildingFootprint: number;
+    infrastructureCoverage: number;
+  };
 }

@@ -29,10 +29,10 @@ export default defineConfig({
       "@shared": path.resolve(import.meta.dirname, "shared"),
       "@assets": path.resolve(import.meta.dirname, "attached_assets"),
     },
-    dedupe: ["react", "react-dom"],
+    dedupe: ["react", "react-dom", "react/jsx-runtime"],
   },
   optimizeDeps: {
-    include: ["leaflet", "react-leaflet"],
+    include: ["leaflet", "react-leaflet", "recharts"],
   },
   css: {
     postcss: {
