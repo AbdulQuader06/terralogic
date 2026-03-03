@@ -14,12 +14,20 @@ interface LayerData {
   [key: string]: any;
 }
 
+interface CustomOverlay {
+  id: string;
+  label: string;
+  color: string;
+  data: any;
+}
+
 interface MapViewerProps {
   onLocationSelect: (lat: number, lon: number, name: string) => void;
   arcgisApiKey: string;
   activeLayers: string[];
   onLayerLoading?: (layerId: string, loading: boolean) => void;
   selectedLocation?: { lat: number; lon: number; name: string } | null;
+  customOverlays?: CustomOverlay[];
 }
 
 const LAYER_COLORS: Record<string, string> = {
@@ -455,7 +463,65 @@ function PointLayerRenderer({ layerData, layerId }: { layerData: any; layerId: s
 const POINT_LAYERS = new Set(["schools", "hospitals", "transit", "infrastructure"]);
 const POLYGON_LAYERS = new Set(["elevation", "soil", "flood", "landuse", "parks", "water"]);
 
-export default function MapViewer({ onLocationSelect, arcgisApiKey, activeLayers, onLayerLoading, selectedLocation }: MapViewerProps) {
+function CustomOverlayRenderer({ overlay }: { overlay: CustomOverlay }) {
+  const features = overlay.data?.features || [];
+  if (features.length === 0) return null;
+
+  const pointFeatures = features.filter((f: any) => f.geometry?.type === "Point");
+  const polyFeatures = features.filter((f: any) => f.geometry?.type !== "Point");
+
+  return (
+    <>
+      {polyFeatures.length > 0 && (
+        <GeoJSON
+          key={`${overlay.id}-poly`}
+          data={{ type: "FeatureCollection", features: polyFeatures }}
+          style={() => ({
+            color: overlay.color,
+            weight: 2,
+            opacity: 0.8,
+            fillColor: overlay.color,
+            fillOpacity: 0.25,
+          })}
+          onEachFeature={(feature, layer) => {
+            const esc = (s: string) => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+            const name = esc(String(feature.properties?.name || feature.properties?.queryKey || ""));
+            const tags = Object.entries(feature.properties || {})
+              .filter(([k]) => !["layer", "queryKey", "queryValue", "_source"].includes(k))
+              .slice(0, 4)
+              .map(([k, v]) => `<div style="color:#999;font-size:10px">${esc(String(k))}: ${esc(String(v))}</div>`)
+              .join("");
+            if (name || tags) {
+              layer.bindTooltip(`<div style="font-family:Inter,sans-serif;font-size:12px"><strong>${name}</strong>${tags}</div>`, { sticky: true });
+            }
+          }}
+        />
+      )}
+      {pointFeatures.map((feature: any, i: number) => {
+        const [lon, lat] = feature.geometry.coordinates;
+        const name = feature.properties?.name || "";
+        return (
+          <CircleMarker
+            key={`${overlay.id}-pt-${i}`}
+            center={[lat, lon]}
+            radius={5}
+            pathOptions={{ fillColor: overlay.color, fillOpacity: 0.85, color: "#fff", weight: 1, opacity: 0.8 }}
+          >
+            {name && (
+              <Tooltip sticky>
+                <div style={{ fontFamily: "Inter, sans-serif", fontSize: "12px" }}>
+                  <strong>{name}</strong>
+                </div>
+              </Tooltip>
+            )}
+          </CircleMarker>
+        );
+      })}
+    </>
+  );
+}
+
+export default function MapViewer({ onLocationSelect, arcgisApiKey, activeLayers, onLayerLoading, selectedLocation, customOverlays = [] }: MapViewerProps) {
   const [position, setPosition] = useState<[number, number]>([37.7749, -122.4194]);
   const [layerData, setLayerData] = useState<LayerData>({});
   const layerDataRef = useRef<LayerData>({});
@@ -548,13 +614,17 @@ export default function MapViewer({ onLocationSelect, arcgisApiKey, activeLayers
           return <PointLayerRenderer key={cacheKey} layerData={data} layerId={layerId} />;
         })}
 
+        {customOverlays.map(overlay => (
+          <CustomOverlayRenderer key={overlay.id} overlay={overlay} />
+        ))}
+
         <Marker position={position} icon={markerIcon} />
         <ClickHandler onLocationSelect={handleLocationSelect} />
         <MapControls position={position} />
         {selectedLocation && <FlyToLocation lat={selectedLocation.lat} lon={selectedLocation.lon} />}
       </MapContainer>
 
-      {activeLayers.length > 0 && (
+      {(activeLayers.length > 0 || customOverlays.length > 0) && (
         <div
           className="absolute bottom-4 left-4 z-[500]"
           data-testid="map-legend"
@@ -601,6 +671,24 @@ export default function MapViewer({ onLocationSelect, arcgisApiKey, activeLayers
                 </div>
               );
             })}
+            {customOverlays.map(overlay => (
+              <div key={overlay.id} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", fontFamily: "Inter, sans-serif" }}>
+                <div
+                  style={{
+                    width: "10px",
+                    height: "10px",
+                    borderRadius: "50%",
+                    background: overlay.color,
+                    border: "1.5px solid hsl(150 20% 14%)",
+                    boxShadow: `0 0 4px ${overlay.color}40`,
+                  }}
+                />
+                <span style={{ color: "hsl(150 12% 92%)" }}>{overlay.label}</span>
+                {overlay.data?.features && (
+                  <span style={{ color: "hsl(150 7% 51%)", fontSize: "10px" }}>({overlay.data.features.length})</span>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       )}

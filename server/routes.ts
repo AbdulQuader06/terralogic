@@ -581,6 +581,153 @@ export async function registerRoutes(
     }
   });
 
+  // === QuickOSM Query Endpoint ===
+
+  app.post("/api/quickosm", async (req, res) => {
+    const { key, value, lat, lon, radius, outputType } = req.body;
+    if (!key || lat === undefined || lon === undefined) {
+      return res.status(400).json({ error: "key, lat, lon required" });
+    }
+    const sanitize = (s: string) => s.replace(/[\[\]"'\\;(){}]/g, "").slice(0, 64);
+    const safeKey = sanitize(String(key));
+    const safeValue = value ? sanitize(String(value)) : "";
+    if (!safeKey) return res.status(400).json({ error: "Invalid key" });
+    const r = Math.min(Math.max(Number(radius) || 5000, 100), 25000);
+    const bbox = `(around:${r},${lat},${lon})`;
+    const valueFilter = safeValue ? `="${safeValue}"` : "";
+    const isAreaQuery = outputType === "polygon" || outputType === "all";
+    const isPointQuery = outputType === "point" || outputType === "all" || !outputType;
+
+    let query = `[out:json][timeout:25];(`;
+    if (isPointQuery) {
+      query += `node["${safeKey}"${valueFilter}]${bbox};`;
+    }
+    if (isAreaQuery || !outputType || outputType === "all") {
+      query += `way["${safeKey}"${valueFilter}]${bbox};relation["${safeKey}"${valueFilter}]${bbox};`;
+    }
+    query += `);out body geom;`;
+
+    try {
+      const resp = await fetch("https://overpass-api.de/api/interpreter", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `data=${encodeURIComponent(query)}`,
+        signal: AbortSignal.timeout(30000),
+      });
+      if (!resp.ok) throw new Error(`Overpass error: ${resp.status}`);
+      const data = await resp.json();
+      const geo = overpassGeometryToGeoJSON(data, { layer: "quickosm", queryKey: safeKey, queryValue: safeValue || "*" });
+      const points = overpassPointsToGeoJSON(data, { layer: "quickosm", queryKey: safeKey, queryValue: safeValue || "*" });
+      const allFeatures = [...(geo.features || []), ...(points.features || [])];
+      const seen = new Set<string>();
+      const deduped = allFeatures.filter(f => {
+        const id = JSON.stringify(f.geometry?.coordinates?.[0] || f.geometry?.coordinates);
+        if (seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      });
+      res.json({ type: "FeatureCollection", features: deduped, meta: { query: `${key}=${value || "*"}`, count: deduped.length, radius: r } });
+    } catch (e: any) {
+      console.error("QuickOSM error:", e.message);
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // === OpenCity India Data Endpoint ===
+
+  app.get("/api/opencity/search", async (req, res) => {
+    const { q, city, rows } = req.query;
+    const searchQ = [q, city].filter(Boolean).join(" ");
+    try {
+      const resp = await fetch(
+        `https://data.opencity.in/api/3/action/package_search?q=${encodeURIComponent(searchQ || "")}&rows=${Number(rows) || 20}`,
+        { signal: AbortSignal.timeout(10000) }
+      );
+      if (!resp.ok) throw new Error(`OpenCity error: ${resp.status}`);
+      const data = await resp.json();
+      if (!data.success) throw new Error("OpenCity API returned unsuccessful");
+      const datasets = data.result.results.map((r: any) => ({
+        id: r.id,
+        title: r.title,
+        name: r.name,
+        organization: r.organization?.title || "",
+        city: r.groups?.map((g: any) => g.display_name).join(", ") || "",
+        resources: (r.resources || []).map((res: any) => ({
+          id: res.id,
+          name: res.name || res.description || "",
+          format: res.format || "",
+          url: res.url || "",
+        })),
+      }));
+      res.json({ datasets, count: data.result.count });
+    } catch (e: any) {
+      console.error("OpenCity search error:", e.message);
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.get("/api/opencity/resource/:id", async (req, res) => {
+    const { id } = req.params;
+    try {
+      const metaResp = await fetch(
+        `https://data.opencity.in/api/3/action/resource_show?id=${id}`,
+        { signal: AbortSignal.timeout(10000) }
+      );
+      if (!metaResp.ok) throw new Error(`OpenCity error: ${metaResp.status}`);
+      const metaData = await metaResp.json();
+      if (!metaData.success) throw new Error("Resource not found");
+      const resource = metaData.result;
+      const url = resource.url;
+      const format = (resource.format || "").toLowerCase();
+
+      if (format === "geojson" || url.endsWith(".geojson")) {
+        const dataResp = await fetch(url, { signal: AbortSignal.timeout(15000) });
+        if (!dataResp.ok) throw new Error(`Failed to fetch resource: ${dataResp.status}`);
+        const geoData = await dataResp.json();
+        res.json({ format: "geojson", data: geoData, name: resource.name || resource.description || "" });
+      } else if (format === "csv") {
+        const dataResp = await fetch(url, { signal: AbortSignal.timeout(15000) });
+        if (!dataResp.ok) throw new Error(`Failed to fetch resource: ${dataResp.status}`);
+        const csvText = await dataResp.text();
+        const lines = csvText.split("\n").filter(l => l.trim());
+        const headers = lines[0]?.split(",").map(h => h.trim().replace(/"/g, ""));
+        const latIdx = headers?.findIndex(h => /^(lat|latitude)$/i.test(h));
+        const lonIdx = headers?.findIndex(h => /^(lon|lng|longitude)$/i.test(h));
+        if (latIdx !== undefined && latIdx >= 0 && lonIdx !== undefined && lonIdx >= 0) {
+          const features = lines.slice(1).map((line, i) => {
+            const cols = line.split(",").map(c => c.trim().replace(/"/g, ""));
+            const lat = parseFloat(cols[latIdx]);
+            const lon = parseFloat(cols[lonIdx]);
+            if (isNaN(lat) || isNaN(lon)) return null;
+            const props: Record<string, string> = {};
+            headers?.forEach((h, j) => { if (j !== latIdx && j !== lonIdx) props[h] = cols[j] || ""; });
+            return {
+              type: "Feature",
+              geometry: { type: "Point", coordinates: [lon, lat] },
+              properties: { ...props, _source: "opencity" },
+            };
+          }).filter(Boolean);
+          res.json({ format: "geojson", data: { type: "FeatureCollection", features }, name: resource.name || "" });
+        } else {
+          const rows = lines.slice(1, 101).map(line => {
+            const cols = line.split(",").map(c => c.trim().replace(/"/g, ""));
+            const row: Record<string, string> = {};
+            headers?.forEach((h, j) => { row[h] = cols[j] || ""; });
+            return row;
+          });
+          res.json({ format: "table", headers, rows, name: resource.name || "" });
+        }
+      } else if (format === "kml") {
+        res.json({ format: "unsupported", message: "KML format not yet supported. Try GeoJSON or CSV resources.", name: resource.name || "" });
+      } else {
+        res.json({ format: "download", url, name: resource.name || "", resourceFormat: format });
+      }
+    } catch (e: any) {
+      console.error("OpenCity resource error:", e.message);
+      res.status(500).json({ error: e.message });
+    }
+  });
+
   // === GIS Data Layer Endpoints ===
 
   app.get("/api/layers/schools", async (req, res) => {
