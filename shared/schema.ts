@@ -11,6 +11,7 @@ export const chatRequestSchema = z.object({
   lat: z.number().optional(),
   lon: z.number().optional(),
   history: z.array(chatMessageSchema).optional(),
+  model: z.enum(["gemini", "mapgpt", "compass", "chatgpt", "auto"]).optional(),
 });
 
 export const analyzeRequestSchema = z.object({
@@ -72,5 +73,14 @@ export interface SiteAnalysis {
     densityLabel: string;
     buildingFootprint: number;
     infrastructureCoverage: number;
+  };
+  aiNarrative?: string;
+  sunPathData?: {
+    sunrise: string;
+    sunset: string;
+    dayLength: number;
+    solarNoon: string;
+    maxAltitude: number;
+    azimuthRange: { min: number; max: number };
   };
 }

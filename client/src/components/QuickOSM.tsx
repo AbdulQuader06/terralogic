@@ -22,7 +22,7 @@ const PRESET_QUERIES = [
   { label: "Pipelines", key: "man_made", value: "pipeline", icon: "🔧", color: "#78716C" },
   { label: "Bridges", key: "man_made", value: "bridge", icon: "🌉", color: "#0EA5E9" },
   { label: "Boundary Walls", key: "barrier", value: "wall", icon: "🧱", color: "#A8A29E" },
-  { label: "Temples", key: "amenity", value: "place_of_worship", icon: "🕉️", color: "#FB923C" },
+  { label: "Temples", key: "religion", value: "hindu", icon: "🕉️", color: "#FB923C" },
   { label: "Drinking Water", key: "amenity", value: "drinking_water", icon: "🚰", color: "#22D3EE" },
   { label: "Toilets", key: "amenity", value: "toilets", icon: "🚻", color: "#A3E635" },
 ];

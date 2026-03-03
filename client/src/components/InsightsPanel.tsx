@@ -99,7 +99,7 @@ export default function InsightsPanel({ location, onAnalysisReady }: InsightsPan
 
           <div>
             <h2 className="font-semibold text-base text-foreground" data-testid="text-insights-title">AI Site Analysis</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">Real-time intelligence & recommendations</p>
+            <p className="text-xs text-muted-foreground mt-0.5">GIS data + AI intelligence</p>
           </div>
 
           <div>
@@ -117,9 +117,15 @@ export default function InsightsPanel({ location, onAnalysisReady }: InsightsPan
                 </div>
                 <CircularGauge score={analysis.overallScore} />
               </div>
-              <p className="text-[11px] text-muted-foreground mt-3 leading-relaxed">
-                Based on environmental metrics, zoning, and site conditions
-              </p>
+              {analysis.aiNarrative ? (
+                <p className="text-[11px] text-muted-foreground mt-3 leading-relaxed" data-testid="text-ai-narrative">
+                  {analysis.aiNarrative}
+                </p>
+              ) : (
+                <p className="text-[11px] text-muted-foreground mt-3 leading-relaxed">
+                  Based on environmental metrics, zoning, and site conditions
+                </p>
+              )}
             </div>
           </div>
 
@@ -224,6 +230,40 @@ export default function InsightsPanel({ location, onAnalysisReady }: InsightsPan
                   }`}>
                     {analysis.environmentalMetrics.floodRisk}
                   </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {analysis.sunPathData && (
+            <div>
+              <h3 className="text-xs font-semibold text-foreground mb-3">Sun Path Data</h3>
+              <div className="bg-muted/40 border border-border rounded-xl p-4" data-testid="card-sun-path">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground">Sunrise</p>
+                    <p className="text-sm font-semibold text-amber-400">{analysis.sunPathData.sunrise}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground">Sunset</p>
+                    <p className="text-sm font-semibold text-orange-400">{analysis.sunPathData.sunset}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground">Day Length</p>
+                    <p className="text-sm font-semibold text-foreground">{analysis.sunPathData.dayLength}h</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground">Solar Noon</p>
+                    <p className="text-sm font-semibold text-foreground">{analysis.sunPathData.solarNoon}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground">Max Solar Altitude</p>
+                    <p className="text-sm font-semibold text-yellow-400">{analysis.sunPathData.maxAltitude}°</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground">Azimuth Range</p>
+                    <p className="text-sm font-semibold text-foreground">{analysis.sunPathData.azimuthRange.min}° — {analysis.sunPathData.azimuthRange.max}°</p>
+                  </div>
                 </div>
               </div>
             </div>

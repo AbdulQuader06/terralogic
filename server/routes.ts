@@ -7,7 +7,200 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const ARCGIS_API_KEY = process.env.ARCGIS_API_KEY || "";
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 const MAX_CHAT_HISTORY = 20;
+
+function calculateSunPath(lat: number, lon: number, date: Date = new Date()) {
+  const dayOfYear = Math.floor((date.getTime() - new Date(date.getFullYear(), 0, 0).getTime()) / 86400000);
+  const declination = 23.45 * Math.sin((2 * Math.PI / 365) * (dayOfYear - 81));
+  const decRad = declination * Math.PI / 180;
+  const latRad = lat * Math.PI / 180;
+  const cosHA = -Math.tan(latRad) * Math.tan(decRad);
+  const clampedCosHA = Math.max(-1, Math.min(1, cosHA));
+  const hourAngle = Math.acos(clampedCosHA) * 180 / Math.PI;
+  const dayLengthHours = (2 * hourAngle) / 15;
+  const eqOfTime = 229.18 * (0.000075 + 0.001868 * Math.cos(2 * Math.PI * dayOfYear / 365) - 0.032077 * Math.sin(2 * Math.PI * dayOfYear / 365) - 0.014615 * Math.cos(4 * Math.PI * dayOfYear / 365) - 0.04089 * Math.sin(4 * Math.PI * dayOfYear / 365));
+  const solarNoonMin = 720 - 4 * lon - eqOfTime;
+  const sunriseMin = solarNoonMin - dayLengthHours * 30;
+  const sunsetMin = solarNoonMin + dayLengthHours * 30;
+  const formatTime = (min: number) => {
+    const h = Math.floor(((min % 1440) + 1440) % 1440 / 60);
+    const m = Math.round(((min % 1440) + 1440) % 1440 % 60);
+    return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+  };
+  const maxAlt = Math.asin(Math.sin(latRad) * Math.sin(decRad) + Math.cos(latRad) * Math.cos(decRad)) * 180 / Math.PI;
+  let sunriseAz = 90;
+  const cosLat = Math.cos(latRad);
+  if (Math.abs(cosLat) > 0.001) {
+    const azArg = Math.max(-1, Math.min(1, Math.sin(decRad) / cosLat));
+    sunriseAz = Math.acos(azArg) * 180 / Math.PI;
+  }
+  return {
+    sunrise: formatTime(sunriseMin),
+    sunset: formatTime(sunsetMin),
+    dayLength: Math.round(dayLengthHours * 10) / 10,
+    solarNoon: formatTime(solarNoonMin),
+    maxAltitude: Math.round(maxAlt * 10) / 10,
+    azimuthRange: { min: Math.round(sunriseAz * 10) / 10, max: Math.round((360 - sunriseAz) * 10) / 10 },
+  };
+}
+
+async function callGemini(systemPrompt: string, message: string, history?: { role: string; content: string }[]): Promise<string> {
+  if (!GEMINI_API_KEY) throw new Error("Gemini API key not configured");
+  const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+  const chatHistory = (history || []).map(msg => ({
+    role: msg.role === "user" ? "user" as const : "model" as const,
+    parts: [{ text: msg.content }],
+  }));
+  const chat = model.startChat({
+    history: [
+      { role: "user", parts: [{ text: "System instruction: " + systemPrompt }] },
+      { role: "model", parts: [{ text: "Understood. I will follow these instructions." }] },
+      ...chatHistory,
+    ],
+  });
+  const result = await chat.sendMessage(message);
+  return result.response.text();
+}
+
+async function callOpenAI(systemPrompt: string, message: string, history?: { role: string; content: string }[]): Promise<string> {
+  if (!OPENAI_API_KEY) throw new Error("OpenAI API key not configured");
+  const messages = [
+    { role: "system", content: systemPrompt },
+    ...(history || []).map(m => ({ role: m.role, content: m.content })),
+    { role: "user", content: message },
+  ];
+  const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${OPENAI_API_KEY}` },
+    body: JSON.stringify({ model: "gpt-4o-mini", messages, max_tokens: 1024 }),
+    signal: AbortSignal.timeout(30000),
+  });
+  if (!resp.ok) throw new Error(`OpenAI error: ${resp.status}`);
+  const data = await resp.json();
+  return data.choices?.[0]?.message?.content || "No response generated.";
+}
+
+function generateLocalGISResponse(message: string, analysis: SiteAnalysis | null, locationName?: string): string {
+  const msg = message.toLowerCase();
+  if (!analysis) {
+    return "I don't have analysis data for this location yet. Please click on the map or use the search bar to select a location, then the right panel will load the GIS analysis. Once loaded, I can answer questions about the site.";
+  }
+  const lines: string[] = [];
+  if (msg.includes("score") || msg.includes("suitab") || msg.includes("overall") || msg.includes("summary") || msg.includes("report")) {
+    lines.push(`## Site Analysis: ${locationName || "Selected Location"}`);
+    lines.push(`**Overall Suitability Score: ${analysis.overallScore}/100** (${analysis.rating})`);
+    lines.push(`\nThis score is derived from real GIS data:`);
+    for (const f of analysis.factors) lines.push(`- **${f.name}**: ${f.value}% (${f.category})`);
+    lines.push(`\n**Nearby Infrastructure**: ${analysis.amenities.schools} schools, ${analysis.amenities.hospitals} hospitals, ${analysis.amenities.transitStops} transit stops, ${analysis.amenities.parks} parks`);
+  } else if (msg.includes("flood") || msg.includes("water") || msg.includes("risk")) {
+    lines.push(`## Flood Risk Assessment`);
+    lines.push(`**Flood Risk Level: ${analysis.environmentalMetrics.floodRisk}**`);
+    lines.push(`- Site elevation: ${analysis.siteInfo.elevation} ${analysis.siteInfo.elevationUnit}`);
+    const floodFactor = analysis.factors.find(f => f.name === "Flood Risk");
+    if (floodFactor) lines.push(`- Flood Risk Score: ${floodFactor.value}%`);
+    const floodRec = analysis.recommendations.find(r => r.title.toLowerCase().includes("flood"));
+    if (floodRec) lines.push(`\n**${floodRec.title}**: ${floodRec.description}`);
+  } else if (msg.includes("soil") || msg.includes("foundation") || msg.includes("bearing")) {
+    lines.push(`## Soil Analysis`);
+    lines.push(`**Soil Quality: ${analysis.environmentalMetrics.soilQuality}%**`);
+    lines.push(`- Zoning: ${analysis.siteInfo.zoning}`);
+    const soilRec = analysis.recommendations.find(r => r.title.toLowerCase().includes("soil"));
+    if (soilRec) lines.push(`\n**${soilRec.title}**: ${soilRec.description}`);
+  } else if (msg.includes("sun") || msg.includes("solar") || msg.includes("sunrise") || msg.includes("sunset")) {
+    lines.push(`## Solar & Sun Path Analysis`);
+    lines.push(`**Sun Exposure: ${analysis.environmentalMetrics.sunExposure}%**`);
+    if (analysis.sunPathData) {
+      lines.push(`- Sunrise: ${analysis.sunPathData.sunrise}`);
+      lines.push(`- Sunset: ${analysis.sunPathData.sunset}`);
+      lines.push(`- Day Length: ${analysis.sunPathData.dayLength} hours`);
+      lines.push(`- Solar Noon: ${analysis.sunPathData.solarNoon}`);
+      lines.push(`- Max Solar Altitude: ${analysis.sunPathData.maxAltitude}°`);
+    }
+    const sunRec = analysis.recommendations.find(r => r.title.toLowerCase().includes("solar"));
+    if (sunRec) lines.push(`\n**${sunRec.title}**: ${sunRec.description}`);
+  } else if (msg.includes("wind")) {
+    lines.push(`## Wind Exposure Analysis`);
+    lines.push(`**Wind Exposure: ${analysis.environmentalMetrics.windExposure}%**`);
+    lines.push(`- Elevation: ${analysis.siteInfo.elevation} ${analysis.siteInfo.elevationUnit}`);
+    const windRec = analysis.recommendations.find(r => r.title.toLowerCase().includes("wind"));
+    if (windRec) lines.push(`\n**${windRec.title}**: ${windRec.description}`);
+  } else if (msg.includes("elevation") || msg.includes("height") || msg.includes("terrain")) {
+    lines.push(`## Elevation & Terrain`);
+    lines.push(`**Site Elevation: ${analysis.siteInfo.elevation} ${analysis.siteInfo.elevationUnit}**`);
+    if (analysis.elevationProfile?.length) {
+      const min = Math.min(...analysis.elevationProfile.map(p => p.elevation));
+      const max = Math.max(...analysis.elevationProfile.map(p => p.elevation));
+      lines.push(`- Terrain range: ${min}m — ${max}m (${(max - min).toFixed(1)}m variation over ${analysis.elevationProfile[analysis.elevationProfile.length-1]?.distance || 0}m)`);
+    }
+    const elevFactor = analysis.factors.find(f => f.name === "Elevation Suitability");
+    if (elevFactor) lines.push(`- Elevation Suitability: ${elevFactor.value}%`);
+  } else if (msg.includes("school") || msg.includes("hospital") || msg.includes("transit") || msg.includes("infrastructure") || msg.includes("amen")) {
+    lines.push(`## Infrastructure & Amenities`);
+    lines.push(`Within 3km radius:`);
+    lines.push(`- **Schools**: ${analysis.amenities.schools}`);
+    lines.push(`- **Hospitals**: ${analysis.amenities.hospitals}`);
+    lines.push(`- **Transit Stops**: ${analysis.amenities.transitStops}`);
+    lines.push(`- **Parks**: ${analysis.amenities.parks}`);
+    lines.push(`- **Infrastructure Score**: ${analysis.factors.find(f => f.name === "Infrastructure Access")?.value || "N/A"}%`);
+  } else if (msg.includes("density") || msg.includes("urban") || msg.includes("building")) {
+    lines.push(`## Development Density`);
+    lines.push(`**${analysis.developmentDensity.densityLabel}** (Index: ${analysis.developmentDensity.densityIndex}%)`);
+    lines.push(`- Building Footprint: ${analysis.developmentDensity.buildingFootprint}%`);
+    lines.push(`- Infrastructure Coverage: ${analysis.developmentDensity.infrastructureCoverage}%`);
+  } else if (msg.includes("recommend") || msg.includes("suggest") || msg.includes("advice") || msg.includes("what should")) {
+    lines.push(`## AI Recommendations for ${locationName || "this site"}`);
+    for (const rec of analysis.recommendations) {
+      const emoji = rec.type === "success" ? "✅" : rec.type === "warning" ? "⚠️" : "ℹ️";
+      lines.push(`${emoji} **${rec.title}**: ${rec.description}`);
+    }
+  } else {
+    lines.push(`## Site Overview: ${locationName || "Selected Location"}`);
+    lines.push(`**Score: ${analysis.overallScore}/100** (${analysis.rating})`);
+    lines.push(`- Elevation: ${analysis.siteInfo.elevation} ${analysis.siteInfo.elevationUnit}`);
+    lines.push(`- Zoning: ${analysis.siteInfo.zoning}`);
+    lines.push(`- Sun: ${analysis.environmentalMetrics.sunExposure}% | Wind: ${analysis.environmentalMetrics.windExposure}% | Soil: ${analysis.environmentalMetrics.soilQuality}%`);
+    lines.push(`- Flood Risk: ${analysis.environmentalMetrics.floodRisk}`);
+    lines.push(`- ${analysis.amenities.schools} schools, ${analysis.amenities.hospitals} hospitals, ${analysis.amenities.transitStops} transit nearby`);
+    lines.push(`\n*Ask me about specific topics: flood risk, soil, solar, wind, elevation, infrastructure, or recommendations.*`);
+  }
+  return lines.join("\n");
+}
+
+async function callAI(modelPreference: string, systemPrompt: string, message: string, history?: { role: string; content: string }[], siteAnalysis?: SiteAnalysis | null, locationName?: string): Promise<{ content: string; model: string }> {
+  const models = modelPreference === "auto"
+    ? ["gemini", "openai"]
+    : [modelPreference, "gemini", "openai"];
+
+  const uniqueModels = [...new Set(models)];
+  const errors: string[] = [];
+
+  for (const m of uniqueModels) {
+    try {
+      if (m === "gemini" || m === "mapgpt") {
+        const gisPrompt = m === "mapgpt"
+          ? systemPrompt + "\n\nYou are MapGPT, specialized in geospatial queries, map data interpretation, and spatial analysis. Focus on geographic data, coordinate systems, projections, and spatial relationships."
+          : systemPrompt;
+        const content = await callGemini(gisPrompt, message, history);
+        return { content, model: m === "mapgpt" ? "MapGPT (Gemini)" : "Gemini" };
+      } else if (m === "compass") {
+        const compassPrompt = systemPrompt + "\n\nYou are CompassAI, specialized in navigation, routing, terrain analysis, and geographic orientation. Focus on directional guidance, path optimization, and terrain-aware analysis.";
+        const content = await callGemini(compassPrompt, message, history);
+        return { content, model: "CompassAI (Gemini)" };
+      } else if (m === "openai" || m === "chatgpt") {
+        const content = await callOpenAI(systemPrompt, message, history);
+        return { content, model: "ChatGPT" };
+      }
+    } catch (e: any) {
+      errors.push(`${m}: ${e.message}`);
+      continue;
+    }
+  }
+
+  const localResponse = generateLocalGISResponse(message, siteAnalysis || null, locationName);
+  return { content: localResponse, model: "TerraLogic (Local GIS)" };
+}
 
 async function fetchOverpassCombined(lat: number, lon: number, radius: number): Promise<any> {
   const bbox = `(around:${radius},${lat},${lon})`;
@@ -293,8 +486,24 @@ async function generateSiteAnalysis(lat: number, lon: number, name: string): Pro
   const densityIndex = Math.min(99, Math.floor(urbanDensity * 0.5 + buildingFootprint * 0.3 + infraCoverage * 0.2));
   const densityLabel = densityIndex >= 75 ? "High Density" : densityIndex >= 40 ? "Medium Density" : "Low Density";
 
+  const sunPathData = calculateSunPath(lat, lon);
+
+  let aiNarrative = "";
+  try {
+    if (GEMINI_API_KEY) {
+      const dataSummary = `Location: ${name} (${lat.toFixed(4)}°, ${lon.toFixed(4)}°). Elevation: ${centerElev.toFixed(1)}m ASL. Soil: ${soilClassName} (${soilDrainageLabel}, bearing ${avgBearing} kPa). Flood risk: ${floodRiskLabel} (${floodOsmCount} flood features, ${waterBodyCount} water bodies). Sun exposure: ${sunExposure}% (sunrise ${sunPathData.sunrise}, sunset ${sunPathData.sunset}, ${sunPathData.dayLength}h daylight, max altitude ${sunPathData.maxAltitude}°). Wind: ${windExposure}%. Infrastructure: ${schoolCount} schools, ${hospitalCount} hospitals, ${transitCount} transit stops, ${infraCount} facilities, ${parkCount} parks. Zoning: ${zoningLabel}. Urban density: ${urbanDensity}%. Score: ${overallScore}/100 (${rating}).`;
+      aiNarrative = await callGemini(
+        "You are a GIS site analysis expert. Write a concise 2-3 paragraph narrative assessment of the site based on the real data provided. Mention specific data points. Be professional and actionable. Do not use markdown headers.",
+        dataSummary
+      );
+    }
+  } catch (e: any) {
+    console.error("AI narrative generation failed:", e.message);
+    aiNarrative = `${name} sits at ${centerElev.toFixed(1)}m elevation on ${soilClassName} soil (${soilDrainageLabel}). The site scores ${overallScore}/100 for construction suitability with ${floodRiskLabel.toLowerCase()} flood risk. ${schoolCount} schools, ${hospitalCount} hospitals, and ${transitCount} transit stops serve the area within 3km. Sun exposure is ${sunExposure}% with ${sunPathData.dayLength} hours of daylight.`;
+  }
+
   return {
-    overallScore, rating,
+    overallScore, rating, aiNarrative, sunPathData,
     factors: [
       { name: "Flood Risk", value: floodRiskScore, category: "risk" },
       { name: "Soil Stability", value: soilScore, category: "benefit" },
@@ -538,45 +747,54 @@ export async function registerRoutes(
     res.json(analysis);
   });
 
+  app.get("/api/chat/models", (_req, res) => {
+    const models = [
+      { id: "gemini", name: "Gemini", description: "Google's Gemini 2.0 Flash — general GIS analysis", available: !!GEMINI_API_KEY, icon: "sparkles" },
+      { id: "mapgpt", name: "MapGPT", description: "Geospatial specialist — map data & spatial queries", available: !!GEMINI_API_KEY, icon: "map" },
+      { id: "compass", name: "CompassAI", description: "Navigation & terrain specialist — routing & orientation", available: !!GEMINI_API_KEY, icon: "compass" },
+      { id: "chatgpt", name: "ChatGPT", description: "OpenAI GPT-4o mini — general purpose analysis", available: !!OPENAI_API_KEY, icon: "bot" },
+      { id: "auto", name: "Auto", description: "Best available model with automatic fallback", available: !!(GEMINI_API_KEY || OPENAI_API_KEY), icon: "zap" },
+    ];
+    res.json({ models });
+  });
+
   app.post("/api/chat", async (req, res) => {
     const parsed = chatRequestSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "Invalid request", details: parsed.error.flatten() });
-    const { message, locationName, lat, lon } = parsed.data;
+    const { message, locationName, lat, lon, model: modelPref } = parsed.data;
     let { history } = parsed.data;
-    if (!GEMINI_API_KEY) return res.status(500).json({ error: "Gemini API key not configured" });
 
     if (history && history.length > MAX_CHAT_HISTORY) {
       history = history.slice(-MAX_CHAT_HISTORY);
     }
 
     try {
-      const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-      let siteContext = "";
-      if (lat !== undefined && lon !== undefined && locationName) {
+      let siteAnalysis: SiteAnalysis | null = null;
+      if (lat !== undefined && lon !== undefined) {
         const key = `${lat.toFixed(4)},${lon.toFixed(4)}`;
-        const analysis = await storage.getAnalysis(key);
-        if (analysis) {
-          siteContext = `\n\nSite Analysis Data for ${locationName}:\n- Overall Suitability Score: ${analysis.overallScore}/100 (${analysis.rating})\n- Factors: ${analysis.factors.map(f => `${f.name}: ${f.value}%`).join(", ")}\n- Nearby: ${analysis.amenities.schools} schools, ${analysis.amenities.transitStops} transit stops, ${analysis.amenities.hospitals} hospitals, ${analysis.amenities.parks} parks`;
+        siteAnalysis = await storage.getAnalysis(key) || null;
+        if (!siteAnalysis && locationName) {
+          try {
+            siteAnalysis = await generateSiteAnalysis(lat, lon, locationName);
+            await storage.saveAnalysis(key, siteAnalysis);
+          } catch (e: any) {
+            console.error("Chat: auto-analysis failed:", e.message);
+          }
         }
       }
-      const systemPrompt = `You are TerraLogic AI, a professional GIS spatial analyst AI assistant specialized in construction site suitability analysis. You help users understand spatial data layers including elevation, soil type, flood risk, land use, climate, and nearby infrastructure. You provide clear, actionable insights about site suitability for construction projects. Keep responses focused, professional, and data-driven. Use markdown formatting for readability.${siteContext}`;
-      const chatHistory = (history || []).map(msg => ({
-        role: msg.role === "user" ? "user" as const : "model" as const,
-        parts: [{ text: msg.content }],
-      }));
-      const chat = model.startChat({
-        history: [
-          { role: "user", parts: [{ text: "You are TerraLogic AI spatial analyst. Acknowledge." }] },
-          { role: "model", parts: [{ text: systemPrompt }] },
-          ...chatHistory,
-        ],
-      });
-      const result = await chat.sendMessage(message);
-      const responseText = result.response.text();
-      res.json({ content: responseText });
+
+      let siteContext = "";
+      if (siteAnalysis && locationName) {
+        const sunPath = siteAnalysis.sunPathData;
+        siteContext = `\n\nReal GIS Site Analysis Data for ${locationName} (${lat?.toFixed(4)}°, ${lon?.toFixed(4)}°):\n- Overall Suitability Score: ${siteAnalysis.overallScore}/100 (${siteAnalysis.rating})\n- Elevation: ${siteAnalysis.siteInfo.elevation} ${siteAnalysis.siteInfo.elevationUnit}\n- Zoning: ${siteAnalysis.siteInfo.zoning}\n- Sun Exposure: ${siteAnalysis.environmentalMetrics.sunExposure}%\n- Soil Quality: ${siteAnalysis.environmentalMetrics.soilQuality}% (${siteAnalysis.recommendations.find(r => r.title.includes("Soil"))?.description || ""})\n- Wind Exposure: ${siteAnalysis.environmentalMetrics.windExposure}%\n- Flood Risk: ${siteAnalysis.environmentalMetrics.floodRisk}\n- Nearby: ${siteAnalysis.amenities.schools} schools, ${siteAnalysis.amenities.transitStops} transit stops, ${siteAnalysis.amenities.hospitals} hospitals, ${siteAnalysis.amenities.parks} parks\n- Factors: ${siteAnalysis.factors.map(f => `${f.name}: ${f.value}%`).join(", ")}${sunPath ? `\n- Sun Path: Sunrise ${sunPath.sunrise}, Sunset ${sunPath.sunset}, Day Length ${sunPath.dayLength}h, Max Solar Altitude ${sunPath.maxAltitude}°` : ""}\n- Density: ${siteAnalysis.developmentDensity.densityLabel} (index ${siteAnalysis.developmentDensity.densityIndex})\n- Recommendations: ${siteAnalysis.recommendations.map(r => `[${r.type}] ${r.title}`).join(", ")}`;
+      }
+
+      const systemPrompt = `You are TerraLogic AI, a professional GIS spatial analyst AI assistant specialized in construction site suitability analysis. You combine real geographic information system (GIS) data with expert analysis. You have access to real-time data including: elevation profiles, soil classification (WRB/SoilGrids), flood risk (FEMA/OSM), sun path calculations, wind exposure, land use mapping, and infrastructure proximity from OpenStreetMap. Provide clear, actionable, data-driven insights about site suitability for construction. Reference specific data points when available. Use markdown formatting for readability.${siteContext}`;
+      const historyForAI = (history || []).map(m => ({ role: m.role, content: m.content }));
+      const aiResult = await callAI(modelPref || "auto", systemPrompt, message, historyForAI, siteAnalysis, locationName);
+      res.json({ content: aiResult.content, model: aiResult.model });
     } catch (error: any) {
-      console.error("Gemini API error:", error.message);
+      console.error("AI chat error:", error.message);
       res.status(500).json({ error: "Failed to generate AI response", message: error.message });
     }
   });
