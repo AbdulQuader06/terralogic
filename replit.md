@@ -85,10 +85,13 @@ Uses 2 combined Overpass queries + 3 parallel API calls + sun path + AI narrativ
 ## AI Chatbot System
 
 - **Multi-model architecture**: Gemini, MapGPT, CompassAI, ChatGPT with automatic fallback chain
-- **Local GIS fallback**: Rule-based engine that generates responses from real analysis data (always works, no API needed)
-- **Auto-analysis**: Chat endpoint auto-generates site analysis if not cached, ensuring data is always available
-- **Topic detection**: Local GIS fallback detects topics (flood, soil, solar, wind, elevation, infrastructure, density, recommendations) and provides targeted responses with real data
-- **Model selector**: Frontend dropdown lets users choose between AI models
+- **Natural language intent classification**: Uses topic scoring across 15 categories (transit, flood, soil, solar, wind, elevation, infrastructure, density, recommendations, overview, landuse, water, parks, schools, hospitals) instead of rigid keyword matching
+- **Conversation history awareness**: Follow-up questions with pronouns ("show them on the map", "tell me more") resolve to previous conversation topic
+- **Map layer actions**: Chat can return `action: {type: "toggleLayer", layer: "transit"}` which the frontend processes to enable/disable map layers automatically
+- **Model personas**: MapGPT ("From a geospatial perspective...") and CompassAI ("Looking at the terrain and navigation data...") have distinct voices even in local fallback mode
+- **Always-available models**: MapGPT, CompassAI, and Auto are always available — they use Gemini when API is available, otherwise fall back to persona-flavored local GIS engine
+- **Auto-analysis**: Chat endpoint auto-generates site analysis if not cached
+- **Overpass mirror fallback**: All Overpass API calls try 3 mirror endpoints (overpass-api.de, kumi.systems, maps.mail.ru) for reliability
 
 ## Environment Variables
 

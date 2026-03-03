@@ -7,6 +7,8 @@ import { useToast } from "@/hooks/use-toast";
 
 interface ChatPanelProps {
   location: { lat: number; lon: number; name: string } | null;
+  onToggleLayer?: (layerId: string) => void;
+  activeLayers?: string[];
 }
 
 interface Message {
@@ -71,7 +73,7 @@ function renderInline(text: string) {
   });
 }
 
-export default function ChatPanel({ location }: ChatPanelProps) {
+export default function ChatPanel({ location, onToggleLayer, activeLayers }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -154,6 +156,11 @@ export default function ChatPanel({ location }: ChatPanelProps) {
         content: data.content,
         model: data.model || selectedModel
       }]);
+      if (data.action?.type === "toggleLayer" && data.action.layer && onToggleLayer) {
+        if (!activeLayers?.includes(data.action.layer)) {
+          onToggleLayer(data.action.layer);
+        }
+      }
     } catch (error: any) {
       toast({ title: "AI Error", description: error.message || "Could not reach AI service.", variant: "destructive" });
       setMessages(prev => [...prev, {

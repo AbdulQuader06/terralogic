@@ -87,105 +87,223 @@ async function callOpenAI(systemPrompt: string, message: string, history?: { rol
   return data.choices?.[0]?.message?.content || "No response generated.";
 }
 
-function generateLocalGISResponse(message: string, analysis: SiteAnalysis | null, locationName?: string): string {
-  const msg = message.toLowerCase();
-  if (!analysis) {
-    return "I don't have analysis data for this location yet. Please click on the map or use the search bar to select a location, then the right panel will load the GIS analysis. Once loaded, I can answer questions about the site.";
-  }
-  const lines: string[] = [];
-  if (msg.includes("score") || msg.includes("suitab") || msg.includes("overall") || msg.includes("summary") || msg.includes("report")) {
-    lines.push(`## Site Analysis: ${locationName || "Selected Location"}`);
-    lines.push(`**Overall Suitability Score: ${analysis.overallScore}/100** (${analysis.rating})`);
-    lines.push(`\nThis score is derived from real GIS data:`);
-    for (const f of analysis.factors) lines.push(`- **${f.name}**: ${f.value}% (${f.category})`);
-    lines.push(`\n**Nearby Infrastructure**: ${analysis.amenities.schools} schools, ${analysis.amenities.hospitals} hospitals, ${analysis.amenities.transitStops} transit stops, ${analysis.amenities.parks} parks`);
-  } else if (msg.includes("flood") || msg.includes("water") || msg.includes("risk")) {
-    lines.push(`## Flood Risk Assessment`);
-    lines.push(`**Flood Risk Level: ${analysis.environmentalMetrics.floodRisk}**`);
-    lines.push(`- Site elevation: ${analysis.siteInfo.elevation} ${analysis.siteInfo.elevationUnit}`);
-    const floodFactor = analysis.factors.find(f => f.name === "Flood Risk");
-    if (floodFactor) lines.push(`- Flood Risk Score: ${floodFactor.value}%`);
-    const floodRec = analysis.recommendations.find(r => r.title.toLowerCase().includes("flood"));
-    if (floodRec) lines.push(`\n**${floodRec.title}**: ${floodRec.description}`);
-  } else if (msg.includes("soil") || msg.includes("foundation") || msg.includes("bearing")) {
-    lines.push(`## Soil Analysis`);
-    lines.push(`**Soil Quality: ${analysis.environmentalMetrics.soilQuality}%**`);
-    lines.push(`- Zoning: ${analysis.siteInfo.zoning}`);
-    const soilRec = analysis.recommendations.find(r => r.title.toLowerCase().includes("soil"));
-    if (soilRec) lines.push(`\n**${soilRec.title}**: ${soilRec.description}`);
-  } else if (msg.includes("sun") || msg.includes("solar") || msg.includes("sunrise") || msg.includes("sunset")) {
-    lines.push(`## Solar & Sun Path Analysis`);
-    lines.push(`**Sun Exposure: ${analysis.environmentalMetrics.sunExposure}%**`);
-    if (analysis.sunPathData) {
-      lines.push(`- Sunrise: ${analysis.sunPathData.sunrise}`);
-      lines.push(`- Sunset: ${analysis.sunPathData.sunset}`);
-      lines.push(`- Day Length: ${analysis.sunPathData.dayLength} hours`);
-      lines.push(`- Solar Noon: ${analysis.sunPathData.solarNoon}`);
-      lines.push(`- Max Solar Altitude: ${analysis.sunPathData.maxAltitude}°`);
-    }
-    const sunRec = analysis.recommendations.find(r => r.title.toLowerCase().includes("solar"));
-    if (sunRec) lines.push(`\n**${sunRec.title}**: ${sunRec.description}`);
-  } else if (msg.includes("wind")) {
-    lines.push(`## Wind Exposure Analysis`);
-    lines.push(`**Wind Exposure: ${analysis.environmentalMetrics.windExposure}%**`);
-    lines.push(`- Elevation: ${analysis.siteInfo.elevation} ${analysis.siteInfo.elevationUnit}`);
-    const windRec = analysis.recommendations.find(r => r.title.toLowerCase().includes("wind"));
-    if (windRec) lines.push(`\n**${windRec.title}**: ${windRec.description}`);
-  } else if (msg.includes("elevation") || msg.includes("height") || msg.includes("terrain")) {
-    lines.push(`## Elevation & Terrain`);
-    lines.push(`**Site Elevation: ${analysis.siteInfo.elevation} ${analysis.siteInfo.elevationUnit}**`);
-    if (analysis.elevationProfile?.length) {
-      const min = Math.min(...analysis.elevationProfile.map(p => p.elevation));
-      const max = Math.max(...analysis.elevationProfile.map(p => p.elevation));
-      lines.push(`- Terrain range: ${min}m — ${max}m (${(max - min).toFixed(1)}m variation over ${analysis.elevationProfile[analysis.elevationProfile.length-1]?.distance || 0}m)`);
-    }
-    const elevFactor = analysis.factors.find(f => f.name === "Elevation Suitability");
-    if (elevFactor) lines.push(`- Elevation Suitability: ${elevFactor.value}%`);
-  } else if (msg.includes("bus") || msg.includes("metro") || msg.includes("station") || msg.includes("transport") || msg.includes("transit") || msg.includes("railway") || msg.includes("train") || msg.includes("stop")) {
-    lines.push(`## Transit & Transport`);
-    lines.push(`Within the analysis radius of ${locationName || "this location"}:`);
-    lines.push(`- **Total Transit Stops**: ${analysis.amenities.transitStops}`);
-    lines.push(`  - Includes bus stops, metro stations, railway stations, tram stops, and other public transport nodes`);
-    lines.push(`- **Infrastructure Score**: ${analysis.factors.find(f => f.name === "Infrastructure Access")?.value || "N/A"}%`);
-    lines.push(`\n**Other nearby amenities:**`);
-    lines.push(`- Schools: ${analysis.amenities.schools}`);
-    lines.push(`- Hospitals: ${analysis.amenities.hospitals}`);
-    lines.push(`- Parks: ${analysis.amenities.parks}`);
-    const transitRec = analysis.recommendations.find(r => r.title.toLowerCase().includes("infra") || r.title.toLowerCase().includes("transit") || r.title.toLowerCase().includes("access"));
-    if (transitRec) lines.push(`\n**${transitRec.title}**: ${transitRec.description}`);
-  } else if (msg.includes("school") || msg.includes("hospital") || msg.includes("infrastructure") || msg.includes("amen")) {
-    lines.push(`## Infrastructure & Amenities`);
-    lines.push(`Within 3km radius:`);
-    lines.push(`- **Schools**: ${analysis.amenities.schools}`);
-    lines.push(`- **Hospitals**: ${analysis.amenities.hospitals}`);
-    lines.push(`- **Transit Stops**: ${analysis.amenities.transitStops}`);
-    lines.push(`- **Parks**: ${analysis.amenities.parks}`);
-    lines.push(`- **Infrastructure Score**: ${analysis.factors.find(f => f.name === "Infrastructure Access")?.value || "N/A"}%`);
-  } else if (msg.includes("density") || msg.includes("urban") || msg.includes("building")) {
-    lines.push(`## Development Density`);
-    lines.push(`**${analysis.developmentDensity.densityLabel}** (Index: ${analysis.developmentDensity.densityIndex}%)`);
-    lines.push(`- Building Footprint: ${analysis.developmentDensity.buildingFootprint}%`);
-    lines.push(`- Infrastructure Coverage: ${analysis.developmentDensity.infrastructureCoverage}%`);
-  } else if (msg.includes("recommend") || msg.includes("suggest") || msg.includes("advice") || msg.includes("what should")) {
-    lines.push(`## AI Recommendations for ${locationName || "this site"}`);
-    for (const rec of analysis.recommendations) {
-      const emoji = rec.type === "success" ? "✅" : rec.type === "warning" ? "⚠️" : "ℹ️";
-      lines.push(`${emoji} **${rec.title}**: ${rec.description}`);
-    }
-  } else {
-    lines.push(`## Site Overview: ${locationName || "Selected Location"}`);
-    lines.push(`**Score: ${analysis.overallScore}/100** (${analysis.rating})`);
-    lines.push(`- Elevation: ${analysis.siteInfo.elevation} ${analysis.siteInfo.elevationUnit}`);
-    lines.push(`- Zoning: ${analysis.siteInfo.zoning}`);
-    lines.push(`- Sun: ${analysis.environmentalMetrics.sunExposure}% | Wind: ${analysis.environmentalMetrics.windExposure}% | Soil: ${analysis.environmentalMetrics.soilQuality}%`);
-    lines.push(`- Flood Risk: ${analysis.environmentalMetrics.floodRisk}`);
-    lines.push(`- ${analysis.amenities.schools} schools, ${analysis.amenities.hospitals} hospitals, ${analysis.amenities.transitStops} transit nearby`);
-    lines.push(`\n*Ask me about specific topics: flood risk, soil, solar, wind, elevation, infrastructure, or recommendations.*`);
-  }
-  return lines.join("\n");
+interface LocalGISResult {
+  content: string;
+  action?: { type: string; layer?: string; layers?: string[] };
+  detectedTopic?: string;
 }
 
-async function callAI(modelPreference: string, systemPrompt: string, message: string, history?: { role: string; content: string }[], siteAnalysis?: SiteAnalysis | null, locationName?: string): Promise<{ content: string; model: string }> {
+function detectIntent(msg: string, history?: { role: string; content: string }[]): { topic: string; isMapRequest: boolean; isComparison: boolean; isFollowUp: boolean; refersToPrevious: boolean } {
+  const m = msg.toLowerCase().trim();
+  const recentHistory = (history || []).slice(-6);
+  const lastAssistant = [...recentHistory].reverse().find(h => h.role === "assistant")?.content?.toLowerCase() || "";
+  const lastUser = [...recentHistory].reverse().find(h => h.role === "user")?.content?.toLowerCase() || "";
+
+  const refersToPrevious = /\b(them|those|these|it|that|the above|show .*(on|in) ?(the )?map|display|visuali[sz]e|overlay|plot|mark|highlight|where are|locate)\b/.test(m) && m.split(/\s+/).length < 12;
+  const isMapRequest = /\b(show|display|map|visuali[sz]e|overlay|plot|mark|highlight|locate|where|pin|layer)\b.*\b(map|layer|on map|on the map)\b/.test(m) ||
+    /\b(show|display|put|add|turn on|enable|toggle)\b.*\b(them|those|these|it|layer|on map)\b/.test(m) ||
+    /\bon ?(the )?map\b/.test(m);
+  const isComparison = /\b(compare|versus|vs|better|worse|differ|between)\b/.test(m);
+  const isFollowUp = refersToPrevious || m.split(/\s+/).length <= 4;
+
+  const topicScores: Record<string, number> = {
+    transit: 0, flood: 0, soil: 0, solar: 0, wind: 0,
+    elevation: 0, infrastructure: 0, density: 0, recommendations: 0, overview: 0,
+    landuse: 0, water: 0, parks: 0, schools: 0, hospitals: 0
+  };
+
+  const patterns: Record<string, RegExp[]> = {
+    transit: [/bus\b/i, /metro/i, /station/i, /transport/i, /transit/i, /railway/i, /train/i, /commut/i, /route/i, /subway/i, /tram/i, /auto/i, /rickshaw/i, /cab/i, /taxi/i],
+    flood: [/flood/i, /drainage/i, /inundat/i, /waterlog/i, /submerg/i, /storm/i, /rain/i, /monsoon/i],
+    soil: [/soil/i, /foundation/i, /bearing/i, /ground/i, /geolog/i, /clay/i, /sand/i, /rock/i, /earth/i, /dig/i, /excavat/i, /terrain type/i],
+    solar: [/sun/i, /solar/i, /sunrise/i, /sunset/i, /daylight/i, /shade/i, /shadow/i, /panel/i, /photovoltaic/i, /irradiance/i],
+    wind: [/wind/i, /breeze/i, /gust/i, /ventilat/i, /airflow/i, /turbine/i],
+    elevation: [/elevation/i, /height/i, /terrain/i, /altitude/i, /topograph/i, /slope/i, /hill/i, /contour/i, /profile/i, /steep/i, /flat/i],
+    infrastructure: [/infrastr/i, /facilit/i, /amenit/i, /nearby/i, /access/i, /connect/i, /road/i, /highway/i, /bridge/i, /utility/i, /power/i, /electric/i, /sewage/i, /pipe/i],
+    density: [/densit/i, /urban/i, /building/i, /construct/i, /develop/i, /built/i, /footprint/i, /coverage/i, /population/i, /crowd/i, /congesti/i],
+    recommendations: [/recommend/i, /suggest/i, /advice/i, /should/i, /what.*do/i, /can.*build/i, /safe.*to/i, /feasib/i, /suitable/i, /plan/i, /proposal/i, /best/i, /worst/i, /pros/i, /cons/i],
+    overview: [/overview/i, /summary/i, /overall/i, /score/i, /suitab/i, /tell.*about/i, /analys[ie]/i, /report/i, /assess/i, /evaluat/i],
+    landuse: [/land\s*use/i, /zoning/i, /zone/i, /residential/i, /commercial/i, /industrial/i, /agricultural/i, /mixed/i],
+    water: [/water\s*bod/i, /river/i, /lake/i, /pond/i, /canal/i, /reservoir/i, /wetland/i],
+    parks: [/park/i, /garden/i, /green/i, /recreation/i, /open\s*space/i, /playground/i, /nature/i],
+    schools: [/school/i, /college/i, /universit/i, /education/i, /academ/i, /institut/i, /learn/i],
+    hospitals: [/hospital/i, /clinic/i, /health/i, /medic/i, /pharma/i, /doctor/i, /healthcare/i, /emergency/i]
+  };
+
+  for (const [topic, regexes] of Object.entries(patterns)) {
+    for (const re of regexes) {
+      if (re.test(m)) topicScores[topic] += 2;
+    }
+  }
+
+  if (isFollowUp && refersToPrevious) {
+    for (const [topic, regexes] of Object.entries(patterns)) {
+      for (const re of regexes) {
+        if (re.test(lastAssistant) || re.test(lastUser)) topicScores[topic] += 1;
+      }
+    }
+  }
+
+  let bestTopic = "overview";
+  let bestScore = 0;
+  for (const [topic, score] of Object.entries(topicScores)) {
+    if (score > bestScore) { bestScore = score; bestTopic = topic; }
+  }
+  if (bestScore === 0) bestTopic = "overview";
+
+  return { topic: bestTopic, isMapRequest, isComparison, isFollowUp, refersToPrevious };
+}
+
+function getLayerForTopic(topic: string): string | null {
+  const map: Record<string, string> = {
+    transit: "transit", flood: "flood", soil: "soil", solar: "elevation",
+    elevation: "elevation", landuse: "landuse", water: "water", parks: "parks",
+    schools: "schools", hospitals: "hospitals", infrastructure: "infrastructure"
+  };
+  return map[topic] || null;
+}
+
+function generateLocalGISResponse(message: string, analysis: SiteAnalysis | null, locationName?: string, history?: { role: string; content: string }[], modelPersona?: string): LocalGISResult {
+  if (!analysis) {
+    return { content: "I don't have analysis data for this location yet. Click on the map or search for a location to run a site analysis first. Once it's loaded, I can answer detailed questions about the area." };
+  }
+
+  const intent = detectIntent(message, history);
+  const { topic, isMapRequest, refersToPrevious } = intent;
+  const loc = locationName || "this location";
+  const lines: string[] = [];
+  let action: LocalGISResult["action"] | undefined;
+
+  if (isMapRequest) {
+    const layer = getLayerForTopic(topic);
+    if (layer) {
+      action = { type: "toggleLayer", layer };
+      lines.push(`I've enabled the **${topic}** layer on the map for ${loc}. You should now see the data overlaid on the map.`);
+    } else if (refersToPrevious) {
+      const prevTopic = detectIntent(([...(history || [])].reverse().find(h => h.role === "user")?.content || ""), []).topic;
+      const prevLayer = getLayerForTopic(prevTopic);
+      if (prevLayer) {
+        action = { type: "toggleLayer", layer: prevLayer };
+        lines.push(`Done! I've turned on the **${prevTopic}** layer on the map so you can see them visually.`);
+      } else {
+        lines.push(`To visualize data on the map, try enabling specific layers from the **Layers** tab on the left panel. Available layers include transit stops, schools, hospitals, land use, flood zones, and more.`);
+      }
+    } else {
+      lines.push(`You can enable map layers from the **Layers** tab on the left panel. Available layers include transit, schools, hospitals, flood zones, land use, water bodies, elevation contours, soil types, and infrastructure.`);
+    }
+
+    if (lines.length) {
+      return { content: lines.join("\n"), action, detectedTopic: topic };
+    }
+  }
+
+  const persona = modelPersona || "default";
+  const introStyle = (text: string) => {
+    if (persona === "mapgpt") return `From a geospatial perspective, ${text}`;
+    if (persona === "compass") return `Looking at the terrain and navigation data, ${text}`;
+    return text;
+  };
+
+  if (topic === "transit" || topic === "infrastructure" || topic === "schools" || topic === "hospitals") {
+    if (topic === "transit") {
+      lines.push(introStyle(`there are **${analysis.amenities.transitStops} transit stops** within the 3km analysis radius of ${loc}.`));
+      lines.push(`\nThis includes bus stops, metro/subway stations, railway stations, tram stops, and other public transport nodes identified from OpenStreetMap data.`);
+      lines.push(`\nThe area has an **Infrastructure Access score of ${analysis.factors.find(f => f.name === "Infrastructure Access")?.value || "N/A"}%**, indicating ${(analysis.factors.find(f => f.name === "Infrastructure Access")?.value || 0) >= 70 ? "excellent" : "moderate"} connectivity.`);
+    } else if (topic === "schools") {
+      lines.push(introStyle(`there are **${analysis.amenities.schools} educational institutions** within 3km of ${loc}.`));
+      lines.push(`This includes schools, colleges, universities, kindergartens, and libraries found in OpenStreetMap data.`);
+    } else if (topic === "hospitals") {
+      lines.push(introStyle(`there are **${analysis.amenities.hospitals} healthcare facilities** within 3km of ${loc}.`));
+      lines.push(`This includes hospitals, clinics, doctors' offices, pharmacies, and other healthcare providers from OpenStreetMap data.`);
+    } else {
+      lines.push(introStyle(`${loc} has solid infrastructure coverage:`));
+    }
+    lines.push(`\n**Nearby Amenities Summary:**`);
+    lines.push(`- Schools & Education: ${analysis.amenities.schools}`);
+    lines.push(`- Healthcare: ${analysis.amenities.hospitals}`);
+    lines.push(`- Transit Stops: ${analysis.amenities.transitStops}`);
+    lines.push(`- Parks & Green Spaces: ${analysis.amenities.parks}`);
+  } else if (topic === "flood") {
+    lines.push(introStyle(`the flood risk at ${loc} is rated **${analysis.environmentalMetrics.floodRisk}**.`));
+    lines.push(`\nThe site sits at **${analysis.siteInfo.elevation} ${analysis.siteInfo.elevationUnit}** elevation, which ${analysis.siteInfo.elevation > 100 ? "provides good natural protection against flooding" : analysis.siteInfo.elevation > 30 ? "offers moderate flood protection" : "means the area could be vulnerable to flooding events"}.`);
+    const floodFactor = analysis.factors.find(f => f.name === "Flood Risk");
+    if (floodFactor) lines.push(`\nFlood Risk Factor: **${floodFactor.value}%** ${floodFactor.value > 60 ? "(elevated — consider flood mitigation measures)" : "(manageable with standard precautions)"}`);
+    const floodRec = analysis.recommendations.find(r => r.title.toLowerCase().includes("flood"));
+    if (floodRec) lines.push(`\n> ${floodRec.description}`);
+  } else if (topic === "soil") {
+    lines.push(introStyle(`the soil quality at ${loc} scores **${analysis.environmentalMetrics.soilQuality}%**.`));
+    lines.push(`\nThe land is classified as **${analysis.siteInfo.zoning}** zoning. ${analysis.environmentalMetrics.soilQuality >= 70 ? "The soil conditions are favorable for construction with standard foundation techniques." : "You may need specialized foundation engineering depending on the structure type."}`);
+    const soilRec = analysis.recommendations.find(r => r.title.toLowerCase().includes("soil"));
+    if (soilRec) lines.push(`\n> ${soilRec.description}`);
+  } else if (topic === "solar") {
+    lines.push(introStyle(`sun exposure at ${loc} is **${analysis.environmentalMetrics.sunExposure}%**.`));
+    if (analysis.sunPathData) {
+      lines.push(`\n**Sun Path Data (today):**`);
+      lines.push(`- Sunrise: ${analysis.sunPathData.sunrise} UTC / Sunset: ${analysis.sunPathData.sunset} UTC`);
+      lines.push(`- Day length: ${analysis.sunPathData.dayLength} hours`);
+      lines.push(`- Solar noon: ${analysis.sunPathData.solarNoon} UTC`);
+      lines.push(`- Peak solar altitude: ${analysis.sunPathData.maxAltitude}°`);
+      lines.push(`- Azimuth range: ${analysis.sunPathData.azimuthRange.min}° to ${analysis.sunPathData.azimuthRange.max}°`);
+    }
+    lines.push(`\n${analysis.environmentalMetrics.sunExposure >= 60 ? "Good solar potential — the site receives adequate sunlight for solar panel installation or passive solar design." : "Limited sun exposure — consider shade analysis and optimized panel placement if solar energy is planned."}`);
+  } else if (topic === "wind") {
+    lines.push(introStyle(`wind exposure at ${loc} is **${analysis.environmentalMetrics.windExposure}%**.`));
+    lines.push(`\nAt **${analysis.siteInfo.elevation} ${analysis.siteInfo.elevationUnit}** elevation, ${analysis.environmentalMetrics.windExposure > 50 ? "the site experiences significant wind exposure. Wind-resistant building design and landscaping windbreaks are recommended." : "wind conditions are moderate. Standard construction practices should be adequate."}`);
+  } else if (topic === "elevation") {
+    lines.push(introStyle(`${loc} sits at **${analysis.siteInfo.elevation} ${analysis.siteInfo.elevationUnit}** elevation.`));
+    if (analysis.elevationProfile?.length) {
+      const elMin = Math.min(...analysis.elevationProfile.map(p => p.elevation));
+      const elMax = Math.max(...analysis.elevationProfile.map(p => p.elevation));
+      const dist = analysis.elevationProfile[analysis.elevationProfile.length - 1]?.distance || 0;
+      lines.push(`\nThe elevation profile across ${dist}m shows a range from **${elMin}m to ${elMax}m** (${(elMax - elMin).toFixed(1)}m variation). ${(elMax - elMin) > 50 ? "The terrain is quite varied — earthwork and grading will be significant considerations." : "The terrain is relatively flat, which is favorable for construction."}`);
+    }
+    const elevFactor = analysis.factors.find(f => f.name === "Elevation Suitability");
+    if (elevFactor) lines.push(`\nElevation suitability score: **${elevFactor.value}%**`);
+  } else if (topic === "density" || topic === "landuse") {
+    lines.push(introStyle(`${loc} is classified as **${analysis.developmentDensity.densityLabel}** with a density index of ${analysis.developmentDensity.densityIndex}%.`));
+    lines.push(`\n- Building footprint coverage: **${analysis.developmentDensity.buildingFootprint}%**`);
+    lines.push(`- Infrastructure coverage: **${analysis.developmentDensity.infrastructureCoverage}%**`);
+    lines.push(`- Zoning: **${analysis.siteInfo.zoning}**`);
+    lines.push(`\n${analysis.developmentDensity.densityIndex > 70 ? "This is a heavily developed area. New construction may face space constraints and higher costs, but benefits from existing infrastructure." : "There is room for development. The lower density means more flexibility for site planning."}`);
+  } else if (topic === "recommendations") {
+    lines.push(`Here are the key recommendations for ${loc}:\n`);
+    for (const rec of analysis.recommendations) {
+      const icon = rec.type === "success" ? "✅" : rec.type === "warning" ? "⚠️" : "ℹ️";
+      lines.push(`${icon} **${rec.title}**`);
+      lines.push(`   ${rec.description}\n`);
+    }
+  } else if (topic === "parks" || topic === "water") {
+    if (topic === "parks") {
+      lines.push(introStyle(`there are **${analysis.amenities.parks} parks and green spaces** within 3km of ${loc}.`));
+      lines.push(`\nThis includes public parks, gardens, nature reserves, playgrounds, and forested areas identified from OpenStreetMap data.`);
+    } else {
+      lines.push(introStyle(`the area around ${loc} has water features nearby.`));
+      lines.push(`\nFlood risk is rated **${analysis.environmentalMetrics.floodRisk}**. Check the water layer on the map for rivers, lakes, canals, and other water bodies.`);
+    }
+  } else {
+    lines.push(`Here's a quick overview of **${loc}**:\n`);
+    lines.push(`**Suitability Score: ${analysis.overallScore}/100** (${analysis.rating})`);
+    lines.push(`\n**Location Details:**`);
+    lines.push(`- Coordinates: ${analysis.siteInfo.coordinates.lat.toFixed(4)}°, ${analysis.siteInfo.coordinates.lon.toFixed(4)}°`);
+    lines.push(`- Elevation: ${analysis.siteInfo.elevation} ${analysis.siteInfo.elevationUnit}`);
+    lines.push(`- Zoning: ${analysis.siteInfo.zoning}`);
+    lines.push(`\n**Environmental:**`);
+    lines.push(`- Sun exposure: ${analysis.environmentalMetrics.sunExposure}% | Wind: ${analysis.environmentalMetrics.windExposure}%`);
+    lines.push(`- Soil quality: ${analysis.environmentalMetrics.soilQuality}% | Flood risk: ${analysis.environmentalMetrics.floodRisk}`);
+    lines.push(`\n**Nearby (within 3km):** ${analysis.amenities.schools} schools, ${analysis.amenities.hospitals} healthcare, ${analysis.amenities.transitStops} transit stops, ${analysis.amenities.parks} parks`);
+    lines.push(`\nFeel free to ask me anything specific — like "is this area prone to flooding?", "show transit stops on the map", or "what are the soil conditions?"`);
+  }
+
+  return { content: lines.join("\n"), detectedTopic: topic };
+}
+
+interface AIResult {
+  content: string;
+  model: string;
+  action?: { type: string; layer?: string; layers?: string[] };
+}
+
+async function callAI(modelPreference: string, systemPrompt: string, message: string, history?: { role: string; content: string }[], siteAnalysis?: SiteAnalysis | null, locationName?: string): Promise<AIResult> {
   const models = modelPreference === "auto"
     ? ["gemini", "openai"]
     : [modelPreference, "gemini", "openai"];
@@ -197,14 +315,14 @@ async function callAI(modelPreference: string, systemPrompt: string, message: st
     try {
       if (m === "gemini" || m === "mapgpt") {
         const gisPrompt = m === "mapgpt"
-          ? systemPrompt + "\n\nYou are MapGPT, specialized in geospatial queries, map data interpretation, and spatial analysis. Focus on geographic data, coordinate systems, projections, and spatial relationships."
+          ? systemPrompt + "\n\nYou are MapGPT, a geospatial analysis specialist. Focus on geographic data interpretation, coordinate systems, spatial relationships, and map-based analysis. Speak with authority about GIS concepts. When users ask to show things on the map, mention they can enable the relevant layer from the Layers tab."
           : systemPrompt;
         const content = await callGemini(gisPrompt, message, history);
-        return { content, model: m === "mapgpt" ? "MapGPT (Gemini)" : "Gemini" };
+        return { content, model: m === "mapgpt" ? "MapGPT" : "Gemini" };
       } else if (m === "compass") {
-        const compassPrompt = systemPrompt + "\n\nYou are CompassAI, specialized in navigation, routing, terrain analysis, and geographic orientation. Focus on directional guidance, path optimization, and terrain-aware analysis.";
+        const compassPrompt = systemPrompt + "\n\nYou are CompassAI, a navigation and terrain analysis specialist. Focus on terrain, elevation profiles, routing, slope analysis, and geographic orientation. Think about how terrain affects construction access, drainage, and site planning.";
         const content = await callGemini(compassPrompt, message, history);
-        return { content, model: "CompassAI (Gemini)" };
+        return { content, model: "CompassAI" };
       } else if (m === "openai" || m === "chatgpt") {
         const content = await callOpenAI(systemPrompt, message, history);
         return { content, model: "ChatGPT" };
@@ -215,8 +333,10 @@ async function callAI(modelPreference: string, systemPrompt: string, message: st
     }
   }
 
-  const localResponse = generateLocalGISResponse(message, siteAnalysis || null, locationName);
-  return { content: localResponse, model: "TerraLogic (Local GIS)" };
+  const persona = modelPreference === "mapgpt" ? "mapgpt" : modelPreference === "compass" ? "compass" : "default";
+  const localResult = generateLocalGISResponse(message, siteAnalysis || null, locationName, history, persona);
+  const modelName = persona === "mapgpt" ? "MapGPT (Local)" : persona === "compass" ? "CompassAI (Local)" : "TerraLogic AI";
+  return { content: localResult.content, model: modelName, action: localResult.action };
 }
 
 async function fetchOverpassCombined(lat: number, lon: number, radius: number): Promise<any> {
@@ -775,11 +895,11 @@ export async function registerRoutes(
 
   app.get("/api/chat/models", (_req, res) => {
     const models = [
-      { id: "gemini", name: "Gemini", description: "Google's Gemini 2.0 Flash — general GIS analysis", available: !!GEMINI_API_KEY, icon: "sparkles" },
-      { id: "mapgpt", name: "MapGPT", description: "Geospatial specialist — map data & spatial queries", available: !!GEMINI_API_KEY, icon: "map" },
-      { id: "compass", name: "CompassAI", description: "Navigation & terrain specialist — routing & orientation", available: !!GEMINI_API_KEY, icon: "compass" },
+      { id: "gemini", name: "Gemini", description: "Google Gemini 2.0 Flash — general GIS analysis", available: !!GEMINI_API_KEY, icon: "sparkles" },
+      { id: "mapgpt", name: "MapGPT", description: "Geospatial specialist — map data & spatial analysis", available: true, icon: "map" },
+      { id: "compass", name: "CompassAI", description: "Terrain & navigation specialist — elevation & routing", available: true, icon: "compass" },
       { id: "chatgpt", name: "ChatGPT", description: "OpenAI GPT-4o mini — general purpose analysis", available: !!OPENAI_API_KEY, icon: "bot" },
-      { id: "auto", name: "Auto", description: "Best available model with automatic fallback", available: !!(GEMINI_API_KEY || OPENAI_API_KEY), icon: "zap" },
+      { id: "auto", name: "Auto", description: "Best available model with automatic fallback", available: true, icon: "zap" },
     ];
     res.json({ models });
   });
@@ -818,7 +938,9 @@ export async function registerRoutes(
       const systemPrompt = `You are TerraLogic AI, a professional GIS spatial analyst AI assistant specialized in construction site suitability analysis. You combine real geographic information system (GIS) data with expert analysis. You have access to real-time data including: elevation profiles, soil classification (WRB/SoilGrids), flood risk (FEMA/OSM), sun path calculations, wind exposure, land use mapping, and infrastructure proximity from OpenStreetMap. Provide clear, actionable, data-driven insights about site suitability for construction. Reference specific data points when available. Use markdown formatting for readability.${siteContext}`;
       const historyForAI = (history || []).map(m => ({ role: m.role, content: m.content }));
       const aiResult = await callAI(modelPref || "auto", systemPrompt, message, historyForAI, siteAnalysis, locationName);
-      res.json({ content: aiResult.content, model: aiResult.model });
+      const response: any = { content: aiResult.content, model: aiResult.model };
+      if (aiResult.action) response.action = aiResult.action;
+      res.json(response);
     } catch (error: any) {
       console.error("AI chat error:", error.message);
       res.status(500).json({ error: "Failed to generate AI response", message: error.message });
