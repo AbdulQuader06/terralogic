@@ -9,6 +9,11 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const ARCGIS_API_KEY = process.env.ARCGIS_API_KEY || "";
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 const MAX_CHAT_HISTORY = 20;
+const OVERPASS_ENDPOINTS = [
+  "https://overpass-api.de/api/interpreter",
+  "https://overpass.kumi.systems/api/interpreter",
+  "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+];
 
 function calculateSunPath(lat: number, lon: number, date: Date = new Date()) {
   const dayOfYear = Math.floor((date.getTime() - new Date(date.getFullYear(), 0, 0).getTime()) / 86400000);
@@ -136,7 +141,19 @@ function generateLocalGISResponse(message: string, analysis: SiteAnalysis | null
     }
     const elevFactor = analysis.factors.find(f => f.name === "Elevation Suitability");
     if (elevFactor) lines.push(`- Elevation Suitability: ${elevFactor.value}%`);
-  } else if (msg.includes("school") || msg.includes("hospital") || msg.includes("transit") || msg.includes("infrastructure") || msg.includes("amen")) {
+  } else if (msg.includes("bus") || msg.includes("metro") || msg.includes("station") || msg.includes("transport") || msg.includes("transit") || msg.includes("railway") || msg.includes("train") || msg.includes("stop")) {
+    lines.push(`## Transit & Transport`);
+    lines.push(`Within the analysis radius of ${locationName || "this location"}:`);
+    lines.push(`- **Total Transit Stops**: ${analysis.amenities.transitStops}`);
+    lines.push(`  - Includes bus stops, metro stations, railway stations, tram stops, and other public transport nodes`);
+    lines.push(`- **Infrastructure Score**: ${analysis.factors.find(f => f.name === "Infrastructure Access")?.value || "N/A"}%`);
+    lines.push(`\n**Other nearby amenities:**`);
+    lines.push(`- Schools: ${analysis.amenities.schools}`);
+    lines.push(`- Hospitals: ${analysis.amenities.hospitals}`);
+    lines.push(`- Parks: ${analysis.amenities.parks}`);
+    const transitRec = analysis.recommendations.find(r => r.title.toLowerCase().includes("infra") || r.title.toLowerCase().includes("transit") || r.title.toLowerCase().includes("access"));
+    if (transitRec) lines.push(`\n**${transitRec.title}**: ${transitRec.description}`);
+  } else if (msg.includes("school") || msg.includes("hospital") || msg.includes("infrastructure") || msg.includes("amen")) {
     lines.push(`## Infrastructure & Amenities`);
     lines.push(`Within 3km radius:`);
     lines.push(`- **Schools**: ${analysis.amenities.schools}`);
@@ -228,19 +245,22 @@ async function fetchOverpassCombined(lat: number, lon: number, radius: number): 
     way["amenity"="marketplace"]${bbox};node["office"="government"]${bbox};
     way["office"="government"]${bbox};node["power"="substation"]${bbox};
   );out body center;`;
-  try {
-    const resp = await fetch("https://overpass-api.de/api/interpreter", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: `data=${encodeURIComponent(query)}`,
-      signal: AbortSignal.timeout(30000),
-    });
-    if (!resp.ok) throw new Error(`Overpass error: ${resp.status}`);
-    return await resp.json();
-  } catch (e: any) {
-    console.error("Overpass combined fetch error:", e.message);
-    return { elements: [] };
+  for (const url of OVERPASS_ENDPOINTS) {
+    try {
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `data=${encodeURIComponent(query)}`,
+        signal: AbortSignal.timeout(30000),
+      });
+      if (!resp.ok) continue;
+      return await resp.json();
+    } catch (e: any) {
+      continue;
+    }
   }
+  console.error("Overpass combined fetch failed all endpoints");
+  return { elements: [] };
 }
 
 async function fetchOverpassGeoCombined(lat: number, lon: number, radius: number): Promise<any> {
@@ -259,19 +279,22 @@ async function fetchOverpassGeoCombined(lat: number, lon: number, radius: number
     way["waterway"="canal"]${bbox};way["waterway"="riverbank"]${bbox};
     relation["waterway"="riverbank"]${bbox};
   );out body geom;`;
-  try {
-    const resp = await fetch("https://overpass-api.de/api/interpreter", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: `data=${encodeURIComponent(query)}`,
-      signal: AbortSignal.timeout(30000),
-    });
-    if (!resp.ok) throw new Error(`Overpass error: ${resp.status}`);
-    return await resp.json();
-  } catch (e: any) {
-    console.error("Overpass geo combined fetch error:", e.message);
-    return { elements: [] };
+  for (const url of OVERPASS_ENDPOINTS) {
+    try {
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `data=${encodeURIComponent(query)}`,
+        signal: AbortSignal.timeout(30000),
+      });
+      if (!resp.ok) continue;
+      return await resp.json();
+    } catch (e: any) {
+      continue;
+    }
   }
+  console.error("Overpass geo combined fetch failed all endpoints");
+  return { elements: [] };
 }
 
 async function generateSiteAnalysis(lat: number, lon: number, name: string): Promise<SiteAnalysis> {
@@ -564,21 +587,24 @@ async function fetchOverpassPoints(lat: number, lon: number, radius: number, que
 }
 
 async function fetchOverpassGeometry(lat: number, lon: number, radius: number, query: string): Promise<any> {
-  const overpassUrl = "https://overpass-api.de/api/interpreter";
   const bbox = `(around:${radius},${lat},${lon})`;
   const overpassQuery = `[out:json][timeout:25];(${query.replace(/BBOX/g, bbox)});out body geom;`;
-  try {
-    const resp = await fetch(overpassUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: `data=${encodeURIComponent(overpassQuery)}`,
-    });
-    if (!resp.ok) throw new Error(`Overpass error: ${resp.status}`);
-    return await resp.json();
-  } catch (e: any) {
-    console.error("Overpass geometry fetch error:", e.message);
-    return { elements: [] };
+  for (const url of OVERPASS_ENDPOINTS) {
+    try {
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `data=${encodeURIComponent(overpassQuery)}`,
+        signal: AbortSignal.timeout(25000),
+      });
+      if (!resp.ok) { continue; }
+      return await resp.json();
+    } catch (e: any) {
+      continue;
+    }
   }
+  console.error("Overpass geometry fetch failed all endpoints for query");
+  return { elements: [] };
 }
 
 function overpassPointsToGeoJSON(data: any, properties: Record<string, any> = {}): any {
@@ -996,10 +1022,29 @@ export async function registerRoutes(
   app.get("/api/layers/landuse", async (req, res) => {
     const { lat, lon, radius } = req.query;
     if (!lat || !lon) return res.status(400).json({ error: "lat and lon required" });
-    const data = await fetchOverpassGeometry(Number(lat), Number(lon), Number(radius) || 3000,
-      `way["landuse"]BBOX;relation["landuse"]BBOX;way["building"]BBOX;`
-    );
-    res.json(overpassGeometryToGeoJSON(data, { layer: "landuse" }));
+    const r = Math.min(Number(radius) || 2000, 3000);
+    const bbox = `(around:${r},${Number(lat)},${Number(lon)})`;
+    const overpassQuery = `[out:json][timeout:25][maxsize:10485760];(way["landuse"]${bbox};relation["landuse"]${bbox};);out body geom 200;`;
+    let lastError = "";
+    for (const url of OVERPASS_ENDPOINTS) {
+      try {
+        const resp = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: `data=${encodeURIComponent(overpassQuery)}`,
+          signal: AbortSignal.timeout(20000),
+        });
+        if (!resp.ok) { lastError = `${url}: ${resp.status}`; continue; }
+        const data = await resp.json();
+        const geo = overpassGeometryToGeoJSON(data, { layer: "landuse" });
+        return res.json(geo);
+      } catch (e: any) {
+        lastError = `${url}: ${e.message}`;
+        continue;
+      }
+    }
+    console.error("Landuse layer fetch failed all endpoints:", lastError);
+    res.json({ type: "FeatureCollection", features: [] });
   });
 
   app.get("/api/layers/water", async (req, res) => {
