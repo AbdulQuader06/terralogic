@@ -1,14 +1,20 @@
 # TerraLogic AI
 
-AI-powered GIS spatial analysis platform with dark Figma-matched UI. Evaluates construction site suitability using real spatial data layers (OSM, FEMA, USGS, USDA) and Gemini AI chatbot.
+AI-powered GIS spatial analysis platform with dark Figma-matched UI. Evaluates construction site suitability using real spatial data layers (OSM, FEMA, SoilGrids ISRIC, Open-Meteo) and Gemini AI chatbot.
 
 ## Architecture
 
 - **Frontend**: React + Vite + Tailwind CSS v4 + shadcn/ui + recharts
 - **Backend**: Express.js with API routes for GIS data proxying and AI chat
-- **Map**: Leaflet + react-leaflet with CartoDB dark_all basemap, ArcGIS geocoding
+- **Map**: Leaflet + react-leaflet with CartoDB dark_all basemap, server-side geocoding (Nominatim/ArcGIS)
 - **AI**: Google Gemini 2.0 Flash (server-side) for conversational spatial analysis
-- **GIS Data Sources**: OpenStreetMap (Overpass API), FEMA NFHL, USGS Elevation, USDA Soil
+- **GIS Data Sources**:
+  - OpenStreetMap Overpass API (schools, hospitals, transit, parks, landuse, water, infrastructure)
+  - FEMA NFHL (flood zones via ArcGIS feature layer)
+  - Open-Meteo Elevation API (real DEM elevation, multi-point profiles, marching squares contours)
+  - SoilGrids ISRIC API (WRB soil classification: Cambisols, Luvisols, etc.)
+  - USDA Soil (fallback grid generation)
+  - Nominatim/ArcGIS (geocoding)
 - **Routing**: wouter (frontend), Express (backend API)
 - **Storage**: In-memory (MemStorage) for analysis caching
 
@@ -16,32 +22,33 @@ AI-powered GIS spatial analysis platform with dark Figma-matched UI. Evaluates c
 
 Three-panel dark theme layout:
 - **Header**: TerraLogic AI logo, project location selector, Hyderabad Case Study button, Export Report button
-- **Left Panel** (280px): Project Overview heading, ArcGIS geocoder search input, tabbed Data Layers/AI Assistant, footer with active layer count and analysis status
-- **Center**: Leaflet dark map with CartoDB basemap, custom zoom/coordinate/fullscreen controls, GeoJSON layer rendering for 10 data layers
-- **Right Panel** (320px): Scrollable InsightsPanel with circular score gauge, development density analysis, site information, 2x2 environmental metrics grid, elevation profile AreaChart, radar chart, AI recommendation cards
+- **Left Panel** (280px): Project Overview heading, geocoder search input with search button, tabbed Data Layers/AI Assistant, footer with active layer count and analysis status
+- **Center**: Leaflet dark map with CartoDB basemap, custom zoom/coordinate/fullscreen controls, GeoJSON layer rendering for 10 data layers (contour lines for elevation, WRB colored regions for soil)
+- **Right Panel** (320px): Scrollable InsightsPanel with circular SVG score gauge, development density analysis, site information (real elevation), 2x2 environmental metrics grid, elevation profile AreaChart (real multi-point data), radar chart, AI recommendation cards
 
 ## Key Files
 
 - `client/src/pages/Home.tsx` - Main three-panel layout with header, search, tabs
-- `client/src/components/MapViewer.tsx` - Leaflet dark map with custom controls and GeoJSON layers
+- `client/src/components/MapViewer.tsx` - Leaflet dark map with custom controls and GeoJSON layers (contour lines, WRB soil colors)
 - `client/src/components/InsightsPanel.tsx` - Full analysis dashboard with recharts
 - `client/src/components/ChatPanel.tsx` - AI chatbot in left panel tab
 - `client/src/components/LayerControls.tsx` - Dark-themed layer toggle cards with icons
-- `server/routes.ts` - Real GIS data analysis + 10 layer proxy endpoints + Gemini chat
+- `server/routes.ts` - Real GIS data analysis + 10 layer proxy endpoints + Gemini chat + geocoding
 - `server/storage.ts` - In-memory storage for site analyses
 - `shared/schema.ts` - Zod schemas and TypeScript types (SiteAnalysis interface)
-- `client/src/index.css` - Dark theme CSS variables and Leaflet dark styling
+- `client/src/index.css` - Dark theme CSS variables, Leaflet dark styling, contour label styles
 
 ## API Endpoints
 
 - `GET /api/config` - Returns ArcGIS API key
-- `POST /api/analyze` - Real GIS data aggregation: USGS elevation, FEMA flood, USDA soil, OSM amenities → suitability score, environmental metrics, radar data, recommendations
+- `GET /api/geocode?q=` - Server-side geocoding (Nominatim primary, ArcGIS fallback)
+- `POST /api/analyze` - Real GIS data aggregation: Open-Meteo elevation, FEMA flood, SoilGrids WRB classification, OSM amenities → suitability score, environmental metrics, real elevation profile, radar data, recommendations
 - `POST /api/chat` - AI chat via Gemini with site context injection
 - `GET /api/layers/{schools,hospitals,transit,parks,landuse,water,flood,soil,elevation,infrastructure}` - GIS layer data endpoints
 
 ## Environment Variables
 
-- `ARCGIS_API_KEY` - ArcGIS API key for geocoding search
+- `ARCGIS_API_KEY` - ArcGIS API key for geocoding fallback
 - `GEMINI_API_KEY` - Google Gemini API key for AI chat
 
 ## Color Palette (Dark Theme)
@@ -56,9 +63,17 @@ Three-panel dark theme layout:
 
 ## Dependencies
 
-- leaflet, react-leaflet, @types/leaflet (map with GeoJSON)
+- leaflet, react-leaflet, @types/leaflet (map with GeoJSON contour/soil rendering)
 - recharts (AreaChart, RadarChart for analysis dashboard)
 - @google/generative-ai (Gemini API, server-side only)
 - lucide-react (icons)
 - @tanstack/react-query (data fetching)
 - wouter (client routing)
+
+## Layer System
+
+- Layer toggle uses `e.stopPropagation()` on Switch to prevent double-toggle
+- `layerDataRef` tracks fetched cache keys to prevent stale closure re-fetches
+- Elevation layer: contour LineStrings with major/minor styling (Open-Meteo → marching squares)
+- Soil layer: WRB soil type colored polygons (SoilGrids ISRIC API for classification data)
+- Flood layer: FEMA zones with red/blue risk coloring

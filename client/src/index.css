@@ -199,6 +199,21 @@
   .leaflet-control-attribution a {
     color: hsl(145 100% 39%) !important;
   }
+  
+  .contour-label {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: hsl(150 12% 75%) !important;
+    font-size: 9px !important;
+    font-weight: 600 !important;
+    text-shadow: 0 0 3px hsl(160 14% 5%), 0 0 6px hsl(160 14% 5%) !important;
+    padding: 0 !important;
+    white-space: nowrap !important;
+  }
+  .contour-label::before {
+    display: none !important;
+  }
 }
 
 @layer utilities {

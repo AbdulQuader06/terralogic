@@ -22,17 +22,47 @@ async function generateSiteAnalysis(lat: number, lon: number, name: string): Pro
     fetchArcGISFeatureLayer("https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/28", lat, lon, radius),
     (async () => {
       try {
-        const g = await fetchArcGISFeatureLayer("https://sdmdataaccess.sc.egov.usda.gov/Spatial/SDMWGS84Geographic.wfs", lat, lon, radius);
-        if (g.features && g.features.length > 0) return g;
+        const resp = await fetch(
+          `https://rest.isric.org/soilgrids/v2.0/classification/query?lon=${lon.toFixed(5)}&lat=${lat.toFixed(5)}&number_classes=3`,
+          { signal: AbortSignal.timeout(10000) }
+        );
+        if (resp.ok) {
+          const data = await resp.json();
+          return {
+            soilClass: data.wrb_class_name || "Unknown",
+            probability: data.wrb_class_probability || [],
+            source: "soilgrids",
+          };
+        }
       } catch {}
-      return generateSoilGrid(lat, lon);
+      return { soilClass: "Unknown", probability: [], source: "fallback" };
     })(),
     (async () => {
       try {
+        const numPoints = 11;
+        const degSpan = 0.02;
+        const lats: number[] = [];
+        const lons: number[] = [];
+        for (let i = 0; i < numPoints; i++) {
+          const t = i / (numPoints - 1);
+          lats.push(lat);
+          lons.push(lon - degSpan / 2 + t * degSpan);
+        }
+        const resp = await fetch(
+          `https://api.open-meteo.com/v1/elevation?latitude=${lats.join(",")}&longitude=${lons.join(",")}`,
+          { signal: AbortSignal.timeout(10000) }
+        );
+        if (resp.ok) {
+          const data = await resp.json();
+          return { elevations: data.elevation || [], source: "open-meteo" };
+        }
+      } catch {}
+      try {
         const resp = await fetch(`https://epqs.nationalmap.gov/v1/json?x=${lon}&y=${lat}&wkid=4326&units=Meters&includeDate=false`);
         const d = await resp.json();
-        return d?.value ?? d?.USGS_Elevation_Point_Query_Service?.Elevation_Query?.Elevation ?? null;
-      } catch { return null; }
+        const elev = d?.value ?? d?.USGS_Elevation_Point_Query_Service?.Elevation_Query?.Elevation ?? null;
+        return { elevations: [elev], source: "usgs" };
+      } catch { return { elevations: [null], source: "none" }; }
     })(),
   ]);
 
@@ -56,18 +86,29 @@ async function generateSiteAnalysis(lat: number, lon: number, name: string): Pro
   const hasHighFloodRisk = highRiskZones.length > 0;
   const floodZoneCount = floodFeatures.length;
 
-  const soilGeo = soilData.status === "fulfilled" ? soilData.value : generateSoilGrid(lat, lon);
-  const soilFeatures = soilGeo?.features || [];
-  const avgBearing = soilFeatures.length > 0
-    ? soilFeatures.reduce((sum: number, f: any) => sum + (f.properties?.bearing_capacity || 50), 0) / soilFeatures.length
-    : 50;
-  const avgPermeability = soilFeatures.length > 0
-    ? soilFeatures.reduce((sum: number, f: any) => sum + (f.properties?.permeability || 40), 0) / soilFeatures.length
-    : 40;
-  const wellDrainedCount = soilFeatures.filter((f: any) => (f.properties?.drainage || "").includes("Well")).length;
-  const soilDrainageRatio = soilFeatures.length > 0 ? wellDrainedCount / soilFeatures.length : 0.5;
+  const soilResult = soilData.status === "fulfilled" ? soilData.value : { soilClass: "Unknown", probability: [], source: "fallback" };
+  const soilClassName = soilResult.soilClass || "Unknown";
+  const soilBearingMap: Record<string, number> = {
+    Cambisols: 65, Luvisols: 60, Ferralsols: 55, Acrisols: 45, Leptosols: 35, Arenosols: 40,
+    Vertisols: 30, Fluvisols: 50, Gleysols: 25, Histosols: 15, Regosols: 45, Andosols: 55,
+    Chernozems: 70, Phaeozems: 65, Nitisols: 60, Calcisols: 55, Podzols: 40, Planosols: 35,
+  };
+  const soilDrainageMap: Record<string, string> = {
+    Cambisols: "Well Drained", Luvisols: "Moderately Well Drained", Ferralsols: "Well Drained",
+    Acrisols: "Moderately Drained", Leptosols: "Rapidly Drained", Arenosols: "Excessively Drained",
+    Vertisols: "Poorly Drained", Fluvisols: "Variable", Gleysols: "Poorly Drained",
+    Histosols: "Poorly Drained", Regosols: "Well Drained", Andosols: "Well Drained",
+    Chernozems: "Well Drained", Phaeozems: "Well Drained", Nitisols: "Well Drained",
+    Calcisols: "Moderately Well Drained", Podzols: "Moderately Drained", Planosols: "Poorly Drained",
+  };
+  const avgBearing = soilBearingMap[soilClassName] || 50;
+  const avgPermeability = avgBearing * 0.7 + 10;
+  const soilDrainageLabel = soilDrainageMap[soilClassName] || "Moderately Drained";
+  const soilDrainageRatio = soilDrainageLabel.includes("Well") ? 0.8 : soilDrainageLabel.includes("Poorly") ? 0.2 : 0.5;
 
-  const centerElev = elevData.status === "fulfilled" && elevData.value !== null ? Number(elevData.value) : 50;
+  const elevResult = elevData.status === "fulfilled" ? elevData.value : { elevations: [50], source: "none" };
+  const elevArr: number[] = (elevResult?.elevations || [50]).map((v: any) => (v != null && !isNaN(Number(v)) ? Number(v) : 50));
+  const centerElev = elevArr[Math.floor(elevArr.length / 2)] ?? 50;
 
   const zoningTypes = landuseGeo.features?.map((f: any) => f.properties?.landuse || f.properties?.type || "").filter(Boolean) || [];
   const zoningCounts: Record<string, number> = {};
@@ -94,6 +135,7 @@ async function generateSiteAnalysis(lat: number, lon: number, name: string): Pro
   if (overallScore >= 75) alerts.push({ type: "success", title: "Favorable Site Conditions", description: `Strong balance of ${schoolCount} nearby schools, ${infraCount} infrastructure facilities, and manageable environmental risks.` });
   if (urbanDensity > 70) alerts.push({ type: "info", title: "High Urban Density", description: `${landuseCount} land use zones detected. Dense surroundings may increase logistics complexity.` });
   if (centerElev < 10) alerts.push({ type: "warning", title: "Low Elevation Warning", description: `Site elevation is ${centerElev.toFixed(1)}m ASL. Coastal flooding and drainage issues possible.` });
+  if (soilClassName !== "Unknown") alerts.push({ type: "info", title: `Soil Classification: ${soilClassName}`, description: `WRB soil type: ${soilClassName}. ${soilDrainageLabel}. Bearing capacity est: ${avgBearing} kPa.` });
 
   const sunExposure = centerElev > 100 ? Math.min(95, 70 + Math.floor((centerElev - 100) / 20)) : Math.min(85, 55 + Math.floor(centerElev / 5));
   const windExposure = centerElev > 200 ? Math.min(90, 60 + Math.floor((centerElev - 200) / 15)) : Math.max(25, 30 + Math.floor(centerElev / 8));
@@ -101,10 +143,11 @@ async function generateSiteAnalysis(lat: number, lon: number, name: string): Pro
   const floodRiskLabel = hasHighFloodRisk ? "High" : floodZoneCount > 0 ? "Moderate" : "Low";
 
   const elevationProfile: { distance: number; elevation: number }[] = [];
-  for (let i = 0; i <= 10; i++) {
-    const dist = i * 25;
-    const variation = Math.sin(i * 0.8) * 12 + Math.cos(i * 0.5) * 8;
-    elevationProfile.push({ distance: dist, elevation: Math.round((centerElev + variation) * 10) / 10 });
+  const degSpan = 0.02;
+  const totalDistMeters = degSpan * 111000;
+  for (let i = 0; i < elevArr.length; i++) {
+    const dist = Math.round((i / (elevArr.length - 1)) * totalDistMeters);
+    elevationProfile.push({ distance: dist, elevation: Math.round(elevArr[i] * 10) / 10 });
   }
 
   const waterScore = floodZoneCount > 0 ? Math.max(20, 80 - floodRiskScore) : 85;
@@ -119,8 +162,8 @@ async function generateSiteAnalysis(lat: number, lon: number, name: string): Pro
   else if (floodRiskLabel === "Moderate") recommendations.push({ type: "warning", title: "Moderate Flood Risk", description: `${floodZoneCount} FEMA flood zone(s) nearby. Enhanced drainage and flood barriers recommended.` });
   else recommendations.push({ type: "warning", title: "High Flood Risk", description: `${highRiskZones.length} high-risk FEMA zone(s) detected. Flood insurance required. Elevated construction recommended.` });
 
-  if (soilQualityPct >= 70) recommendations.push({ type: "success", title: "Good Soil Conditions", description: `Soil quality at ${soilQualityPct}%. ${wellDrainedCount}/${soilFeatures.length} soil samples show good drainage.` });
-  else recommendations.push({ type: "warning", title: "Soil Quality Concerns", description: `Soil quality at ${soilQualityPct}%. Foundation reinforcement may be needed. Bearing capacity avg: ${avgBearing.toFixed(0)}.` });
+  if (soilQualityPct >= 70) recommendations.push({ type: "success", title: "Good Soil Conditions", description: `${soilClassName} soil with ${soilQualityPct}% quality rating. ${soilDrainageLabel}. Bearing capacity: ${avgBearing} kPa.` });
+  else recommendations.push({ type: "warning", title: "Soil Quality Concerns", description: `${soilClassName} soil rated ${soilQualityPct}%. ${soilDrainageLabel}. Foundation reinforcement may be needed. Bearing: ${avgBearing} kPa.` });
 
   const buildingFootprint = Math.min(95, Math.floor(urbanDensity * 0.7 + infraScore * 0.2));
   const infraCoverage = Math.min(99, Math.floor(infraScore * 0.6 + transitCount * 3 + hospitalCount * 8));
@@ -496,66 +539,406 @@ export async function registerRoutes(
     res.json(geojson);
   });
 
-  // Soil data — USDA Web Soil Survey via ArcGIS REST
+  // Geocode endpoint using Nominatim (OSM)
+  app.get("/api/geocode", async (req, res) => {
+    const { q } = req.query;
+    if (!q) return res.status(400).json({ error: "q parameter required" });
+    try {
+      const resp = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(String(q))}&format=json&limit=6&addressdetails=1`,
+        { headers: { "User-Agent": "TerraLogicAI/1.0 (GIS Analysis Platform)" } }
+      );
+      if (!resp.ok) throw new Error(`Nominatim error: ${resp.status}`);
+      const data = await resp.json();
+      const results = data.map((r: any) => ({
+        address: r.display_name,
+        location: { x: parseFloat(r.lon), y: parseFloat(r.lat) },
+        type: r.type,
+        importance: r.importance,
+      }));
+      res.json(results);
+    } catch (e: any) {
+      console.error("Geocode error:", e.message);
+      if (ARCGIS_API_KEY) {
+        try {
+          const resp = await fetch(
+            `https://geocode-api.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?f=json&singleLine=${encodeURIComponent(String(q))}&maxLocations=5&token=${ARCGIS_API_KEY}`
+          );
+          const data = await resp.json();
+          res.json((data.candidates || []).map((c: any) => ({
+            address: c.address,
+            location: c.location,
+          })));
+        } catch { res.json([]); }
+      } else {
+        res.json([]);
+      }
+    }
+  });
+
+  // Soil data — SoilGrids (ISRIC) real classification + colored polygons
   app.get("/api/layers/soil", async (req, res) => {
     const { lat, lon, radius } = req.query;
     if (!lat || !lon) return res.status(400).json({ error: "lat and lon required" });
+    const clat = Number(lat), clon = Number(lon);
     const r = Number(radius) || 3000;
-    try {
-      const geojson = await fetchArcGISFeatureLayer(
-        "https://sdmdataaccess.sc.egov.usda.gov/Spatial/SDMWGS84Geographic.wfs",
-        Number(lat), Number(lon), r
-      );
-      if (geojson.features && geojson.features.length > 0) {
-        geojson.features.forEach((f: any) => { f.properties = { ...f.properties, layer: "soil" }; });
-        return res.json(geojson);
-      }
-    } catch (e) {
-      console.error("USDA WFS error, using fallback");
-    }
-    res.json(generateSoilGrid(Number(lat), Number(lon)));
-  });
+    const degOffset = r / 111000;
 
-  // Elevation — USGS Elevation Point Query Service
-  app.get("/api/layers/elevation", async (req, res) => {
-    const { lat, lon } = req.query;
-    if (!lat || !lon) return res.status(400).json({ error: "lat and lon required" });
     try {
-      const resp = await fetch(
-        `https://epqs.nationalmap.gov/v1/json?x=${lon}&y=${lat}&wkid=4326&units=Meters&includeDate=false`
-      );
-      const data = await resp.json();
-      const elevation = data?.value ?? data?.USGS_Elevation_Point_Query_Service?.Elevation_Query?.Elevation ?? 50;
-      const gridSize = 0.003;
-      const features = [];
-      for (let dlat = -3; dlat <= 3; dlat++) {
-        for (let dlon = -3; dlon <= 3; dlon++) {
-          const clat = Number(lat) + dlat * gridSize;
-          const clon = Number(lon) + dlon * gridSize;
-          const dist = Math.sqrt(dlat * dlat + dlon * dlon);
-          const elev = (Number(elevation) || 50) + (Math.sin(dlat * 0.8) * 15) + (Math.cos(dlon * 0.6) * 10) - dist * 3;
+      const gridSize = 5;
+      const latStep = (degOffset * 2) / gridSize;
+      const lonStep = (degOffset * 2) / gridSize;
+      const points: { lat: number; lon: number; row: number; col: number }[] = [];
+      for (let row = 0; row <= gridSize; row++) {
+        for (let col = 0; col <= gridSize; col++) {
+          points.push({
+            lat: clat - degOffset + row * latStep,
+            lon: clon - degOffset + col * lonStep,
+            row, col,
+          });
+        }
+      }
+
+      const batchSize = 6;
+      const soilResults: { row: number; col: number; soilClass: string; probability: number }[] = [];
+      for (let i = 0; i < points.length; i += batchSize) {
+        const batch = points.slice(i, i + batchSize);
+        const results = await Promise.allSettled(
+          batch.map(async (p) => {
+            const resp = await fetch(
+              `https://rest.isric.org/soilgrids/v2.0/classification/query?lon=${p.lon.toFixed(5)}&lat=${p.lat.toFixed(5)}&number_classes=1`,
+              { signal: AbortSignal.timeout(8000) }
+            );
+            if (!resp.ok) throw new Error(`SoilGrids error: ${resp.status}`);
+            const data = await resp.json();
+            return {
+              row: p.row, col: p.col,
+              soilClass: data.wrb_class_name || "Unknown",
+              probability: data.wrb_class_probability?.[0]?.[1] || 0,
+            };
+          })
+        );
+        for (const r of results) {
+          if (r.status === "fulfilled") soilResults.push(r.value);
+        }
+      }
+
+      if (soilResults.length >= 4) {
+        const features: any[] = [];
+        for (const sr of soilResults) {
+          const cellLat = clat - degOffset + sr.row * latStep;
+          const cellLon = clon - degOffset + sr.col * lonStep;
+          const halfLat = latStep / 2;
+          const halfLon = lonStep / 2;
           features.push({
             type: "Feature",
             geometry: {
               type: "Polygon",
               coordinates: [[
-                [clon - gridSize / 2, clat - gridSize / 2],
-                [clon + gridSize / 2, clat - gridSize / 2],
-                [clon + gridSize / 2, clat + gridSize / 2],
-                [clon - gridSize / 2, clat + gridSize / 2],
-                [clon - gridSize / 2, clat - gridSize / 2],
+                [cellLon - halfLon, cellLat - halfLat],
+                [cellLon + halfLon, cellLat - halfLat],
+                [cellLon + halfLon, cellLat + halfLat],
+                [cellLon - halfLon, cellLat + halfLat],
+                [cellLon - halfLon, cellLat - halfLat],
               ]],
             },
-            properties: { layer: "elevation", elevation: Math.round(elev * 10) / 10, unit: "meters" },
+            properties: {
+              layer: "soil",
+              soilType: sr.soilClass,
+              probability: sr.probability,
+              drainage: getSoilDrainage(sr.soilClass),
+              permeability: getSoilPermeability(sr.soilClass),
+              bearing_capacity: getSoilBearing(sr.soilClass),
+              description: getSoilDescription(sr.soilClass),
+            },
           });
         }
+        return res.json({ type: "FeatureCollection", features });
       }
-      res.json({ type: "FeatureCollection", features, meta: { centerElevation: elevation } });
     } catch (e: any) {
-      console.error("Elevation fetch error:", e.message);
-      res.status(500).json({ error: "Failed to fetch elevation data" });
+      console.error("SoilGrids error, using fallback:", e.message);
+    }
+    res.json(generateSoilGrid(Number(lat), Number(lon)));
+  });
+
+  // Elevation contour lines — real DEM from Open-Meteo + marching squares
+  app.get("/api/layers/elevation", async (req, res) => {
+    const { lat, lon, radius } = req.query;
+    if (!lat || !lon) return res.status(400).json({ error: "lat and lon required" });
+    const clat = Number(lat), clon = Number(lon);
+    const r = Number(radius) || 3000;
+    const degOffset = r / 111000;
+
+    try {
+      const gridRes = 20;
+      const latMin = clat - degOffset;
+      const latMax = clat + degOffset;
+      const lonMin = clon - degOffset;
+      const lonMax = clon + degOffset;
+      const latStep = (latMax - latMin) / (gridRes - 1);
+      const lonStep = (lonMax - lonMin) / (gridRes - 1);
+
+      const lats: number[] = [];
+      const lons: number[] = [];
+      for (let r = 0; r < gridRes; r++) {
+        for (let c = 0; c < gridRes; c++) {
+          lats.push(latMin + r * latStep);
+          lons.push(lonMin + c * lonStep);
+        }
+      }
+
+      const batchSize = 100;
+      const allElevations: number[] = [];
+      for (let i = 0; i < lats.length; i += batchSize) {
+        const batchLats = lats.slice(i, i + batchSize);
+        const batchLons = lons.slice(i, i + batchSize);
+        const resp = await fetch(
+          `https://api.open-meteo.com/v1/elevation?latitude=${batchLats.join(",")}&longitude=${batchLons.join(",")}`,
+          { signal: AbortSignal.timeout(15000) }
+        );
+        if (!resp.ok) throw new Error(`Open-Meteo error: ${resp.status}`);
+        const data = await resp.json();
+        allElevations.push(...(data.elevation || []));
+      }
+
+      const grid: number[][] = [];
+      for (let r = 0; r < gridRes; r++) {
+        grid[r] = [];
+        for (let c = 0; c < gridRes; c++) {
+          grid[r][c] = allElevations[r * gridRes + c] ?? 0;
+        }
+      }
+
+      const minElev = Math.min(...allElevations.filter(e => e !== undefined));
+      const maxElev = Math.max(...allElevations.filter(e => e !== undefined));
+      const range = maxElev - minElev;
+
+      let interval: number;
+      if (range < 10) interval = 2;
+      else if (range < 50) interval = 5;
+      else if (range < 200) interval = 10;
+      else if (range < 500) interval = 25;
+      else if (range < 1000) interval = 50;
+      else interval = 100;
+
+      const startLevel = Math.ceil(minElev / interval) * interval;
+      const levels: number[] = [];
+      for (let l = startLevel; l <= maxElev; l += interval) {
+        levels.push(l);
+      }
+
+      const contourFeatures = generateContourLines(grid, latMin, latMax, lonMin, lonMax, levels);
+      res.json(contourFeatures);
+    } catch (e: any) {
+      console.error("Elevation contour error:", e.message);
+      res.status(500).json({ error: "Failed to generate elevation contours" });
     }
   });
 
   return httpServer;
+}
+
+function getSoilDrainage(soilClass: string): string {
+  const map: Record<string, string> = {
+    Acrisols: "Moderately Well Drained", Alisols: "Moderately Drained", Andosols: "Well Drained",
+    Arenosols: "Excessively Drained", Calcisols: "Well Drained", Cambisols: "Well Drained",
+    Chernozems: "Well Drained", Cryosols: "Poorly Drained", Durisols: "Well Drained",
+    Ferralsols: "Well Drained", Fluvisols: "Moderately Well Drained", Gleysols: "Poorly Drained",
+    Gypsisols: "Well Drained", Histosols: "Very Poorly Drained", Kastanozems: "Well Drained",
+    Leptosols: "Somewhat Excessively Drained", Lixisols: "Well Drained", Luvisols: "Well Drained",
+    Nitisols: "Well Drained", Phaeozems: "Well Drained", Planosols: "Poorly Drained",
+    Plinthosols: "Moderately Well Drained", Podzols: "Well Drained", Regosols: "Well Drained",
+    Retisols: "Moderately Well Drained", Solonchaks: "Poorly Drained", Solonetz: "Moderately Drained",
+    Stagnosols: "Poorly Drained", Technosols: "Variable", Umbrisols: "Well Drained",
+    Vertisols: "Poorly Drained",
+  };
+  return map[soilClass] || "Moderately Well Drained";
+}
+
+function getSoilPermeability(soilClass: string): number {
+  const map: Record<string, number> = {
+    Arenosols: 85, Andosols: 75, Cambisols: 60, Ferralsols: 55, Fluvisols: 50,
+    Leptosols: 70, Luvisols: 45, Nitisols: 50, Podzols: 65, Regosols: 70,
+    Acrisols: 40, Gleysols: 20, Histosols: 30, Vertisols: 15, Planosols: 25,
+    Stagnosols: 20, Solonchaks: 30, Chernozems: 55, Phaeozems: 55, Kastanozems: 50,
+  };
+  return map[soilClass] || 45;
+}
+
+function getSoilBearing(soilClass: string): number {
+  const map: Record<string, number> = {
+    Cambisols: 65, Luvisols: 60, Ferralsols: 55, Nitisols: 70, Andosols: 40,
+    Arenosols: 50, Leptosols: 75, Regosols: 55, Fluvisols: 45, Gleysols: 30,
+    Histosols: 15, Vertisols: 35, Chernozems: 60, Phaeozems: 60, Podzols: 50,
+    Acrisols: 45, Calcisols: 70, Kastanozems: 60, Solonchaks: 40, Planosols: 35,
+  };
+  return map[soilClass] || 50;
+}
+
+function getSoilDescription(soilClass: string): string {
+  const map: Record<string, string> = {
+    Acrisols: "Acidic, weathered soils with clay accumulation",
+    Andosols: "Volcanic ash soils, high water retention",
+    Arenosols: "Sandy soils, low fertility, high drainage",
+    Cambisols: "Young, moderately developed soils",
+    Chernozems: "Dark, fertile prairie soils",
+    Ferralsols: "Deeply weathered tropical soils",
+    Fluvisols: "Alluvial floodplain deposits",
+    Gleysols: "Waterlogged soils with reducing conditions",
+    Histosols: "Organic peat/bog soils",
+    Kastanozems: "Chestnut steppe soils",
+    Leptosols: "Thin soils over hard rock",
+    Luvisols: "Clay-enriched subsurface soils",
+    Nitisols: "Deep, red tropical soils",
+    Phaeozems: "Dark, humus-rich prairie soils",
+    Planosols: "Soils with abrupt textural change",
+    Podzols: "Acidic soils with bleached subsurface",
+    Regosols: "Weakly developed mineral soils",
+    Solonchaks: "Salt-affected soils",
+    Solonetz: "Sodium-rich soils",
+    Stagnosols: "Periodically waterlogged soils",
+    Vertisols: "Swelling clay soils with deep cracks",
+    Umbrisols: "Acidic, humus-rich mountain soils",
+  };
+  return map[soilClass] || "Classified soil unit (WRB)";
+}
+
+function generateContourLines(
+  grid: number[][],
+  latMin: number, latMax: number,
+  lonMin: number, lonMax: number,
+  levels: number[]
+): any {
+  const rows = grid.length;
+  const cols = grid[0].length;
+  const features: any[] = [];
+  const latStep = (latMax - latMin) / (rows - 1);
+  const lonStep = (lonMax - lonMin) / (cols - 1);
+
+  const getLat = (r: number) => latMin + r * latStep;
+  const getLon = (c: number) => lonMin + c * lonStep;
+
+  for (const level of levels) {
+    const segments: number[][][] = [];
+
+    for (let r = 0; r < rows - 1; r++) {
+      for (let c = 0; c < cols - 1; c++) {
+        const tl = grid[r][c];
+        const tr = grid[r][c + 1];
+        const br = grid[r + 1][c + 1];
+        const bl = grid[r + 1][c];
+
+        const code =
+          (tl >= level ? 8 : 0) |
+          (tr >= level ? 4 : 0) |
+          (br >= level ? 2 : 0) |
+          (bl >= level ? 1 : 0);
+
+        if (code === 0 || code === 15) continue;
+
+        const interp = (v1: number, v2: number) => {
+          if (Math.abs(v2 - v1) < 0.0001) return 0.5;
+          return Math.max(0, Math.min(1, (level - v1) / (v2 - v1)));
+        };
+
+        const topLat = getLat(r), botLat = getLat(r + 1);
+        const leftLon = getLon(c), rightLon = getLon(c + 1);
+
+        const top = (): [number, number] => {
+          const t = interp(tl, tr);
+          return [leftLon + t * (rightLon - leftLon), topLat];
+        };
+        const bottom = (): [number, number] => {
+          const t = interp(bl, br);
+          return [leftLon + t * (rightLon - leftLon), botLat];
+        };
+        const left = (): [number, number] => {
+          const t = interp(tl, bl);
+          return [leftLon, topLat + t * (botLat - topLat)];
+        };
+        const right = (): [number, number] => {
+          const t = interp(tr, br);
+          return [rightLon, topLat + t * (botLat - topLat)];
+        };
+
+        const addSeg = (p1: [number, number], p2: [number, number]) => {
+          segments.push([p1, p2]);
+        };
+
+        switch (code) {
+          case 1: case 14: addSeg(left(), bottom()); break;
+          case 2: case 13: addSeg(bottom(), right()); break;
+          case 3: case 12: addSeg(left(), right()); break;
+          case 4: case 11: addSeg(top(), right()); break;
+          case 5: addSeg(left(), top()); addSeg(bottom(), right()); break;
+          case 6: case 9: addSeg(top(), bottom()); break;
+          case 7: case 8: addSeg(left(), top()); break;
+          case 10: addSeg(top(), right()); addSeg(left(), bottom()); break;
+        }
+      }
+    }
+
+    if (segments.length > 0) {
+      const connected = connectSegments(segments);
+      for (const line of connected) {
+        if (line.length >= 2) {
+          features.push({
+            type: "Feature",
+            geometry: { type: "LineString", coordinates: line },
+            properties: {
+              layer: "elevation",
+              elevation: level,
+              type: "contour",
+              isMajor: level % (levels.length > 10 ? 50 : 10) === 0,
+            },
+          });
+        }
+      }
+    }
+  }
+
+  return { type: "FeatureCollection", features };
+}
+
+function connectSegments(segments: number[][][]): number[][][] {
+  const lines: number[][][] = [];
+  const used = new Set<number>();
+  const eps = 0.00001;
+
+  const closeEnough = (a: number[], b: number[]) =>
+    Math.abs(a[0] - b[0]) < eps && Math.abs(a[1] - b[1]) < eps;
+
+  for (let i = 0; i < segments.length; i++) {
+    if (used.has(i)) continue;
+    used.add(i);
+    const line = [...segments[i]];
+
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (let j = 0; j < segments.length; j++) {
+        if (used.has(j)) continue;
+        const seg = segments[j];
+        if (closeEnough(line[line.length - 1], seg[0])) {
+          line.push(seg[1]);
+          used.add(j);
+          changed = true;
+        } else if (closeEnough(line[line.length - 1], seg[1])) {
+          line.push(seg[0]);
+          used.add(j);
+          changed = true;
+        } else if (closeEnough(line[0], seg[1])) {
+          line.unshift(seg[0]);
+          used.add(j);
+          changed = true;
+        } else if (closeEnough(line[0], seg[0])) {
+          line.unshift(seg[1]);
+          used.add(j);
+          changed = true;
+        }
+      }
+    }
+    lines.push(line);
+  }
+  return lines;
 }

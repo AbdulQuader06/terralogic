@@ -53,19 +53,32 @@ const LANDUSE_COLORS: Record<string, string> = {
   reservoir: "#7DD3FC",
 };
 
-function getElevationColor(elev: number): string {
-  if (elev < 20) return "#1a9850";
-  if (elev < 50) return "#91cf60";
-  if (elev < 100) return "#d9ef8b";
-  if (elev < 200) return "#fee08b";
-  if (elev < 500) return "#fc8d59";
-  return "#d73027";
+function getContourColor(elev: number): string {
+  if (elev < 10) return "#2166ac";
+  if (elev < 50) return "#4393c3";
+  if (elev < 100) return "#92c5de";
+  if (elev < 200) return "#d1e5f0";
+  if (elev < 500) return "#fddbc7";
+  if (elev < 1000) return "#f4a582";
+  if (elev < 2000) return "#d6604d";
+  return "#b2182b";
 }
 
-function getSoilColor(soilType: string): string {
+function getWRBSoilColor(soilType: string): string {
   const colors: Record<string, string> = {
-    "Clay Loam": "#8B4513", "Sandy Loam": "#DEB887", "Silty Clay": "#A0522D",
-    "Loam": "#CD853F", "Sandy Clay Loam": "#D2691E", "Silt Loam": "#BC8F8F",
+    Acrisols: "#E8A040", Alisols: "#D4A050", Andosols: "#4A3728",
+    Arenosols: "#F5DEB3", Calcisols: "#F0E68C", Cambisols: "#8FBC8F",
+    Chernozems: "#2F4F2F", Cryosols: "#B0C4DE", Durisols: "#C4A882",
+    Ferralsols: "#CD5C5C", Fluvisols: "#90B88C", Gleysols: "#708090",
+    Gypsisols: "#FAEBD7", Histosols: "#2D1B0E", Kastanozems: "#8B6914",
+    Leptosols: "#A9A9A9", Lixisols: "#DAA520", Luvisols: "#BC8F5F",
+    Nitisols: "#B22222", Phaeozems: "#3B5323", Planosols: "#9ACD32",
+    Plinthosols: "#DC7633", Podzols: "#C0C0C0", Regosols: "#D2B48C",
+    Retisols: "#BDB76B", Solonchaks: "#F5F5DC", Solonetz: "#DDD0A8",
+    Stagnosols: "#6B8E6B", Technosols: "#808080", Umbrisols: "#556B2F",
+    Vertisols: "#4B3621",
+    "Clay Loam": "#8B6914", "Sandy Loam": "#DAA520", "Silty Clay": "#A0522D",
+    "Loam": "#BC8F5F", "Sandy Clay Loam": "#D2691E", "Silt Loam": "#D2B48C",
   };
   return colors[soilType] || "#8B7355";
 }
@@ -259,14 +272,28 @@ function PolygonLayerRenderer({ layerData, layerId }: { layerData: any; layerId:
   if (layerId === "elevation") {
     return (
       <GeoJSON
-        key={`elev-${JSON.stringify(layerData.features[0]?.geometry?.coordinates?.[0]?.[0])}`}
+        key={`elev-contour-${layerData.features.length}-${layerData.features[0]?.properties?.elevation}`}
         data={layerData}
-        style={(feature) => ({
-          fillColor: getElevationColor(feature?.properties?.elevation || 0),
-          fillOpacity: 0.45, weight: 0.5, color: "#fff", opacity: 0.5,
-        })}
+        style={(feature) => {
+          const elev = feature?.properties?.elevation || 0;
+          const isMajor = feature?.properties?.isMajor;
+          return {
+            color: getContourColor(elev),
+            weight: isMajor ? 2.5 : 1.2,
+            opacity: isMajor ? 0.9 : 0.6,
+            fill: false,
+            dashArray: isMajor ? undefined : "4 3",
+          };
+        }}
         onEachFeature={(feature, layer) => {
-          if (feature.properties) layer.bindTooltip(`Elevation: ${feature.properties.elevation}m`, { sticky: true });
+          if (feature.properties?.elevation !== undefined) {
+            layer.bindTooltip(`${feature.properties.elevation}m`, {
+              sticky: true,
+              permanent: feature.properties.isMajor,
+              direction: "center",
+              className: "contour-label",
+            });
+          }
         }}
       />
     );
@@ -275,18 +302,30 @@ function PolygonLayerRenderer({ layerData, layerId }: { layerData: any; layerId:
   if (layerId === "soil") {
     return (
       <GeoJSON
-        key={`soil-${JSON.stringify(layerData.features[0]?.geometry?.coordinates?.[0]?.[0])}`}
+        key={`soil-wrb-${layerData.features.length}-${layerData.features[0]?.properties?.soilType}`}
         data={layerData}
-        style={(feature) => ({
-          fillColor: getSoilColor(feature?.properties?.soilType || ""),
-          fillOpacity: 0.5, weight: 1, color: "#fff", opacity: 0.6,
-        })}
+        style={(feature) => {
+          const soilType = feature?.properties?.soilType || "";
+          return {
+            fillColor: getWRBSoilColor(soilType),
+            fillOpacity: 0.65,
+            weight: 0.8,
+            color: "rgba(255,255,255,0.3)",
+            opacity: 0.5,
+          };
+        }}
         onEachFeature={(feature, layer) => {
-          if (feature.properties?.soilType) {
-            layer.bindTooltip(
-              `Soil: ${feature.properties.soilType}\nDrainage: ${feature.properties.drainage}\nPermeability: ${feature.properties.permeability}%`,
-              { sticky: true }
-            );
+          const p = feature?.properties;
+          if (p?.soilType) {
+            const tooltip = [
+              `<b>${p.soilType}</b>`,
+              p.description ? `<i>${p.description}</i>` : "",
+              `Drainage: ${p.drainage || "N/A"}`,
+              `Permeability: ${p.permeability || "N/A"}%`,
+              `Bearing Capacity: ${p.bearing_capacity || "N/A"}`,
+              p.probability ? `Confidence: ${p.probability}%` : "",
+            ].filter(Boolean).join("<br/>");
+            layer.bindTooltip(tooltip, { sticky: true });
           }
         }}
       />
