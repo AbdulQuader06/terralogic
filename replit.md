@@ -34,7 +34,7 @@ Three-panel dark theme layout:
   - **AI tab**: Multi-model chatbot with model selector dropdown (Gemini/MapGPT/CompassAI/ChatGPT/Auto)
   - **Custom Overlays section**: Lists loaded QuickOSM/OpenCity overlays with remove buttons
   - Footer: Active layer count and analysis status
-- **Center**: Leaflet dark map with CartoDB basemap, custom zoom/coordinate/fullscreen controls, GeoJSON layer rendering for 10 data layers + custom overlays
+- **Center**: Leaflet dark map with CartoDB basemap, custom zoom/coordinate/fullscreen controls, drawing tools (polygon/circle/rectangle) for region-based filtering, GeoJSON layer rendering for 10 data layers + custom overlays
 - **Right Panel** (320px): Scrollable InsightsPanel with:
   - AI narrative (Gemini-generated or fallback data summary)
   - Circular SVG score gauge
@@ -92,6 +92,7 @@ Uses 2 combined Overpass queries + 3 parallel API calls + sun path + AI narrativ
 - **Always-available models**: MapGPT, CompassAI, and Auto are always available — they use Gemini when API is available, otherwise fall back to persona-flavored local GIS engine
 - **Auto-analysis**: Chat endpoint auto-generates site analysis if not cached
 - **Overpass mirror fallback**: All Overpass API calls try 3 mirror endpoints (overpass-api.de, kumi.systems, maps.mail.ru) for reliability
+- **Draw-to-filter**: Users can draw polygon/circle/rectangle on the map; all layer fetches and QuickOSM queries use Overpass `poly:` filter to constrain results to the drawn area. Without drawing, default `around:radius` is used.
 
 ## Environment Variables
 

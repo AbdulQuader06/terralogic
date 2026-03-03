@@ -2,10 +2,13 @@ import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, Loader2, Database, Map, ChevronDown, ChevronRight, ExternalLink, X } from "lucide-react";
+import type { DrawnRegion } from "@/components/MapViewer";
+import { drawnRegionToPolygonParam } from "@/components/MapViewer";
 
 interface QuickOSMProps {
   location: { lat: number; lon: number; name: string } | null;
   onDataLoaded: (data: any, label: string, color: string) => void;
+  drawnRegion?: DrawnRegion;
 }
 
 const PRESET_QUERIES = [
@@ -48,7 +51,7 @@ interface OpenCityDataset {
   resources: { id: string; name: string; format: string; url: string }[];
 }
 
-export default function QuickOSM({ location, onDataLoaded }: QuickOSMProps) {
+export default function QuickOSM({ location, onDataLoaded, drawnRegion }: QuickOSMProps) {
   const [activeTab, setActiveTab] = useState<"osm" | "opencity">("osm");
   const [osmKey, setOsmKey] = useState("");
   const [osmValue, setOsmValue] = useState("");
@@ -69,15 +72,19 @@ export default function QuickOSM({ location, onDataLoaded }: QuickOSMProps) {
     setResultCount(null);
     setLastQuery(`${key}=${value || "*"}`);
     try {
+      const polyParam = drawnRegionToPolygonParam(drawnRegion || null);
+      const body: any = {
+        key, value: value || undefined,
+        lat: location.lat, lon: location.lon,
+        radius: Number(radius),
+        outputType: "all",
+      };
+      if (polyParam) body.polygon = polyParam;
+
       const resp = await fetch("/api/quickosm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          key, value: value || undefined,
-          lat: location.lat, lon: location.lon,
-          radius: Number(radius),
-          outputType: "all",
-        }),
+        body: JSON.stringify(body),
       });
       if (!resp.ok) throw new Error("Query failed");
       const data = await resp.json();
@@ -91,7 +98,7 @@ export default function QuickOSM({ location, onDataLoaded }: QuickOSMProps) {
     } finally {
       setLoading(false);
     }
-  }, [location, radius, onDataLoaded]);
+  }, [location, radius, onDataLoaded, drawnRegion]);
 
   const searchOpenCity = async () => {
     if (!ocSearch.trim()) return;

@@ -688,8 +688,21 @@ async function generateSiteAnalysis(lat: number, lon: number, name: string): Pro
   };
 }
 
-async function fetchOverpassPoints(lat: number, lon: number, radius: number, query: string): Promise<any> {
-  const bbox = `(around:${radius},${lat},${lon})`;
+function buildOverpassBbox(lat: number, lon: number, radius: number, polygonParam?: string): string {
+  if (polygonParam) {
+    try {
+      const coords: [number, number][] = JSON.parse(polygonParam);
+      if (Array.isArray(coords) && coords.length >= 3) {
+        const polyStr = coords.map(([la, lo]) => `${la} ${lo}`).join(" ");
+        return `(poly:"${polyStr}")`;
+      }
+    } catch {}
+  }
+  return `(around:${radius},${lat},${lon})`;
+}
+
+async function fetchOverpassPoints(lat: number, lon: number, radius: number, query: string, polygonParam?: string): Promise<any> {
+  const bbox = buildOverpassBbox(lat, lon, radius, polygonParam);
   const overpassQuery = `[out:json][timeout:25];(${query.replace(/BBOX/g, bbox)});out center;`;
   for (const url of OVERPASS_ENDPOINTS) {
     try {
@@ -709,8 +722,8 @@ async function fetchOverpassPoints(lat: number, lon: number, radius: number, que
   return { elements: [] };
 }
 
-async function fetchOverpassGeometry(lat: number, lon: number, radius: number, query: string): Promise<any> {
-  const bbox = `(around:${radius},${lat},${lon})`;
+async function fetchOverpassGeometry(lat: number, lon: number, radius: number, query: string, polygonParam?: string): Promise<any> {
+  const bbox = buildOverpassBbox(lat, lon, radius, polygonParam);
   const overpassQuery = `[out:json][timeout:25];(${query.replace(/BBOX/g, bbox)});out body geom;`;
   for (const url of OVERPASS_ENDPOINTS) {
     try {
@@ -953,7 +966,7 @@ export async function registerRoutes(
   // === QuickOSM Query Endpoint ===
 
   app.post("/api/quickosm", async (req, res) => {
-    const { key, value, lat, lon, radius, outputType } = req.body;
+    const { key, value, lat, lon, radius, outputType, polygon } = req.body;
     if (!key || lat === undefined || lon === undefined) {
       return res.status(400).json({ error: "key, lat, lon required" });
     }
@@ -962,7 +975,7 @@ export async function registerRoutes(
     const safeValue = value ? sanitize(String(value)) : "";
     if (!safeKey) return res.status(400).json({ error: "Invalid key" });
     const r = Math.min(Math.max(Number(radius) || 5000, 100), 25000);
-    const bbox = `(around:${r},${lat},${lon})`;
+    const bbox = buildOverpassBbox(lat, lon, r, polygon);
     const valueFilter = safeValue ? `="${safeValue}"` : "";
     const isAreaQuery = outputType === "polygon" || outputType === "all";
     const isPointQuery = outputType === "point" || outputType === "all" || !outputType;
@@ -1100,55 +1113,60 @@ export async function registerRoutes(
   // === GIS Data Layer Endpoints ===
 
   app.get("/api/layers/schools", async (req, res) => {
-    const { lat, lon, radius } = req.query;
+    const { lat, lon, radius, polygon } = req.query;
     if (!lat || !lon) return res.status(400).json({ error: "lat and lon required" });
     const data = await fetchOverpassPoints(Number(lat), Number(lon), Number(radius) || 5000,
-      `node["amenity"="school"]BBOX;way["amenity"="school"]BBOX;node["amenity"="university"]BBOX;way["amenity"="university"]BBOX;node["amenity"="college"]BBOX;way["amenity"="college"]BBOX;node["amenity"="kindergarten"]BBOX;node["amenity"="library"]BBOX;way["amenity"="library"]BBOX;node["building"="school"]BBOX;way["building"="school"]BBOX;node["building"="university"]BBOX;way["building"="university"]BBOX;node["building"="college"]BBOX;way["building"="college"]BBOX;`
+      `node["amenity"="school"]BBOX;way["amenity"="school"]BBOX;node["amenity"="university"]BBOX;way["amenity"="university"]BBOX;node["amenity"="college"]BBOX;way["amenity"="college"]BBOX;node["amenity"="kindergarten"]BBOX;node["amenity"="library"]BBOX;way["amenity"="library"]BBOX;node["building"="school"]BBOX;way["building"="school"]BBOX;node["building"="university"]BBOX;way["building"="university"]BBOX;node["building"="college"]BBOX;way["building"="college"]BBOX;`,
+      polygon as string | undefined
     );
     res.json(overpassPointsToGeoJSON(data, { layer: "schools", icon: "school" }));
   });
 
   app.get("/api/layers/hospitals", async (req, res) => {
-    const { lat, lon, radius } = req.query;
+    const { lat, lon, radius, polygon } = req.query;
     if (!lat || !lon) return res.status(400).json({ error: "lat and lon required" });
     const data = await fetchOverpassPoints(Number(lat), Number(lon), Number(radius) || 5000,
-      `node["amenity"="hospital"]BBOX;way["amenity"="hospital"]BBOX;node["amenity"="clinic"]BBOX;way["amenity"="clinic"]BBOX;node["amenity"="doctors"]BBOX;node["amenity"="pharmacy"]BBOX;node["amenity"="dentist"]BBOX;node["amenity"="veterinary"]BBOX;node["healthcare"]BBOX;way["healthcare"]BBOX;node["healthcare"="centre"]BBOX;way["healthcare"="centre"]BBOX;node["healthcare"="hospital"]BBOX;way["healthcare"="hospital"]BBOX;node["building"="hospital"]BBOX;way["building"="hospital"]BBOX;`
+      `node["amenity"="hospital"]BBOX;way["amenity"="hospital"]BBOX;node["amenity"="clinic"]BBOX;way["amenity"="clinic"]BBOX;node["amenity"="doctors"]BBOX;node["amenity"="pharmacy"]BBOX;node["amenity"="dentist"]BBOX;node["amenity"="veterinary"]BBOX;node["healthcare"]BBOX;way["healthcare"]BBOX;node["healthcare"="centre"]BBOX;way["healthcare"="centre"]BBOX;node["healthcare"="hospital"]BBOX;way["healthcare"="hospital"]BBOX;node["building"="hospital"]BBOX;way["building"="hospital"]BBOX;`,
+      polygon as string | undefined
     );
     res.json(overpassPointsToGeoJSON(data, { layer: "hospitals", icon: "hospital" }));
   });
 
   app.get("/api/layers/transit", async (req, res) => {
-    const { lat, lon, radius } = req.query;
+    const { lat, lon, radius, polygon } = req.query;
     if (!lat || !lon) return res.status(400).json({ error: "lat and lon required" });
     const data = await fetchOverpassPoints(Number(lat), Number(lon), Number(radius) || 5000,
-      `node["public_transport"="stop_position"]BBOX;node["public_transport"="platform"]BBOX;node["highway"="bus_stop"]BBOX;way["highway"="bus_stop"]BBOX;node["railway"="station"]BBOX;way["railway"="station"]BBOX;node["railway"="halt"]BBOX;node["railway"="tram_stop"]BBOX;node["amenity"="bus_station"]BBOX;way["amenity"="bus_station"]BBOX;node["amenity"="taxi"]BBOX;node["amenity"="ferry_terminal"]BBOX;node["aeroway"="aerodrome"]BBOX;way["aeroway"="aerodrome"]BBOX;node["station"="subway"]BBOX;way["railway"="subway_entrance"]BBOX;`
+      `node["public_transport"="stop_position"]BBOX;node["public_transport"="platform"]BBOX;node["highway"="bus_stop"]BBOX;way["highway"="bus_stop"]BBOX;node["railway"="station"]BBOX;way["railway"="station"]BBOX;node["railway"="halt"]BBOX;node["railway"="tram_stop"]BBOX;node["amenity"="bus_station"]BBOX;way["amenity"="bus_station"]BBOX;node["amenity"="taxi"]BBOX;node["amenity"="ferry_terminal"]BBOX;node["aeroway"="aerodrome"]BBOX;way["aeroway"="aerodrome"]BBOX;node["station"="subway"]BBOX;way["railway"="subway_entrance"]BBOX;`,
+      polygon as string | undefined
     );
     res.json(overpassPointsToGeoJSON(data, { layer: "transit", icon: "bus" }));
   });
 
   app.get("/api/layers/infrastructure", async (req, res) => {
-    const { lat, lon, radius } = req.query;
+    const { lat, lon, radius, polygon } = req.query;
     if (!lat || !lon) return res.status(400).json({ error: "lat and lon required" });
     const data = await fetchOverpassPoints(Number(lat), Number(lon), Number(radius) || 4000,
-      `node["amenity"="fire_station"]BBOX;way["amenity"="fire_station"]BBOX;node["amenity"="police"]BBOX;way["amenity"="police"]BBOX;node["amenity"="post_office"]BBOX;node["amenity"="townhall"]BBOX;way["amenity"="townhall"]BBOX;node["amenity"="courthouse"]BBOX;node["amenity"="community_centre"]BBOX;way["amenity"="community_centre"]BBOX;node["amenity"="social_facility"]BBOX;node["amenity"="bank"]BBOX;node["amenity"="atm"]BBOX;node["amenity"="fuel"]BBOX;node["amenity"="charging_station"]BBOX;node["amenity"="waste_disposal"]BBOX;node["amenity"="recycling"]BBOX;node["amenity"="marketplace"]BBOX;way["amenity"="marketplace"]BBOX;node["office"="government"]BBOX;way["office"="government"]BBOX;node["building"="government"]BBOX;way["building"="government"]BBOX;node["man_made"="water_tower"]BBOX;node["man_made"="reservoir_covered"]BBOX;node["power"="substation"]BBOX;way["power"="substation"]BBOX;node["power"="plant"]BBOX;way["power"="plant"]BBOX;node["telecom"="exchange"]BBOX;`
+      `node["amenity"="fire_station"]BBOX;way["amenity"="fire_station"]BBOX;node["amenity"="police"]BBOX;way["amenity"="police"]BBOX;node["amenity"="post_office"]BBOX;node["amenity"="townhall"]BBOX;way["amenity"="townhall"]BBOX;node["amenity"="courthouse"]BBOX;node["amenity"="community_centre"]BBOX;way["amenity"="community_centre"]BBOX;node["amenity"="social_facility"]BBOX;node["amenity"="bank"]BBOX;node["amenity"="atm"]BBOX;node["amenity"="fuel"]BBOX;node["amenity"="charging_station"]BBOX;node["amenity"="waste_disposal"]BBOX;node["amenity"="recycling"]BBOX;node["amenity"="marketplace"]BBOX;way["amenity"="marketplace"]BBOX;node["office"="government"]BBOX;way["office"="government"]BBOX;node["building"="government"]BBOX;way["building"="government"]BBOX;node["man_made"="water_tower"]BBOX;node["man_made"="reservoir_covered"]BBOX;node["power"="substation"]BBOX;way["power"="substation"]BBOX;node["power"="plant"]BBOX;way["power"="plant"]BBOX;node["telecom"="exchange"]BBOX;`,
+      polygon as string | undefined
     );
     res.json(overpassPointsToGeoJSON(data, { layer: "infrastructure" }));
   });
 
   app.get("/api/layers/parks", async (req, res) => {
-    const { lat, lon, radius } = req.query;
+    const { lat, lon, radius, polygon } = req.query;
     if (!lat || !lon) return res.status(400).json({ error: "lat and lon required" });
     const data = await fetchOverpassGeometry(Number(lat), Number(lon), Number(radius) || 4000,
-      `way["leisure"="park"]BBOX;relation["leisure"="park"]BBOX;way["leisure"="garden"]BBOX;relation["leisure"="garden"]BBOX;way["leisure"="nature_reserve"]BBOX;relation["leisure"="nature_reserve"]BBOX;way["leisure"="playground"]BBOX;way["leisure"="sports_centre"]BBOX;way["leisure"="stadium"]BBOX;way["leisure"="recreation_ground"]BBOX;way["landuse"="recreation_ground"]BBOX;way["boundary"="national_park"]BBOX;relation["boundary"="national_park"]BBOX;way["leisure"="golf_course"]BBOX;way["landuse"="forest"]BBOX;relation["landuse"="forest"]BBOX;way["natural"="wood"]BBOX;relation["natural"="wood"]BBOX;`
+      `way["leisure"="park"]BBOX;relation["leisure"="park"]BBOX;way["leisure"="garden"]BBOX;relation["leisure"="garden"]BBOX;way["leisure"="nature_reserve"]BBOX;relation["leisure"="nature_reserve"]BBOX;way["leisure"="playground"]BBOX;way["leisure"="sports_centre"]BBOX;way["leisure"="stadium"]BBOX;way["leisure"="recreation_ground"]BBOX;way["landuse"="recreation_ground"]BBOX;way["boundary"="national_park"]BBOX;relation["boundary"="national_park"]BBOX;way["leisure"="golf_course"]BBOX;way["landuse"="forest"]BBOX;relation["landuse"="forest"]BBOX;way["natural"="wood"]BBOX;relation["natural"="wood"]BBOX;`,
+      polygon as string | undefined
     );
     res.json(overpassGeometryToGeoJSON(data, { layer: "parks" }));
   });
 
   app.get("/api/layers/landuse", async (req, res) => {
-    const { lat, lon, radius } = req.query;
+    const { lat, lon, radius, polygon } = req.query;
     if (!lat || !lon) return res.status(400).json({ error: "lat and lon required" });
     const r = Math.min(Number(radius) || 2000, 3000);
-    const bbox = `(around:${r},${Number(lat)},${Number(lon)})`;
+    const bbox = buildOverpassBbox(Number(lat), Number(lon), r, polygon as string | undefined);
     const overpassQuery = `[out:json][timeout:25][maxsize:10485760];(way["landuse"]${bbox};relation["landuse"]${bbox};);out body geom 200;`;
     let lastError = "";
     for (const url of OVERPASS_ENDPOINTS) {
@@ -1173,25 +1191,29 @@ export async function registerRoutes(
   });
 
   app.get("/api/layers/water", async (req, res) => {
-    const { lat, lon, radius } = req.query;
+    const { lat, lon, radius, polygon } = req.query;
     if (!lat || !lon) return res.status(400).json({ error: "lat and lon required" });
     const data = await fetchOverpassGeometry(Number(lat), Number(lon), Number(radius) || 5000,
-      `way["natural"="water"]BBOX;relation["natural"="water"]BBOX;way["waterway"="river"]BBOX;way["waterway"="stream"]BBOX;way["waterway"="canal"]BBOX;way["waterway"="drain"]BBOX;way["waterway"="ditch"]BBOX;way["waterway"="riverbank"]BBOX;relation["waterway"="riverbank"]BBOX;way["water"="lake"]BBOX;relation["water"="lake"]BBOX;way["water"="pond"]BBOX;way["water"="reservoir"]BBOX;relation["water"="reservoir"]BBOX;way["landuse"="reservoir"]BBOX;relation["landuse"="reservoir"]BBOX;way["landuse"="basin"]BBOX;way["natural"="wetland"]BBOX;relation["natural"="wetland"]BBOX;way["natural"="spring"]BBOX;node["natural"="spring"]BBOX;node["man_made"="water_well"]BBOX;node["amenity"="drinking_water"]BBOX;node["man_made"="water_tap"]BBOX;way["water"="tank"]BBOX;node["man_made"="storage_tank"]["content"="water"]BBOX;`
+      `way["natural"="water"]BBOX;relation["natural"="water"]BBOX;way["waterway"="river"]BBOX;way["waterway"="stream"]BBOX;way["waterway"="canal"]BBOX;way["waterway"="drain"]BBOX;way["waterway"="ditch"]BBOX;way["waterway"="riverbank"]BBOX;relation["waterway"="riverbank"]BBOX;way["water"="lake"]BBOX;relation["water"="lake"]BBOX;way["water"="pond"]BBOX;way["water"="reservoir"]BBOX;relation["water"="reservoir"]BBOX;way["landuse"="reservoir"]BBOX;relation["landuse"="reservoir"]BBOX;way["landuse"="basin"]BBOX;way["natural"="wetland"]BBOX;relation["natural"="wetland"]BBOX;way["natural"="spring"]BBOX;node["natural"="spring"]BBOX;node["man_made"="water_well"]BBOX;node["amenity"="drinking_water"]BBOX;node["man_made"="water_tap"]BBOX;way["water"="tank"]BBOX;node["man_made"="storage_tank"]["content"="water"]BBOX;`,
+      polygon as string | undefined
     );
     res.json(overpassGeometryToGeoJSON(data, { layer: "water" }));
   });
 
   app.get("/api/layers/flood", async (req, res) => {
-    const { lat, lon, radius } = req.query;
+    const { lat, lon, radius, polygon } = req.query;
     if (!lat || !lon) return res.status(400).json({ error: "lat and lon required" });
     const clat = Number(lat), clon = Number(lon), r = Number(radius) || 5000;
+    const polyStr = polygon as string | undefined;
 
     const results = await Promise.allSettled([
       fetchOverpassGeometry(clat, clon, r,
-        `way["natural"="floodplain"]BBOX;relation["natural"="floodplain"]BBOX;way["flood_prone"="yes"]BBOX;way["natural"="wetland"]BBOX;relation["natural"="wetland"]BBOX;way["wetland"="marsh"]BBOX;way["wetland"="swamp"]BBOX;way["water"="intermittent"]BBOX;way["intermittent"="yes"]BBOX;way["waterway"="drain"]BBOX;`
+        `way["natural"="floodplain"]BBOX;relation["natural"="floodplain"]BBOX;way["flood_prone"="yes"]BBOX;way["natural"="wetland"]BBOX;relation["natural"="wetland"]BBOX;way["wetland"="marsh"]BBOX;way["wetland"="swamp"]BBOX;way["water"="intermittent"]BBOX;way["intermittent"="yes"]BBOX;way["waterway"="drain"]BBOX;`,
+        polyStr
       ),
       fetchOverpassGeometry(clat, clon, r,
-        `way["natural"="water"]BBOX;relation["natural"="water"]BBOX;way["waterway"="river"]BBOX;way["waterway"="stream"]BBOX;way["waterway"="canal"]BBOX;way["waterway"="riverbank"]BBOX;relation["waterway"="riverbank"]BBOX;`
+        `way["natural"="water"]BBOX;relation["natural"="water"]BBOX;way["waterway"="river"]BBOX;way["waterway"="stream"]BBOX;way["waterway"="canal"]BBOX;way["waterway"="riverbank"]BBOX;relation["waterway"="riverbank"]BBOX;`,
+        polyStr
       ),
       (async () => {
         try {

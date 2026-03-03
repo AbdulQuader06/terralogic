@@ -1,8 +1,47 @@
 import { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardRef } from "react";
-import { MapContainer, TileLayer, Marker, useMapEvents, useMap, GeoJSON, CircleMarker, Tooltip } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap, GeoJSON, CircleMarker, Tooltip, Polygon as RLPolygon, Circle as RLCircle, Rectangle as RLRectangle } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import html2canvas from "html2canvas";
+
+export type DrawnRegion = {
+  type: "polygon";
+  coords: [number, number][];
+} | {
+  type: "circle";
+  center: [number, number];
+  radius: number;
+} | {
+  type: "rectangle";
+  bounds: [[number, number], [number, number]];
+} | null;
+
+export function drawnRegionToPolygonParam(region: DrawnRegion): string | undefined {
+  if (!region) return undefined;
+  if (region.type === "polygon") {
+    return JSON.stringify(region.coords);
+  }
+  if (region.type === "circle") {
+    const [lat, lon] = region.center;
+    const r = region.radius;
+    const points: [number, number][] = [];
+    for (let i = 0; i < 32; i++) {
+      const angle = (i / 32) * 2 * Math.PI;
+      const dlat = (r / 111320) * Math.cos(angle);
+      const dlon = (r / (111320 * Math.cos(lat * Math.PI / 180))) * Math.sin(angle);
+      points.push([lat + dlat, lon + dlon]);
+    }
+    points.push(points[0]);
+    return JSON.stringify(points);
+  }
+  if (region.type === "rectangle") {
+    const [[lat1, lon1], [lat2, lon2]] = region.bounds;
+    return JSON.stringify([
+      [lat1, lon1], [lat1, lon2], [lat2, lon2], [lat2, lon1], [lat1, lon1]
+    ]);
+  }
+  return undefined;
+}
 
 const markerIcon = new L.DivIcon({
   className: "custom-marker",
@@ -29,6 +68,8 @@ interface MapViewerProps {
   onLayerLoading?: (layerId: string, loading: boolean) => void;
   selectedLocation?: { lat: number; lon: number; name: string } | null;
   customOverlays?: CustomOverlay[];
+  drawnRegion?: DrawnRegion;
+  onDrawRegion?: (region: DrawnRegion) => void;
 }
 
 const LAYER_COLORS: Record<string, string> = {
@@ -92,9 +133,10 @@ function getWRBSoilColor(soilType: string): string {
   return colors[soilType] || "#8B7355";
 }
 
-function ClickHandler({ onLocationSelect }: { onLocationSelect: (lat: number, lon: number, name: string) => void }) {
+function ClickHandler({ onLocationSelect, disabled }: { onLocationSelect: (lat: number, lon: number, name: string) => void; disabled?: boolean }) {
   useMapEvents({
     click(e) {
+      if (disabled) return;
       const { lat, lng } = e.latlng;
       onLocationSelect(lat, lng, `Selected Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`);
     },
@@ -271,6 +313,264 @@ function MapControls({ position }: { position: [number, number] }) {
           )}
         </button>
       </div>
+    </>
+  );
+}
+
+type DrawMode = "polygon" | "circle" | "rectangle" | null;
+
+function DrawingTools({ drawnRegion, onDrawRegion, onDrawingStateChange }: { drawnRegion: DrawnRegion; onDrawRegion: (region: DrawnRegion) => void; onDrawingStateChange?: (drawing: boolean) => void }) {
+  const map = useMap();
+  const [drawMode, setDrawMode] = useState<DrawMode>(null);
+  const [drawingPoints, setDrawingPoints] = useState<[number, number][]>([]);
+  const [circleStart, setCircleStart] = useState<[number, number] | null>(null);
+  const [rectStart, setRectStart] = useState<[number, number] | null>(null);
+  const [cursorPos, setCursorPos] = useState<[number, number] | null>(null);
+
+  useMapEvents({
+    click(e) {
+      if (!drawMode) return;
+      const { lat, lng } = e.latlng;
+      L.DomEvent.stopPropagation(e);
+
+      if (drawMode === "polygon") {
+        setDrawingPoints(prev => [...prev, [lat, lng]]);
+      } else if (drawMode === "circle") {
+        if (!circleStart) {
+          setCircleStart([lat, lng]);
+        } else {
+          const radius = map.distance(L.latLng(circleStart[0], circleStart[1]), e.latlng);
+          onDrawRegion({ type: "circle", center: circleStart, radius });
+          setCircleStart(null);
+          setCursorPos(null);
+          setDrawMode(null);
+        }
+      } else if (drawMode === "rectangle") {
+        if (!rectStart) {
+          setRectStart([lat, lng]);
+        } else {
+          onDrawRegion({ type: "rectangle", bounds: [rectStart, [lat, lng]] });
+          setRectStart(null);
+          setCursorPos(null);
+          setDrawMode(null);
+        }
+      }
+    },
+    mousemove(e) {
+      if (drawMode && (circleStart || rectStart || drawingPoints.length > 0)) {
+        setCursorPos([e.latlng.lat, e.latlng.lng]);
+      }
+    },
+    contextmenu(e) {
+      if (drawMode === "polygon" && drawingPoints.length >= 3) {
+        L.DomEvent.preventDefault(e);
+        onDrawRegion({ type: "polygon", coords: [...drawingPoints, drawingPoints[0]] });
+        setDrawingPoints([]);
+        setCursorPos(null);
+        setDrawMode(null);
+      }
+    },
+  });
+
+  useEffect(() => {
+    if (drawMode) {
+      map.getContainer().style.cursor = "crosshair";
+      map.dragging.disable();
+      onDrawingStateChange?.(true);
+    } else {
+      map.getContainer().style.cursor = "";
+      map.dragging.enable();
+      onDrawingStateChange?.(false);
+    }
+    return () => {
+      map.getContainer().style.cursor = "";
+      map.dragging.enable();
+      onDrawingStateChange?.(false);
+    };
+  }, [drawMode, map]);
+
+  const startDraw = (mode: DrawMode) => {
+    onDrawRegion(null);
+    setDrawingPoints([]);
+    setCircleStart(null);
+    setRectStart(null);
+    setCursorPos(null);
+    setDrawMode(mode);
+  };
+
+  const clearDraw = () => {
+    onDrawRegion(null);
+    setDrawingPoints([]);
+    setCircleStart(null);
+    setRectStart(null);
+    setCursorPos(null);
+    setDrawMode(null);
+  };
+
+  const finishPolygon = () => {
+    if (drawingPoints.length >= 3) {
+      onDrawRegion({ type: "polygon", coords: [...drawingPoints, drawingPoints[0]] });
+      setDrawingPoints([]);
+      setCursorPos(null);
+      setDrawMode(null);
+    }
+  };
+
+  const btnStyle = (active: boolean): React.CSSProperties => ({
+    width: "32px",
+    height: "32px",
+    background: active ? "hsl(145 100% 39% / 0.3)" : "hsl(150 19% 8% / 0.9)",
+    border: `1px solid ${active ? "#00C853" : "hsl(150 20% 14%)"}`,
+    borderRadius: "6px",
+    color: active ? "#00C853" : "hsl(150 12% 92%)",
+    fontSize: "12px",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    backdropFilter: "blur(8px)",
+  });
+
+  const drawStyle = {
+    color: "#00C853",
+    weight: 2,
+    opacity: 0.8,
+    fillColor: "#00C853",
+    fillOpacity: 0.12,
+    dashArray: "6 4",
+  };
+
+  const previewPolygonPositions = drawingPoints.length > 0 && cursorPos
+    ? [...drawingPoints, cursorPos]
+    : drawingPoints;
+
+  return (
+    <>
+      <div
+        className="absolute top-14 right-3 z-[1000] flex flex-col gap-1"
+        data-testid="draw-controls"
+      >
+        <button
+          onClick={() => drawMode === "polygon" ? clearDraw() : startDraw("polygon")}
+          data-testid="button-draw-polygon"
+          title="Draw Polygon (right-click to finish)"
+          style={btnStyle(drawMode === "polygon")}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polygon points="12 2 22 8.5 18 20 6 20 2 8.5" />
+          </svg>
+        </button>
+        <button
+          onClick={() => drawMode === "circle" ? clearDraw() : startDraw("circle")}
+          data-testid="button-draw-circle"
+          title="Draw Circle (click center, then edge)"
+          style={btnStyle(drawMode === "circle")}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="10" />
+          </svg>
+        </button>
+        <button
+          onClick={() => drawMode === "rectangle" ? clearDraw() : startDraw("rectangle")}
+          data-testid="button-draw-rectangle"
+          title="Draw Rectangle (click two corners)"
+          style={btnStyle(drawMode === "rectangle")}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+          </svg>
+        </button>
+        {(drawnRegion || drawMode) && (
+          <button
+            onClick={clearDraw}
+            data-testid="button-clear-draw"
+            title="Clear drawn region"
+            style={{
+              ...btnStyle(false),
+              color: "#EF4444",
+              borderColor: "#EF4444",
+              marginTop: "4px",
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        )}
+      </div>
+
+      {drawMode && (
+        <div
+          className="absolute bottom-14 left-1/2 -translate-x-1/2 z-[1000]"
+          style={{
+            background: "hsl(150 19% 8% / 0.95)",
+            border: "1px solid hsl(145 100% 39% / 0.4)",
+            borderRadius: "8px",
+            padding: "6px 14px",
+            fontSize: "12px",
+            fontFamily: "Inter, sans-serif",
+            color: "#00C853",
+            backdropFilter: "blur(8px)",
+            whiteSpace: "nowrap",
+          }}
+          data-testid="draw-hint"
+        >
+          {drawMode === "polygon" && drawingPoints.length === 0 && "Click to start drawing polygon"}
+          {drawMode === "polygon" && drawingPoints.length > 0 && drawingPoints.length < 3 && `${drawingPoints.length} point${drawingPoints.length > 1 ? "s" : ""} — keep clicking to add more`}
+          {drawMode === "polygon" && drawingPoints.length >= 3 && (
+            <span>
+              {drawingPoints.length} points — <button onClick={finishPolygon} style={{ textDecoration: "underline", cursor: "pointer", background: "none", border: "none", color: "#00C853", font: "inherit" }}>finish</button> or right-click
+            </span>
+          )}
+          {drawMode === "circle" && !circleStart && "Click to place circle center"}
+          {drawMode === "circle" && circleStart && "Click to set circle radius"}
+          {drawMode === "rectangle" && !rectStart && "Click first corner"}
+          {drawMode === "rectangle" && rectStart && "Click opposite corner"}
+        </div>
+      )}
+
+      {drawingPoints.length > 1 && (
+        <RLPolygon positions={previewPolygonPositions as L.LatLngExpression[]} pathOptions={drawStyle} />
+      )}
+      {drawingPoints.length === 1 && cursorPos && (
+        <RLPolygon positions={[drawingPoints[0], cursorPos] as L.LatLngExpression[]} pathOptions={{ ...drawStyle, fill: false }} />
+      )}
+
+      {circleStart && cursorPos && (
+        <RLCircle
+          center={circleStart}
+          radius={map.distance(L.latLng(circleStart[0], circleStart[1]), L.latLng(cursorPos[0], cursorPos[1]))}
+          pathOptions={drawStyle}
+        />
+      )}
+
+      {rectStart && cursorPos && (
+        <RLRectangle
+          bounds={[rectStart, cursorPos]}
+          pathOptions={drawStyle}
+        />
+      )}
+
+      {drawnRegion && drawnRegion.type === "polygon" && (
+        <RLPolygon
+          positions={drawnRegion.coords as L.LatLngExpression[]}
+          pathOptions={{ color: "#00C853", weight: 2.5, opacity: 0.9, fillColor: "#00C853", fillOpacity: 0.1 }}
+        />
+      )}
+      {drawnRegion && drawnRegion.type === "circle" && (
+        <RLCircle
+          center={drawnRegion.center}
+          radius={drawnRegion.radius}
+          pathOptions={{ color: "#00C853", weight: 2.5, opacity: 0.9, fillColor: "#00C853", fillOpacity: 0.1 }}
+        />
+      )}
+      {drawnRegion && drawnRegion.type === "rectangle" && (
+        <RLRectangle
+          bounds={drawnRegion.bounds}
+          pathOptions={{ color: "#00C853", weight: 2.5, opacity: 0.9, fillColor: "#00C853", fillOpacity: 0.1 }}
+        />
+      )}
     </>
   );
 }
@@ -527,7 +827,7 @@ export interface MapViewerHandle {
   isExporting: () => boolean;
 }
 
-const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer({ onLocationSelect, arcgisApiKey, activeLayers, onLayerLoading, selectedLocation, customOverlays = [] }, ref) {
+const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer({ onLocationSelect, arcgisApiKey, activeLayers, onLayerLoading, selectedLocation, customOverlays = [], drawnRegion, onDrawRegion }, ref) {
   const [position, setPosition] = useState<[number, number]>([37.7749, -122.4194]);
   const [layerData, setLayerData] = useState<LayerData>({});
   const layerDataRef = useRef<LayerData>({});
@@ -535,6 +835,7 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
   const [exporting, setExporting] = useState(false);
+  const [isDrawing, setIsDrawing] = useState(false);
 
   useImperativeHandle(ref, () => ({
     isExporting: () => exporting,
@@ -602,20 +903,33 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
     onLocationSelect(lat, lon, name);
   }, [onLocationSelect]);
 
+  const drawnRegionKey = drawnRegion
+    ? JSON.stringify(drawnRegion).slice(0, 80)
+    : "none";
+
+  useEffect(() => {
+    layerDataRef.current = {};
+    setLayerData({});
+  }, [drawnRegionKey]);
+
   useEffect(() => {
     if (!position || activeLayers.length === 0) return;
     const [lat, lon] = position;
     const controller = new AbortController();
     abortRef.current = controller;
 
+    const polyParam = drawnRegionToPolygonParam(drawnRegion || null);
+
     activeLayers.forEach(async (layerId) => {
-      const cacheKey = `${layerId}-${lat.toFixed(3)}-${lon.toFixed(3)}`;
+      const regionSuffix = polyParam ? `-region` : "";
+      const cacheKey = `${layerId}-${lat.toFixed(3)}-${lon.toFixed(3)}${regionSuffix}`;
       if (layerDataRef.current[cacheKey]) return;
 
       layerDataRef.current[cacheKey] = "loading";
       onLayerLoading?.(layerId, true);
       try {
         const params = new URLSearchParams({ lat: lat.toString(), lon: lon.toString(), radius: "5000" });
+        if (polyParam) params.set("polygon", polyParam);
         const resp = await fetch(`/api/layers/${layerId}?${params}`, { signal: controller.signal });
         if (resp.ok) {
           const data = await resp.json();
@@ -637,7 +951,7 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
     });
 
     return () => { controller.abort(); };
-  }, [position, activeLayers]);
+  }, [position, activeLayers, drawnRegionKey]);
 
   return (
     <div className="w-full h-full relative" data-testid="map-container" ref={mapContainerRef}>
@@ -657,14 +971,16 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
         />
 
         {activeLayers.filter(id => POLYGON_LAYERS.has(id)).map(layerId => {
-          const cacheKey = `${layerId}-${position[0].toFixed(3)}-${position[1].toFixed(3)}`;
+          const regionSuffix = drawnRegion ? `-region` : "";
+          const cacheKey = `${layerId}-${position[0].toFixed(3)}-${position[1].toFixed(3)}${regionSuffix}`;
           const data = layerData[cacheKey];
           if (!data) return null;
           return <PolygonLayerRenderer key={cacheKey} layerData={data} layerId={layerId} />;
         })}
 
         {activeLayers.filter(id => POINT_LAYERS.has(id)).map(layerId => {
-          const cacheKey = `${layerId}-${position[0].toFixed(3)}-${position[1].toFixed(3)}`;
+          const regionSuffix = drawnRegion ? `-region` : "";
+          const cacheKey = `${layerId}-${position[0].toFixed(3)}-${position[1].toFixed(3)}${regionSuffix}`;
           const data = layerData[cacheKey];
           if (!data) return null;
           return <PointLayerRenderer key={cacheKey} layerData={data} layerId={layerId} />;
@@ -675,8 +991,9 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
         ))}
 
         <Marker position={position} icon={markerIcon} />
-        <ClickHandler onLocationSelect={handleLocationSelect} />
+        <ClickHandler onLocationSelect={handleLocationSelect} disabled={isDrawing} />
         <MapControls position={position} />
+        {onDrawRegion && <DrawingTools drawnRegion={drawnRegion || null} onDrawRegion={onDrawRegion} onDrawingStateChange={setIsDrawing} />}
         {selectedLocation && <FlyToLocation lat={selectedLocation.lat} lon={selectedLocation.lon} />}
       </MapContainer>
 
@@ -706,7 +1023,8 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             {activeLayers.map(id => {
-              const cacheKey = `${id}-${position[0].toFixed(3)}-${position[1].toFixed(3)}`;
+              const regionSuffix = drawnRegion ? `-region` : "";
+              const cacheKey = `${id}-${position[0].toFixed(3)}-${position[1].toFixed(3)}${regionSuffix}`;
               const data = layerData[cacheKey];
               return (
                 <div key={id} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", fontFamily: "Inter, sans-serif" }}>
