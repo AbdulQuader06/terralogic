@@ -339,16 +339,24 @@ function PolygonLayerRenderer({ layerData, layerId }: { layerData: any; layerId:
         data={layerData}
         style={(feature) => {
           const zone = feature?.properties?.FLD_ZONE || "";
-          const isHighRisk = zone.startsWith("A") || zone.startsWith("V");
+          const risk = feature?.properties?.riskLevel || "";
+          const isHighRisk = zone.startsWith("A") || zone.startsWith("V") || risk === "High";
+          const isModerate = zone === "AE" || zone === "X500" || risk === "Moderate" || risk === "Low-Moderate";
           return {
-            fillColor: isHighRisk ? "#DC2626" : "#3B82F6",
-            fillOpacity: isHighRisk ? 0.4 : 0.15,
-            weight: 1, color: isHighRisk ? "#DC2626" : "#3B82F6", opacity: 0.6,
+            fillColor: isHighRisk ? "#DC2626" : isModerate ? "#F59E0B" : "#3B82F6",
+            fillOpacity: isHighRisk ? 0.45 : isModerate ? 0.3 : 0.15,
+            weight: 1,
+            color: isHighRisk ? "#DC2626" : isModerate ? "#F59E0B" : "#3B82F6",
+            opacity: 0.6,
           };
         }}
         onEachFeature={(feature, layer) => {
-          const zone = feature?.properties?.FLD_ZONE || "Unknown";
-          layer.bindTooltip(`Flood Zone: ${zone}`, { sticky: true });
+          const p = feature?.properties || {};
+          const zone = p.FLD_ZONE || "Unknown";
+          const risk = p.riskLevel || (zone.startsWith("A") ? "High" : "Low");
+          const source = p.source === "osm" ? "OpenStreetMap" : p.source === "elevation-model" ? "Elevation Model" : p.source === "fema" ? "FEMA NFHL" : "Analysis";
+          const elev = p.elevation ? ` | Elev: ${p.elevation}m` : "";
+          layer.bindTooltip(`<b>Flood Risk: ${risk}</b><br/>Zone: ${zone}${elev}<br/>Source: ${source}`, { sticky: true });
         }}
       />
     );

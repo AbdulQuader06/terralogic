@@ -12,6 +12,7 @@ AI-powered GIS spatial analysis platform with dark Figma-matched UI. Evaluates c
   - OpenStreetMap Overpass API (schools, hospitals, transit, parks, landuse, water, infrastructure)
   - FEMA NFHL (flood zones via ArcGIS feature layer)
   - Open-Meteo Elevation API (real DEM elevation, multi-point profiles, marching squares contours)
+  - Open-Meteo Weather API (real sunshine_duration, windspeed_10m_max for sun/wind exposure)
   - SoilGrids ISRIC API (WRB soil classification: Cambisols, Luvisols, etc.)
   - USDA Soil (fallback grid generation)
   - Nominatim/ArcGIS (geocoding)
@@ -42,13 +43,24 @@ Three-panel dark theme layout:
 
 - `GET /api/config` - Returns ArcGIS API key
 - `GET /api/geocode?q=` - Server-side geocoding (Nominatim primary, ArcGIS fallback)
-- `POST /api/analyze` - Real GIS data aggregation: Open-Meteo elevation, FEMA flood, SoilGrids WRB classification, OSM amenities → suitability score, environmental metrics, real elevation profile, radar data, recommendations
+- `POST /api/analyze` - Real GIS data aggregation: Combined Overpass queries (2 requests instead of 8+) + Open-Meteo elevation + Open-Meteo weather + SoilGrids WRB → suitability score, environmental metrics, real elevation profile, radar data, recommendations
 - `POST /api/chat` - AI chat via Gemini with site context injection
 - `GET /api/layers/{schools,hospitals,transit,parks,landuse,water,flood,soil,elevation,infrastructure}` - GIS layer data endpoints
 
+## Data Pipeline (generateSiteAnalysis)
+
+Uses 2 combined Overpass queries + 3 parallel API calls (total 5 requests instead of 11+):
+1. `fetchOverpassCombined()` - Single query for all point data (schools, hospitals, transit, infrastructure)
+2. `fetchOverpassGeoCombined()` - Single query for all polygon data (parks, landuse, flood, water)
+3. SoilGrids ISRIC API - WRB soil classification
+4. Open-Meteo Elevation API - 11-point transect for elevation profile
+5. Open-Meteo Weather API - 30-day sunshine_duration & windspeed_10m_max
+
+Results are filtered by tag locally to extract amenity counts, flood/water features, parks, and landuse data.
+
 ## Environment Variables
 
-- `ARCGIS_API_KEY` - ArcGIS API key for geocoding fallback
+- `ARCGIS_API_KEY` - ArcGIS API key for geocoding fallback and FEMA flood data
 - `GEMINI_API_KEY` - Google Gemini API key for AI chat
 
 ## Color Palette (Dark Theme)
@@ -76,4 +88,5 @@ Three-panel dark theme layout:
 - `layerDataRef` tracks fetched cache keys to prevent stale closure re-fetches
 - Elevation layer: contour LineStrings with major/minor styling (Open-Meteo → marching squares)
 - Soil layer: WRB soil type colored polygons (SoilGrids ISRIC API for classification data)
-- Flood layer: FEMA zones with red/blue risk coloring
+- Flood layer: OSM floodplains + elevation-based risk model + FEMA NFHL fallback (works globally)
+- All scores capped at 0-100 range

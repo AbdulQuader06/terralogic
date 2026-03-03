@@ -9,17 +9,84 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const ARCGIS_API_KEY = process.env.ARCGIS_API_KEY || "";
 const MAX_CHAT_HISTORY = 20;
 
+async function fetchOverpassCombined(lat: number, lon: number, radius: number): Promise<any> {
+  const bbox = `(around:${radius},${lat},${lon})`;
+  const query = `[out:json][timeout:30];(
+    node["amenity"="school"]${bbox};way["amenity"="school"]${bbox};
+    node["amenity"="university"]${bbox};way["amenity"="university"]${bbox};
+    node["amenity"="college"]${bbox};way["amenity"="college"]${bbox};
+    node["amenity"="kindergarten"]${bbox};node["amenity"="library"]${bbox};
+    node["building"="school"]${bbox};way["building"="school"]${bbox};
+    node["amenity"="hospital"]${bbox};way["amenity"="hospital"]${bbox};
+    node["amenity"="clinic"]${bbox};way["amenity"="clinic"]${bbox};
+    node["amenity"="doctors"]${bbox};node["amenity"="pharmacy"]${bbox};
+    node["healthcare"]${bbox};way["healthcare"]${bbox};
+    node["building"="hospital"]${bbox};way["building"="hospital"]${bbox};
+    node["public_transport"="stop_position"]${bbox};node["public_transport"="platform"]${bbox};
+    node["highway"="bus_stop"]${bbox};node["railway"="station"]${bbox};
+    way["railway"="station"]${bbox};node["railway"="halt"]${bbox};
+    node["amenity"="bus_station"]${bbox};way["amenity"="bus_station"]${bbox};
+    node["amenity"="taxi"]${bbox};
+    node["amenity"="fire_station"]${bbox};way["amenity"="fire_station"]${bbox};
+    node["amenity"="police"]${bbox};way["amenity"="police"]${bbox};
+    node["amenity"="post_office"]${bbox};node["amenity"="townhall"]${bbox};
+    way["amenity"="townhall"]${bbox};node["amenity"="bank"]${bbox};
+    node["amenity"="fuel"]${bbox};node["amenity"="marketplace"]${bbox};
+    way["amenity"="marketplace"]${bbox};node["office"="government"]${bbox};
+    way["office"="government"]${bbox};node["power"="substation"]${bbox};
+  );out body center;`;
+  try {
+    const resp = await fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `data=${encodeURIComponent(query)}`,
+      signal: AbortSignal.timeout(30000),
+    });
+    if (!resp.ok) throw new Error(`Overpass error: ${resp.status}`);
+    return await resp.json();
+  } catch (e: any) {
+    console.error("Overpass combined fetch error:", e.message);
+    return { elements: [] };
+  }
+}
+
+async function fetchOverpassGeoCombined(lat: number, lon: number, radius: number): Promise<any> {
+  const bbox = `(around:${radius},${lat},${lon})`;
+  const query = `[out:json][timeout:30];(
+    way["leisure"="park"]${bbox};relation["leisure"="park"]${bbox};
+    way["leisure"="garden"]${bbox};way["leisure"="nature_reserve"]${bbox};
+    way["leisure"="playground"]${bbox};way["landuse"="forest"]${bbox};
+    relation["landuse"="forest"]${bbox};
+    way["landuse"]${bbox};relation["landuse"]${bbox};
+    way["natural"="floodplain"]${bbox};way["flood_prone"="yes"]${bbox};
+    way["natural"="wetland"]${bbox};relation["natural"="wetland"]${bbox};
+    way["water"="intermittent"]${bbox};way["intermittent"="yes"]${bbox};
+    way["natural"="water"]${bbox};relation["natural"="water"]${bbox};
+    way["waterway"="river"]${bbox};way["waterway"="stream"]${bbox};
+    way["waterway"="canal"]${bbox};way["waterway"="riverbank"]${bbox};
+    relation["waterway"="riverbank"]${bbox};
+  );out body geom;`;
+  try {
+    const resp = await fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `data=${encodeURIComponent(query)}`,
+      signal: AbortSignal.timeout(30000),
+    });
+    if (!resp.ok) throw new Error(`Overpass error: ${resp.status}`);
+    return await resp.json();
+  } catch (e: any) {
+    console.error("Overpass geo combined fetch error:", e.message);
+    return { elements: [] };
+  }
+}
+
 async function generateSiteAnalysis(lat: number, lon: number, name: string): Promise<SiteAnalysis> {
   const radius = 3000;
 
-  const [schoolsData, hospitalsData, transitData, parksData, infraData, landuseData, floodData, soilData, elevData] = await Promise.allSettled([
-    fetchOverpassPoints(lat, lon, radius, `node["amenity"="school"]BBOX;way["amenity"="school"]BBOX;node["amenity"="university"]BBOX;`),
-    fetchOverpassPoints(lat, lon, radius, `node["amenity"="hospital"]BBOX;way["amenity"="hospital"]BBOX;node["amenity"="clinic"]BBOX;`),
-    fetchOverpassPoints(lat, lon, radius, `node["public_transport"="stop_position"]BBOX;node["highway"="bus_stop"]BBOX;node["railway"="station"]BBOX;`),
-    fetchOverpassGeometry(lat, lon, radius, `way["leisure"="park"]BBOX;relation["leisure"="park"]BBOX;`),
-    fetchOverpassPoints(lat, lon, radius, `node["amenity"="fire_station"]BBOX;node["amenity"="police"]BBOX;node["amenity"="post_office"]BBOX;`),
-    fetchOverpassGeometry(lat, lon, 2000, `way["landuse"]BBOX;relation["landuse"]BBOX;`),
-    fetchArcGISFeatureLayer("https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/28", lat, lon, radius),
+  const [pointsResult, geoResult, soilData, elevData, weatherData] = await Promise.allSettled([
+    fetchOverpassCombined(lat, lon, radius),
+    fetchOverpassGeoCombined(lat, lon, radius),
     (async () => {
       try {
         const resp = await fetch(
@@ -57,34 +124,57 @@ async function generateSiteAnalysis(lat: number, lon: number, name: string): Pro
           return { elevations: data.elevation || [], source: "open-meteo" };
         }
       } catch {}
+      return { elevations: [50], source: "none" };
+    })(),
+    (async () => {
       try {
-        const resp = await fetch(`https://epqs.nationalmap.gov/v1/json?x=${lon}&y=${lat}&wkid=4326&units=Meters&includeDate=false`);
-        const d = await resp.json();
-        const elev = d?.value ?? d?.USGS_Elevation_Point_Query_Service?.Elevation_Query?.Elevation ?? null;
-        return { elevations: [elev], source: "usgs" };
-      } catch { return { elevations: [null], source: "none" }; }
+        const resp = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max,sunshine_duration&timezone=auto&past_days=30&forecast_days=1`,
+          { signal: AbortSignal.timeout(10000) }
+        );
+        if (resp.ok) {
+          const data = await resp.json();
+          return { daily: data.daily, source: "open-meteo" };
+        }
+      } catch {}
+      return { daily: null, source: "none" };
     })(),
   ]);
 
-  const getVal = (r: PromiseSettledResult<any>) => r.status === "fulfilled" ? r.value : { elements: [] };
+  const pointsData = pointsResult.status === "fulfilled" ? pointsResult.value : { elements: [] };
+  const geoData = geoResult.status === "fulfilled" ? geoResult.value : { elements: [] };
 
-  const schoolCount = overpassPointsToGeoJSON(getVal(schoolsData), {}).features?.length || 0;
-  const hospitalCount = overpassPointsToGeoJSON(getVal(hospitalsData), {}).features?.length || 0;
-  const transitCount = overpassPointsToGeoJSON(getVal(transitData), {}).features?.length || 0;
-  const parkGeo = overpassGeometryToGeoJSON(getVal(parksData), {});
-  const parkCount = parkGeo.features?.length || 0;
-  const infraCount = overpassPointsToGeoJSON(getVal(infraData), {}).features?.length || 0;
-  const landuseGeo = overpassGeometryToGeoJSON(getVal(landuseData), {});
+  const allElements = pointsData.elements || [];
+  const schoolTags = new Set(["school", "university", "college", "kindergarten", "library"]);
+  const hospitalTags = new Set(["hospital", "clinic", "doctors", "pharmacy", "dentist"]);
+  const transitTags = new Set(["stop_position", "platform", "bus_stop", "station", "halt", "bus_station", "taxi"]);
+  const infraTags = new Set(["fire_station", "police", "post_office", "townhall", "courthouse", "community_centre", "bank", "fuel", "marketplace"]);
+
+  const schoolCount = allElements.filter((e: any) =>
+    schoolTags.has(e.tags?.amenity) || schoolTags.has(e.tags?.building)
+  ).length;
+  const hospitalCount = allElements.filter((e: any) =>
+    hospitalTags.has(e.tags?.amenity) || e.tags?.healthcare
+  ).length;
+  const transitCount = allElements.filter((e: any) =>
+    transitTags.has(e.tags?.amenity) || transitTags.has(e.tags?.public_transport) || transitTags.has(e.tags?.highway) || transitTags.has(e.tags?.railway)
+  ).length;
+  const infraCount = allElements.filter((e: any) =>
+    infraTags.has(e.tags?.amenity) || e.tags?.office === "government" || e.tags?.building === "government" || e.tags?.power === "substation"
+  ).length;
+
+  const geoElements = geoData.elements || [];
+  const parkElements = geoElements.filter((e: any) =>
+    e.tags?.leisure === "park" || e.tags?.leisure === "garden" || e.tags?.leisure === "nature_reserve" || e.tags?.leisure === "playground" || e.tags?.landuse === "forest" || e.tags?.natural === "wood"
+  );
+  const parkCount = parkElements.length;
+  const landuseElements = geoElements.filter((e: any) => e.tags?.landuse);
+  const landuseGeo = overpassGeometryToGeoJSON({ elements: landuseElements }, {});
   const landuseCount = landuseGeo.features?.length || 0;
 
-  const floodGeo = floodData.status === "fulfilled" ? floodData.value : { features: [] };
-  const floodFeatures = floodGeo?.features || [];
-  const highRiskZones = floodFeatures.filter((f: any) => {
-    const zone = f.properties?.FLD_ZONE || "";
-    return zone.startsWith("A") || zone.startsWith("V");
-  });
-  const hasHighFloodRisk = highRiskZones.length > 0;
-  const floodZoneCount = floodFeatures.length;
+  const elevResult = elevData.status === "fulfilled" ? elevData.value : { elevations: [50], source: "none" };
+  const elevArr: number[] = (elevResult?.elevations || [50]).map((v: any) => (v != null && !isNaN(Number(v)) ? Number(v) : 50));
+  const centerElev = elevArr[Math.floor(elevArr.length / 2)] ?? 50;
 
   const soilResult = soilData.status === "fulfilled" ? soilData.value : { soilClass: "Unknown", probability: [], source: "fallback" };
   const soilClassName = soilResult.soilClass || "Unknown";
@@ -106,9 +196,26 @@ async function generateSiteAnalysis(lat: number, lon: number, name: string): Pro
   const soilDrainageLabel = soilDrainageMap[soilClassName] || "Moderately Drained";
   const soilDrainageRatio = soilDrainageLabel.includes("Well") ? 0.8 : soilDrainageLabel.includes("Poorly") ? 0.2 : 0.5;
 
-  const elevResult = elevData.status === "fulfilled" ? elevData.value : { elevations: [50], source: "none" };
-  const elevArr: number[] = (elevResult?.elevations || [50]).map((v: any) => (v != null && !isNaN(Number(v)) ? Number(v) : 50));
-  const centerElev = elevArr[Math.floor(elevArr.length / 2)] ?? 50;
+  const floodElements = geoElements.filter((e: any) =>
+    e.tags?.natural === "floodplain" || e.tags?.flood_prone === "yes" || e.tags?.natural === "wetland" || e.tags?.water === "intermittent" || e.tags?.intermittent === "yes"
+  );
+  const waterElements = geoElements.filter((e: any) =>
+    e.tags?.natural === "water" || e.tags?.waterway === "river" || e.tags?.waterway === "stream" || e.tags?.waterway === "canal" || e.tags?.waterway === "riverbank"
+  );
+  const floodOsmCount = floodElements.length;
+  const waterBodyCount = waterElements.length;
+  const hasFloodplains = floodElements.some((e: any) =>
+    e.tags?.natural === "floodplain" || e.tags?.flood_prone === "yes"
+  );
+  const hasWetlands = floodElements.some((e: any) =>
+    e.tags?.natural === "wetland"
+  );
+  const lowElevFloodRisk = centerElev < 10 && waterBodyCount > 0;
+  const floodplainCount = floodElements.filter((e: any) => e.tags?.natural === "floodplain" || e.tags?.flood_prone === "yes").length;
+  const wetlandCount = floodElements.filter((e: any) => e.tags?.natural === "wetland").length;
+  const hasHighFloodRisk = hasFloodplains || lowElevFloodRisk;
+  const floodZoneCount = floodOsmCount + waterBodyCount;
+  const highRiskCount = floodplainCount + (lowElevFloodRisk ? 1 : 0);
 
   const zoningTypes = landuseGeo.features?.map((f: any) => f.properties?.landuse || f.properties?.type || "").filter(Boolean) || [];
   const zoningCounts: Record<string, number> = {};
@@ -118,7 +225,7 @@ async function generateSiteAnalysis(lat: number, lon: number, name: string): Pro
 
   const schoolScore = Math.min(100, Math.floor((schoolCount / 10) * 100));
   const infraScore = Math.min(100, Math.floor(((infraCount + transitCount) / 15) * 100));
-  const floodRiskScore = hasHighFloodRisk ? Math.min(90, 40 + highRiskZones.length * 10) : Math.max(10, floodZoneCount * 5);
+  const floodRiskScore = Math.min(90, hasHighFloodRisk ? 40 + highRiskCount * 10 : Math.max(10, Math.min(floodZoneCount * 5, 80)));
   const soilScore = Math.min(100, Math.floor(avgBearing * 0.8 + soilDrainageRatio * 40));
   const urbanDensity = Math.min(100, Math.floor((landuseCount / 20) * 100));
   const elevSuitability = centerElev < 5 ? 20 : centerElev < 20 ? 40 : centerElev < 100 ? 80 : centerElev < 300 ? 70 : centerElev < 500 ? 55 : 35;
@@ -130,15 +237,31 @@ async function generateSiteAnalysis(lat: number, lon: number, name: string): Pro
   const rating = overallScore >= 75 ? "Highly Suitable" : overallScore >= 55 ? "Moderate Potential" : "High Risk Area";
 
   const alerts: SiteAnalysis["alerts"] = [];
-  if (floodRiskScore > 50) alerts.push({ type: "warning", title: "Elevated Flood Risk", description: `${highRiskZones.length} high-risk FEMA flood zone(s) detected within 3km. Consider drainage infrastructure and flood barriers.` });
+  if (floodRiskScore > 50) alerts.push({ type: "warning", title: "Elevated Flood Risk", description: `${floodOsmCount} flood-prone areas and ${waterBodyCount} water bodies detected within 3km. Consider drainage infrastructure and flood barriers.` });
   if (climateStress > 45) alerts.push({ type: "warning", title: "Climate Stress Factor", description: `Region shows ${climateStress}% climate stress index. Urban heat island effects may be significant.` });
   if (overallScore >= 75) alerts.push({ type: "success", title: "Favorable Site Conditions", description: `Strong balance of ${schoolCount} nearby schools, ${infraCount} infrastructure facilities, and manageable environmental risks.` });
   if (urbanDensity > 70) alerts.push({ type: "info", title: "High Urban Density", description: `${landuseCount} land use zones detected. Dense surroundings may increase logistics complexity.` });
   if (centerElev < 10) alerts.push({ type: "warning", title: "Low Elevation Warning", description: `Site elevation is ${centerElev.toFixed(1)}m ASL. Coastal flooding and drainage issues possible.` });
   if (soilClassName !== "Unknown") alerts.push({ type: "info", title: `Soil Classification: ${soilClassName}`, description: `WRB soil type: ${soilClassName}. ${soilDrainageLabel}. Bearing capacity est: ${avgBearing} kPa.` });
+  if (waterBodyCount > 3) alerts.push({ type: "info", title: "Water Bodies Nearby", description: `${waterBodyCount} water features (rivers, lakes, canals, ponds) detected within 3km.` });
+  if (hasWetlands) alerts.push({ type: "warning", title: "Wetland Areas Present", description: "Wetland areas detected near site. Construction may be restricted. Environmental impact assessment recommended." });
 
-  const sunExposure = centerElev > 100 ? Math.min(95, 70 + Math.floor((centerElev - 100) / 20)) : Math.min(85, 55 + Math.floor(centerElev / 5));
-  const windExposure = centerElev > 200 ? Math.min(90, 60 + Math.floor((centerElev - 200) / 15)) : Math.max(25, 30 + Math.floor(centerElev / 8));
+  const weather = weatherData.status === "fulfilled" ? weatherData.value : { daily: null, source: "none" };
+  let sunExposure: number, windExposure: number;
+
+  if (weather.daily?.sunshine_duration) {
+    const avgSunHrs = (weather.daily.sunshine_duration as number[]).reduce((a: number, b: number) => a + (b || 0), 0) / weather.daily.sunshine_duration.length / 3600;
+    sunExposure = Math.min(98, Math.max(15, Math.round(avgSunHrs / 14 * 100)));
+  } else {
+    sunExposure = centerElev > 100 ? Math.min(95, 70 + Math.floor((centerElev - 100) / 20)) : Math.min(85, 55 + Math.floor(centerElev / 5));
+  }
+
+  if (weather.daily?.windspeed_10m_max) {
+    const avgWind = (weather.daily.windspeed_10m_max as number[]).reduce((a: number, b: number) => a + (b || 0), 0) / weather.daily.windspeed_10m_max.length;
+    windExposure = Math.min(98, Math.max(10, Math.round(avgWind / 60 * 100)));
+  } else {
+    windExposure = centerElev > 200 ? Math.min(90, 60 + Math.floor((centerElev - 200) / 15)) : Math.max(25, 30 + Math.floor(centerElev / 8));
+  }
   const soilQualityPct = Math.min(100, Math.floor(avgBearing * 0.6 + soilDrainageRatio * 50 + avgPermeability * 0.2));
   const floodRiskLabel = hasHighFloodRisk ? "High" : floodZoneCount > 0 ? "Moderate" : "Low";
 
@@ -160,7 +283,7 @@ async function generateSiteAnalysis(lat: number, lon: number, name: string): Pro
 
   if (floodRiskLabel === "Low") recommendations.push({ type: "success", title: "Low Flood Risk", description: `Site elevation at ${centerElev.toFixed(1)}m provides natural protection. Standard drainage sufficient.` });
   else if (floodRiskLabel === "Moderate") recommendations.push({ type: "warning", title: "Moderate Flood Risk", description: `${floodZoneCount} FEMA flood zone(s) nearby. Enhanced drainage and flood barriers recommended.` });
-  else recommendations.push({ type: "warning", title: "High Flood Risk", description: `${highRiskZones.length} high-risk FEMA zone(s) detected. Flood insurance required. Elevated construction recommended.` });
+  else recommendations.push({ type: "warning", title: "High Flood Risk", description: `${highRiskCount} high-risk flood zone(s) detected. Flood insurance required. Elevated construction recommended.` });
 
   if (soilQualityPct >= 70) recommendations.push({ type: "success", title: "Good Soil Conditions", description: `${soilClassName} soil with ${soilQualityPct}% quality rating. ${soilDrainageLabel}. Bearing capacity: ${avgBearing} kPa.` });
   else recommendations.push({ type: "warning", title: "Soil Quality Concerns", description: `${soilClassName} soil rated ${soilQualityPct}%. ${soilDrainageLabel}. Foundation reinforcement may be needed. Bearing: ${avgBearing} kPa.` });
@@ -460,12 +583,11 @@ export async function registerRoutes(
 
   // === GIS Data Layer Endpoints ===
 
-  // Point layers (schools, hospitals, transit, infrastructure)
   app.get("/api/layers/schools", async (req, res) => {
     const { lat, lon, radius } = req.query;
     if (!lat || !lon) return res.status(400).json({ error: "lat and lon required" });
     const data = await fetchOverpassPoints(Number(lat), Number(lon), Number(radius) || 5000,
-      `node["amenity"="school"]BBOX;way["amenity"="school"]BBOX;node["amenity"="university"]BBOX;way["amenity"="university"]BBOX;node["amenity"="college"]BBOX;`
+      `node["amenity"="school"]BBOX;way["amenity"="school"]BBOX;node["amenity"="university"]BBOX;way["amenity"="university"]BBOX;node["amenity"="college"]BBOX;way["amenity"="college"]BBOX;node["amenity"="kindergarten"]BBOX;node["amenity"="library"]BBOX;way["amenity"="library"]BBOX;node["building"="school"]BBOX;way["building"="school"]BBOX;node["building"="university"]BBOX;way["building"="university"]BBOX;node["building"="college"]BBOX;way["building"="college"]BBOX;`
     );
     res.json(overpassPointsToGeoJSON(data, { layer: "schools", icon: "school" }));
   });
@@ -474,7 +596,7 @@ export async function registerRoutes(
     const { lat, lon, radius } = req.query;
     if (!lat || !lon) return res.status(400).json({ error: "lat and lon required" });
     const data = await fetchOverpassPoints(Number(lat), Number(lon), Number(radius) || 5000,
-      `node["amenity"="hospital"]BBOX;way["amenity"="hospital"]BBOX;node["amenity"="clinic"]BBOX;node["amenity"="doctors"]BBOX;`
+      `node["amenity"="hospital"]BBOX;way["amenity"="hospital"]BBOX;node["amenity"="clinic"]BBOX;way["amenity"="clinic"]BBOX;node["amenity"="doctors"]BBOX;node["amenity"="pharmacy"]BBOX;node["amenity"="dentist"]BBOX;node["amenity"="veterinary"]BBOX;node["healthcare"]BBOX;way["healthcare"]BBOX;node["healthcare"="centre"]BBOX;way["healthcare"="centre"]BBOX;node["healthcare"="hospital"]BBOX;way["healthcare"="hospital"]BBOX;node["building"="hospital"]BBOX;way["building"="hospital"]BBOX;`
     );
     res.json(overpassPointsToGeoJSON(data, { layer: "hospitals", icon: "hospital" }));
   });
@@ -483,7 +605,7 @@ export async function registerRoutes(
     const { lat, lon, radius } = req.query;
     if (!lat || !lon) return res.status(400).json({ error: "lat and lon required" });
     const data = await fetchOverpassPoints(Number(lat), Number(lon), Number(radius) || 5000,
-      `node["public_transport"="stop_position"]BBOX;node["highway"="bus_stop"]BBOX;node["railway"="station"]BBOX;node["railway"="halt"]BBOX;`
+      `node["public_transport"="stop_position"]BBOX;node["public_transport"="platform"]BBOX;node["highway"="bus_stop"]BBOX;way["highway"="bus_stop"]BBOX;node["railway"="station"]BBOX;way["railway"="station"]BBOX;node["railway"="halt"]BBOX;node["railway"="tram_stop"]BBOX;node["amenity"="bus_station"]BBOX;way["amenity"="bus_station"]BBOX;node["amenity"="taxi"]BBOX;node["amenity"="ferry_terminal"]BBOX;node["aeroway"="aerodrome"]BBOX;way["aeroway"="aerodrome"]BBOX;node["station"="subway"]BBOX;way["railway"="subway_entrance"]BBOX;`
     );
     res.json(overpassPointsToGeoJSON(data, { layer: "transit", icon: "bus" }));
   });
@@ -491,18 +613,17 @@ export async function registerRoutes(
   app.get("/api/layers/infrastructure", async (req, res) => {
     const { lat, lon, radius } = req.query;
     if (!lat || !lon) return res.status(400).json({ error: "lat and lon required" });
-    const data = await fetchOverpassPoints(Number(lat), Number(lon), Number(radius) || 3000,
-      `node["amenity"="fire_station"]BBOX;node["amenity"="police"]BBOX;node["amenity"="post_office"]BBOX;node["amenity"="townhall"]BBOX;`
+    const data = await fetchOverpassPoints(Number(lat), Number(lon), Number(radius) || 4000,
+      `node["amenity"="fire_station"]BBOX;way["amenity"="fire_station"]BBOX;node["amenity"="police"]BBOX;way["amenity"="police"]BBOX;node["amenity"="post_office"]BBOX;node["amenity"="townhall"]BBOX;way["amenity"="townhall"]BBOX;node["amenity"="courthouse"]BBOX;node["amenity"="community_centre"]BBOX;way["amenity"="community_centre"]BBOX;node["amenity"="social_facility"]BBOX;node["amenity"="bank"]BBOX;node["amenity"="atm"]BBOX;node["amenity"="fuel"]BBOX;node["amenity"="charging_station"]BBOX;node["amenity"="waste_disposal"]BBOX;node["amenity"="recycling"]BBOX;node["amenity"="marketplace"]BBOX;way["amenity"="marketplace"]BBOX;node["office"="government"]BBOX;way["office"="government"]BBOX;node["building"="government"]BBOX;way["building"="government"]BBOX;node["man_made"="water_tower"]BBOX;node["man_made"="reservoir_covered"]BBOX;node["power"="substation"]BBOX;way["power"="substation"]BBOX;node["power"="plant"]BBOX;way["power"="plant"]BBOX;node["telecom"="exchange"]BBOX;`
     );
     res.json(overpassPointsToGeoJSON(data, { layer: "infrastructure" }));
   });
 
-  // Polygon/area layers (parks, landuse, water) — fetch full geometry
   app.get("/api/layers/parks", async (req, res) => {
     const { lat, lon, radius } = req.query;
     if (!lat || !lon) return res.status(400).json({ error: "lat and lon required" });
-    const data = await fetchOverpassGeometry(Number(lat), Number(lon), Number(radius) || 3000,
-      `way["leisure"="park"]BBOX;relation["leisure"="park"]BBOX;way["leisure"="garden"]BBOX;way["leisure"="nature_reserve"]BBOX;`
+    const data = await fetchOverpassGeometry(Number(lat), Number(lon), Number(radius) || 4000,
+      `way["leisure"="park"]BBOX;relation["leisure"="park"]BBOX;way["leisure"="garden"]BBOX;relation["leisure"="garden"]BBOX;way["leisure"="nature_reserve"]BBOX;relation["leisure"="nature_reserve"]BBOX;way["leisure"="playground"]BBOX;way["leisure"="sports_centre"]BBOX;way["leisure"="stadium"]BBOX;way["leisure"="recreation_ground"]BBOX;way["landuse"="recreation_ground"]BBOX;way["boundary"="national_park"]BBOX;relation["boundary"="national_park"]BBOX;way["leisure"="golf_course"]BBOX;way["landuse"="forest"]BBOX;relation["landuse"="forest"]BBOX;way["natural"="wood"]BBOX;relation["natural"="wood"]BBOX;`
     );
     res.json(overpassGeometryToGeoJSON(data, { layer: "parks" }));
   });
@@ -510,8 +631,8 @@ export async function registerRoutes(
   app.get("/api/layers/landuse", async (req, res) => {
     const { lat, lon, radius } = req.query;
     if (!lat || !lon) return res.status(400).json({ error: "lat and lon required" });
-    const data = await fetchOverpassGeometry(Number(lat), Number(lon), Number(radius) || 2000,
-      `way["landuse"]BBOX;relation["landuse"]BBOX;`
+    const data = await fetchOverpassGeometry(Number(lat), Number(lon), Number(radius) || 3000,
+      `way["landuse"]BBOX;relation["landuse"]BBOX;way["building"]BBOX;`
     );
     res.json(overpassGeometryToGeoJSON(data, { layer: "landuse" }));
   });
@@ -519,24 +640,131 @@ export async function registerRoutes(
   app.get("/api/layers/water", async (req, res) => {
     const { lat, lon, radius } = req.query;
     if (!lat || !lon) return res.status(400).json({ error: "lat and lon required" });
-    const data = await fetchOverpassGeometry(Number(lat), Number(lon), Number(radius) || 4000,
-      `way["natural"="water"]BBOX;relation["natural"="water"]BBOX;way["waterway"="river"]BBOX;way["waterway"="stream"]BBOX;way["waterway"="canal"]BBOX;`
+    const data = await fetchOverpassGeometry(Number(lat), Number(lon), Number(radius) || 5000,
+      `way["natural"="water"]BBOX;relation["natural"="water"]BBOX;way["waterway"="river"]BBOX;way["waterway"="stream"]BBOX;way["waterway"="canal"]BBOX;way["waterway"="drain"]BBOX;way["waterway"="ditch"]BBOX;way["waterway"="riverbank"]BBOX;relation["waterway"="riverbank"]BBOX;way["water"="lake"]BBOX;relation["water"="lake"]BBOX;way["water"="pond"]BBOX;way["water"="reservoir"]BBOX;relation["water"="reservoir"]BBOX;way["landuse"="reservoir"]BBOX;relation["landuse"="reservoir"]BBOX;way["landuse"="basin"]BBOX;way["natural"="wetland"]BBOX;relation["natural"="wetland"]BBOX;way["natural"="spring"]BBOX;node["natural"="spring"]BBOX;node["man_made"="water_well"]BBOX;node["amenity"="drinking_water"]BBOX;node["man_made"="water_tap"]BBOX;way["water"="tank"]BBOX;node["man_made"="storage_tank"]["content"="water"]BBOX;`
     );
     res.json(overpassGeometryToGeoJSON(data, { layer: "water" }));
   });
 
-  // Flood zones — FEMA NFHL via ArcGIS REST
   app.get("/api/layers/flood", async (req, res) => {
     const { lat, lon, radius } = req.query;
     if (!lat || !lon) return res.status(400).json({ error: "lat and lon required" });
-    const geojson = await fetchArcGISFeatureLayer(
-      "https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/28",
-      Number(lat), Number(lon), Number(radius) || 5000
-    );
-    if (geojson.features) {
-      geojson.features.forEach((f: any) => { f.properties = { ...f.properties, layer: "flood" }; });
+    const clat = Number(lat), clon = Number(lon), r = Number(radius) || 5000;
+
+    const results = await Promise.allSettled([
+      fetchOverpassGeometry(clat, clon, r,
+        `way["natural"="floodplain"]BBOX;relation["natural"="floodplain"]BBOX;way["flood_prone"="yes"]BBOX;way["natural"="wetland"]BBOX;relation["natural"="wetland"]BBOX;way["wetland"="marsh"]BBOX;way["wetland"="swamp"]BBOX;way["water"="intermittent"]BBOX;way["intermittent"="yes"]BBOX;way["waterway"="drain"]BBOX;`
+      ),
+      fetchOverpassGeometry(clat, clon, r,
+        `way["natural"="water"]BBOX;relation["natural"="water"]BBOX;way["waterway"="river"]BBOX;way["waterway"="stream"]BBOX;way["waterway"="canal"]BBOX;way["waterway"="riverbank"]BBOX;relation["waterway"="riverbank"]BBOX;`
+      ),
+      (async () => {
+        try {
+          const degOffset = r / 111000;
+          const gridRes = 10;
+          const latMin = clat - degOffset, latMax = clat + degOffset;
+          const lonMin = clon - degOffset, lonMax = clon + degOffset;
+          const latStep = (latMax - latMin) / (gridRes - 1);
+          const lonStep = (lonMax - lonMin) / (gridRes - 1);
+          const elevLats: number[] = [], elevLons: number[] = [];
+          for (let row = 0; row < gridRes; row++) {
+            for (let col = 0; col < gridRes; col++) {
+              elevLats.push(latMin + row * latStep);
+              elevLons.push(lonMin + col * lonStep);
+            }
+          }
+          const resp = await fetch(
+            `https://api.open-meteo.com/v1/elevation?latitude=${elevLats.join(",")}&longitude=${elevLons.join(",")}`,
+            { signal: AbortSignal.timeout(10000) }
+          );
+          if (!resp.ok) return null;
+          const data = await resp.json();
+          const elevations: number[] = data.elevation || [];
+          return { elevations, gridRes, latMin, lonMin, latStep, lonStep };
+        } catch { return null; }
+      })(),
+      fetchArcGISFeatureLayer(
+        "https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/28",
+        clat, clon, r
+      ),
+    ]);
+
+    const floodOsm = results[0].status === "fulfilled" ? results[0].value : { elements: [] };
+    const waterOsm = results[1].status === "fulfilled" ? results[1].value : { elements: [] };
+    const elevGrid = results[2].status === "fulfilled" ? results[2].value : null;
+    const femaData = results[3].status === "fulfilled" ? results[3].value : { features: [] };
+
+    const features: any[] = [];
+
+    const osmFloodGeo = overpassGeometryToGeoJSON(floodOsm, { layer: "flood" });
+    for (const f of (osmFloodGeo.features || [])) {
+      const tags = f.properties || {};
+      const isWetland = tags.natural === "wetland" || tags.wetland;
+      const isFloodplain = tags.natural === "floodplain" || tags.flood_prone === "yes";
+      f.properties = {
+        ...f.properties,
+        layer: "flood",
+        FLD_ZONE: isFloodplain ? "A" : isWetland ? "AE" : "X",
+        riskLevel: isFloodplain ? "High" : isWetland ? "Moderate" : "Low",
+        source: "osm",
+      };
+      features.push(f);
     }
-    res.json(geojson);
+
+    if (elevGrid) {
+      const { elevations, gridRes, latMin, lonMin, latStep, lonStep } = elevGrid;
+      const centerElev = elevations[Math.floor(elevations.length / 2)] ?? 100;
+      const waterGeo = overpassGeometryToGeoJSON(waterOsm, {});
+      const hasNearbyWater = (waterGeo.features || []).length > 0;
+
+      for (let row = 0; row < gridRes - 1; row++) {
+        for (let col = 0; col < gridRes - 1; col++) {
+          const idx = row * gridRes + col;
+          const elev = elevations[idx];
+          if (elev === undefined) continue;
+
+          const relativeElev = elev - Math.min(...elevations.filter((e: number) => e !== undefined));
+          let riskLevel = "Minimal";
+          let fldZone = "X";
+          if (relativeElev < 2 && hasNearbyWater) { riskLevel = "High"; fldZone = "A"; }
+          else if (relativeElev < 5 && hasNearbyWater) { riskLevel = "Moderate"; fldZone = "AE"; }
+          else if (relativeElev < 3) { riskLevel = "Low-Moderate"; fldZone = "X500"; }
+          else if (elev < centerElev - 10 && hasNearbyWater) { riskLevel = "Low-Moderate"; fldZone = "X500"; }
+
+          if (riskLevel === "Minimal") continue;
+
+          const cellLat = latMin + row * latStep;
+          const cellLon = lonMin + col * lonStep;
+          features.push({
+            type: "Feature",
+            geometry: {
+              type: "Polygon",
+              coordinates: [[
+                [cellLon, cellLat],
+                [cellLon + lonStep, cellLat],
+                [cellLon + lonStep, cellLat + latStep],
+                [cellLon, cellLat + latStep],
+                [cellLon, cellLat],
+              ]],
+            },
+            properties: {
+              layer: "flood",
+              FLD_ZONE: fldZone,
+              riskLevel,
+              elevation: Math.round(elev * 10) / 10,
+              source: "elevation-model",
+            },
+          });
+        }
+      }
+    }
+
+    for (const f of (femaData.features || [])) {
+      f.properties = { ...f.properties, layer: "flood", source: "fema" };
+      features.push(f);
+    }
+
+    res.json({ type: "FeatureCollection", features });
   });
 
   // Geocode endpoint using Nominatim (OSM)
