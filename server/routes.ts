@@ -689,21 +689,24 @@ async function generateSiteAnalysis(lat: number, lon: number, name: string): Pro
 }
 
 async function fetchOverpassPoints(lat: number, lon: number, radius: number, query: string): Promise<any> {
-  const overpassUrl = "https://overpass-api.de/api/interpreter";
   const bbox = `(around:${radius},${lat},${lon})`;
-  const overpassQuery = `[out:json][timeout:15];(${query.replace(/BBOX/g, bbox)});out center;`;
-  try {
-    const resp = await fetch(overpassUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: `data=${encodeURIComponent(overpassQuery)}`,
-    });
-    if (!resp.ok) throw new Error(`Overpass error: ${resp.status}`);
-    return await resp.json();
-  } catch (e: any) {
-    console.error("Overpass fetch error:", e.message);
-    return { elements: [] };
+  const overpassQuery = `[out:json][timeout:25];(${query.replace(/BBOX/g, bbox)});out center;`;
+  for (const url of OVERPASS_ENDPOINTS) {
+    try {
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `data=${encodeURIComponent(overpassQuery)}`,
+        signal: AbortSignal.timeout(25000),
+      });
+      if (!resp.ok) { continue; }
+      return await resp.json();
+    } catch (e: any) {
+      continue;
+    }
   }
+  console.error("Overpass points fetch failed all endpoints");
+  return { elements: [] };
 }
 
 async function fetchOverpassGeometry(lat: number, lon: number, radius: number, query: string): Promise<any> {

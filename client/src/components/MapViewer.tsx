@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardRef } from "react";
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap, GeoJSON, CircleMarker, Tooltip } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import html2canvas from "html2canvas";
 
 const markerIcon = new L.DivIcon({
   className: "custom-marker",
@@ -521,11 +522,65 @@ function CustomOverlayRenderer({ overlay }: { overlay: CustomOverlay }) {
   );
 }
 
-export default function MapViewer({ onLocationSelect, arcgisApiKey, activeLayers, onLayerLoading, selectedLocation, customOverlays = [] }: MapViewerProps) {
+export interface MapViewerHandle {
+  exportMapAsPNG: () => Promise<void>;
+  isExporting: () => boolean;
+}
+
+const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer({ onLocationSelect, arcgisApiKey, activeLayers, onLayerLoading, selectedLocation, customOverlays = [] }, ref) {
   const [position, setPosition] = useState<[number, number]>([37.7749, -122.4194]);
   const [layerData, setLayerData] = useState<LayerData>({});
   const layerDataRef = useRef<LayerData>({});
   const abortRef = useRef<AbortController | null>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+
+  const [exporting, setExporting] = useState(false);
+
+  useImperativeHandle(ref, () => ({
+    isExporting: () => exporting,
+    async exportMapAsPNG() {
+      const container = mapContainerRef.current;
+      if (!container || exporting) return;
+      setExporting(true);
+      try {
+        const canvas = await html2canvas(container, {
+          useCORS: true,
+          allowTaint: false,
+          backgroundColor: "#0B1010",
+          scale: 2,
+          logging: false,
+          ignoreElements: (el) => {
+            return el.getAttribute("data-testid") === "map-zoom-controls" ||
+              el.getAttribute("data-testid") === "button-export-map";
+          },
+        });
+        const link = document.createElement("a");
+        link.download = `TerraLogic_Map_${new Date().toISOString().slice(0, 10)}.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      } catch (e) {
+        console.error("Map export failed:", e);
+        try {
+          const canvas = await html2canvas(container, {
+            useCORS: false,
+            allowTaint: true,
+            backgroundColor: "#0B1010",
+            scale: 2,
+            logging: false,
+          });
+          const link = document.createElement("a");
+          link.download = `TerraLogic_Map_${new Date().toISOString().slice(0, 10)}.png`;
+          link.href = canvas.toDataURL("image/png");
+          link.click();
+        } catch (e2) {
+          console.error("Map export fallback also failed:", e2);
+          alert("Map export failed. Try zooming in first, then export again.");
+        }
+      } finally {
+        setExporting(false);
+      }
+    }
+  }));
 
   useEffect(() => {
     if (selectedLocation) {
@@ -585,7 +640,7 @@ export default function MapViewer({ onLocationSelect, arcgisApiKey, activeLayers
   }, [position, activeLayers]);
 
   return (
-    <div className="w-full h-full relative" data-testid="map-container">
+    <div className="w-full h-full relative" data-testid="map-container" ref={mapContainerRef}>
       <MapContainer
         center={position}
         zoom={13}
@@ -598,6 +653,7 @@ export default function MapViewer({ onLocationSelect, arcgisApiKey, activeLayers
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
           maxZoom={20}
           subdomains="abcd"
+          crossOrigin="anonymous"
         />
 
         {activeLayers.filter(id => POLYGON_LAYERS.has(id)).map(layerId => {
@@ -692,6 +748,21 @@ export default function MapViewer({ onLocationSelect, arcgisApiKey, activeLayers
           </div>
         </div>
       )}
+
+      {exporting && (
+        <div
+          className="absolute inset-0 z-[2000] flex items-center justify-center"
+          style={{ background: "rgba(11, 16, 16, 0.6)", backdropFilter: "blur(2px)" }}
+          data-testid="export-overlay"
+        >
+          <div className="bg-card border border-border rounded-xl px-6 py-4 flex items-center gap-3 shadow-xl">
+            <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <span className="text-sm font-medium text-foreground">Exporting map...</span>
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+});
+
+export default MapViewer;
