@@ -47,7 +47,7 @@ interface LayerControlsProps {
 
 export default function LayerControls({ activeLayers, onToggleLayer, loadingLayers }: LayerControlsProps) {
   return (
-    <ScrollArea className="flex-1">
+    <ScrollArea className="flex-1 h-full">
       <div className="px-3 pb-3">
         <h3 className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-2 px-1">Active Data Layers</h3>
         <div className="space-y-1">
