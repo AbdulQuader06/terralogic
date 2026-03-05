@@ -3,11 +3,22 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { chatRequestSchema, analyzeRequestSchema } from "@shared/schema";
 import type { SiteAnalysis } from "@shared/schema";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI, Type } from "@google/genai";
+import OpenAI from "openai";
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
+const geminiAI = new GoogleGenAI({
+  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
+  httpOptions: { apiVersion: "", baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL },
+});
+
+const openaiClient = new OpenAI({
+  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+});
+
+const GEMINI_AVAILABLE = !!(process.env.AI_INTEGRATIONS_GEMINI_API_KEY && process.env.AI_INTEGRATIONS_GEMINI_BASE_URL);
+const OPENAI_AVAILABLE = !!(process.env.AI_INTEGRATIONS_OPENAI_API_KEY && process.env.AI_INTEGRATIONS_OPENAI_BASE_URL);
 const ARCGIS_API_KEY = process.env.ARCGIS_API_KEY || "";
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 const MAX_CHAT_HISTORY = 20;
 const OVERPASS_ENDPOINTS = [
   "https://overpass-api.de/api/interpreter",
@@ -75,40 +86,38 @@ async function fetchSunTimes(lat: number, lon: number): Promise<{ sunrise: strin
 }
 
 async function callGemini(systemPrompt: string, message: string, history?: { role: string; content: string }[]): Promise<string> {
-  if (!GEMINI_API_KEY) throw new Error("Gemini API key not configured");
-  const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+  if (!GEMINI_AVAILABLE) throw new Error("Gemini AI Integration not configured");
   const chatHistory = (history || []).map(msg => ({
     role: msg.role === "user" ? "user" as const : "model" as const,
     parts: [{ text: msg.content }],
   }));
-  const chat = model.startChat({
-    history: [
-      { role: "user", parts: [{ text: "System instruction: " + systemPrompt }] },
-      { role: "model", parts: [{ text: "Understood. I will follow these instructions." }] },
-      ...chatHistory,
-    ],
+  const contents = [
+    { role: "user" as const, parts: [{ text: "System instruction: " + systemPrompt }] },
+    { role: "model" as const, parts: [{ text: "Understood. I will follow these instructions." }] },
+    ...chatHistory,
+    { role: "user" as const, parts: [{ text: message }] },
+  ];
+  const result = await geminiAI.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents,
+    config: { maxOutputTokens: 2048 },
   });
-  const result = await chat.sendMessage(message);
-  return result.response.text();
+  return result.text || "No response generated.";
 }
 
 async function callOpenAI(systemPrompt: string, message: string, history?: { role: string; content: string }[]): Promise<string> {
-  if (!OPENAI_API_KEY) throw new Error("OpenAI API key not configured");
-  const messages = [
+  if (!OPENAI_AVAILABLE) throw new Error("OpenAI AI Integration not configured");
+  const messages: any[] = [
     { role: "system", content: systemPrompt },
     ...(history || []).map(m => ({ role: m.role, content: m.content })),
     { role: "user", content: message },
   ];
-  const resp = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${OPENAI_API_KEY}` },
-    body: JSON.stringify({ model: "gpt-4o-mini", messages, max_tokens: 1024 }),
-    signal: AbortSignal.timeout(30000),
+  const result = await openaiClient.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages,
+    max_tokens: 1024,
   });
-  if (!resp.ok) throw new Error(`OpenAI error: ${resp.status}`);
-  const data = await resp.json();
-  return data.choices?.[0]?.message?.content || "No response generated.";
+  return result.choices?.[0]?.message?.content || "No response generated.";
 }
 
 interface LocalGISResult {
@@ -666,7 +675,7 @@ async function generateSiteAnalysis(lat: number, lon: number, name: string): Pro
 
   let aiNarrative = "";
   try {
-    if (GEMINI_API_KEY) {
+    if (GEMINI_AVAILABLE) {
       const dataSummary = `Location: ${name} (${lat.toFixed(4)}°, ${lon.toFixed(4)}°). Elevation: ${centerElev.toFixed(1)}m ASL. Soil: ${soilClassName} (${soilDrainageLabel}, bearing ${avgBearing} kPa). Flood risk: ${floodRiskLabel} (${floodOsmCount} flood features, ${waterBodyCount} water bodies). Sun exposure: ${sunExposure}% (sunrise ${sunPathData.sunrise}, sunset ${sunPathData.sunset}, ${sunPathData.dayLength}h daylight, max altitude ${sunPathData.maxAltitude}°). Wind: ${windExposure}%. Infrastructure: ${schoolCount} schools, ${hospitalCount} hospitals, ${transitCount} transit stops, ${infraCount} facilities, ${parkCount} parks. Zoning: ${zoningLabel}. Urban density: ${urbanDensity}%. Score: ${overallScore}/100 (${rating}).`;
       aiNarrative = await callGemini(
         "You are a GIS site analysis expert. Write a concise 2-3 paragraph narrative assessment of the site based on the real data provided. Mention specific data points. Be professional and actionable. Do not use markdown headers.",
@@ -1036,10 +1045,10 @@ export async function registerRoutes(
 
   app.get("/api/chat/models", (_req, res) => {
     const models = [
-      { id: "gemini", name: "Gemini", description: "Google Gemini 2.0 Flash — general GIS analysis", available: !!GEMINI_API_KEY, icon: "sparkles" },
+      { id: "gemini", name: "Gemini", description: "Google Gemini 2.5 Flash — general GIS analysis", available: GEMINI_AVAILABLE, icon: "sparkles" },
       { id: "mapgpt", name: "MapGPT", description: "Geospatial specialist — map data & spatial analysis", available: true, icon: "map" },
       { id: "compass", name: "CompassAI", description: "Terrain & navigation specialist — elevation & routing", available: true, icon: "compass" },
-      { id: "chatgpt", name: "ChatGPT", description: "OpenAI GPT-4o mini — general purpose analysis", available: !!OPENAI_API_KEY, icon: "bot" },
+      { id: "chatgpt", name: "ChatGPT", description: "OpenAI GPT-4o mini — general purpose analysis", available: OPENAI_AVAILABLE, icon: "bot" },
       { id: "auto", name: "Auto", description: "Best available model with automatic fallback", available: true, icon: "zap" },
     ];
     res.json({ models });
@@ -1085,6 +1094,278 @@ export async function registerRoutes(
     } catch (error: any) {
       console.error("AI chat error:", error.message);
       res.status(500).json({ error: "Failed to generate AI response", message: error.message });
+    }
+  });
+
+  // === CartoAI Function-Calling Chatbot ===
+
+  const cartoAITools = [
+    {
+      name: "update_map_view",
+      description: "Update the map view to a new location with optional zoom level. Use this when the user asks to go to, show, or navigate to a specific place.",
+      parameters: {
+        type: Type.OBJECT,
+        properties: {
+          lat: { type: Type.NUMBER, description: "Latitude of the center point" },
+          lon: { type: Type.NUMBER, description: "Longitude of the center point" },
+          zoom: { type: Type.NUMBER, description: "Zoom level (1-18), default 13" },
+          name: { type: Type.STRING, description: "Name of the location" },
+        },
+        required: ["lat", "lon"],
+      },
+    },
+    {
+      name: "add_marker",
+      description: "Add a marker to the map at a specific location. Use when the user asks to mark, pin, or highlight a specific point.",
+      parameters: {
+        type: Type.OBJECT,
+        properties: {
+          lat: { type: Type.NUMBER, description: "Latitude" },
+          lon: { type: Type.NUMBER, description: "Longitude" },
+          label: { type: Type.STRING, description: "Label for the marker popup" },
+          color: { type: Type.STRING, description: "Marker color (hex or name), default blue" },
+        },
+        required: ["lat", "lon", "label"],
+      },
+    },
+    {
+      name: "add_geojson",
+      description: "Add GeoJSON data to the map as an overlay. Use when the user asks to draw boundaries, areas, routes, or shapes on the map.",
+      parameters: {
+        type: Type.OBJECT,
+        properties: {
+          geojson: { type: Type.STRING, description: "GeoJSON FeatureCollection as a JSON string" },
+          label: { type: Type.STRING, description: "Label for this overlay" },
+          color: { type: Type.STRING, description: "Color for the overlay, default #3B82F6" },
+        },
+        required: ["geojson", "label"],
+      },
+    },
+    {
+      name: "clear_map",
+      description: "Clear all markers and overlays from the map. Use when the user asks to clear, reset, or remove map markers/overlays.",
+      parameters: {
+        type: Type.OBJECT,
+        properties: {},
+      },
+    },
+    {
+      name: "search_places",
+      description: "Search for places/locations by name or category near a given point. Use when the user asks to find restaurants, parks, hospitals, schools, etc. near a location.",
+      parameters: {
+        type: Type.OBJECT,
+        properties: {
+          query: { type: Type.STRING, description: "Search query (e.g., 'restaurants', 'hospitals', 'parks')" },
+          lat: { type: Type.NUMBER, description: "Latitude of search center" },
+          lon: { type: Type.NUMBER, description: "Longitude of search center" },
+          radius: { type: Type.NUMBER, description: "Search radius in meters, default 2000" },
+        },
+        required: ["query", "lat", "lon"],
+      },
+    },
+    {
+      name: "analyze_site",
+      description: "Run a full GIS suitability analysis on a location. Use when the user asks to analyze a site, check suitability, or get environmental data for a place.",
+      parameters: {
+        type: Type.OBJECT,
+        properties: {
+          lat: { type: Type.NUMBER, description: "Latitude" },
+          lon: { type: Type.NUMBER, description: "Longitude" },
+          name: { type: Type.STRING, description: "Location name" },
+        },
+        required: ["lat", "lon", "name"],
+      },
+    },
+  ];
+
+  async function executeCartoAITool(name: string, args: any): Promise<any> {
+    switch (name) {
+      case "update_map_view":
+        return { action: "update_map_view", lat: args.lat, lon: args.lon, zoom: args.zoom || 13, name: args.name || "" };
+
+      case "add_marker":
+        return { action: "add_marker", lat: args.lat, lon: args.lon, label: args.label, color: args.color || "#3B82F6" };
+
+      case "add_geojson": {
+        let geojson;
+        try {
+          geojson = typeof args.geojson === "string" ? JSON.parse(args.geojson) : args.geojson;
+          if (!geojson || !geojson.type) throw new Error("Invalid GeoJSON");
+        } catch (e) {
+          return { action: "add_geojson", geojson: { type: "FeatureCollection", features: [] }, label: args.label, color: args.color || "#3B82F6", error: "Failed to parse GeoJSON" };
+        }
+        return { action: "add_geojson", geojson, label: args.label, color: args.color || "#3B82F6" };
+      }
+
+      case "clear_map":
+        return { action: "clear_map" };
+
+      case "search_places": {
+        const amenityMap: Record<string, string> = {
+          restaurant: "amenity=restaurant", restaurants: "amenity=restaurant",
+          hospital: "amenity=hospital", hospitals: "amenity=hospital",
+          school: "amenity=school", schools: "amenity=school",
+          park: "leisure=park", parks: "leisure=park",
+          pharmacy: "amenity=pharmacy", pharmacies: "amenity=pharmacy",
+          bank: "amenity=bank", banks: "amenity=bank",
+          hotel: "tourism=hotel", hotels: "tourism=hotel",
+          cafe: "amenity=cafe", cafes: "amenity=cafe",
+          supermarket: "shop=supermarket", supermarkets: "shop=supermarket",
+          gas: "amenity=fuel", fuel: "amenity=fuel",
+          bus: "highway=bus_stop", "bus stop": "highway=bus_stop",
+          station: "railway=station", "train station": "railway=station",
+          mosque: "amenity=place_of_worship", church: "amenity=place_of_worship",
+          temple: "amenity=place_of_worship", "place of worship": "amenity=place_of_worship",
+          atm: "amenity=atm",
+          parking: "amenity=parking",
+          library: "amenity=library", libraries: "amenity=library",
+          police: "amenity=police", "police station": "amenity=police",
+          "fire station": "amenity=fire_station",
+        };
+        const q = (args.query || "").toLowerCase().trim();
+        const tag = amenityMap[q] || `amenity=${q}`;
+        const [key, value] = tag.split("=");
+        const radius = Math.min(args.radius || 2000, 10000);
+        const bbox = `(around:${radius},${args.lat},${args.lon})`;
+        const overpassQ = `[out:json][timeout:15];(node["${key}"="${value}"]${bbox};way["${key}"="${value}"]${bbox};);out body center 50;`;
+        for (const url of OVERPASS_ENDPOINTS) {
+          try {
+            const resp = await fetch(url, {
+              method: "POST",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body: `data=${encodeURIComponent(overpassQ)}`,
+              signal: AbortSignal.timeout(15000),
+            });
+            if (!resp.ok) continue;
+            const data = await resp.json();
+            const places = (data.elements || []).slice(0, 30).map((el: any) => ({
+              name: el.tags?.name || el.tags?.amenity || q,
+              lat: el.lat || el.center?.lat,
+              lon: el.lon || el.center?.lon,
+              tags: el.tags || {},
+            })).filter((p: any) => p.lat && p.lon);
+            return { action: "search_results", query: args.query, places, count: places.length };
+          } catch { continue; }
+        }
+        return { action: "search_results", query: args.query, places: [], count: 0, error: "Search failed" };
+      }
+
+      case "analyze_site": {
+        const key = `${args.lat.toFixed(4)},${args.lon.toFixed(4)}`;
+        let analysis = await storage.getAnalysis(key);
+        if (!analysis) {
+          analysis = await generateSiteAnalysis(args.lat, args.lon, args.name);
+          await storage.saveAnalysis(key, analysis);
+        }
+        return {
+          action: "analyze_site",
+          analysis: {
+            score: analysis.overallScore,
+            rating: analysis.rating,
+            elevation: analysis.siteInfo?.elevation,
+            zoning: analysis.siteInfo?.zoning,
+            floodRisk: analysis.environmentalMetrics?.floodRisk,
+            soilQuality: analysis.environmentalMetrics?.soilQuality,
+            sunExposure: analysis.environmentalMetrics?.sunExposure,
+            windExposure: analysis.environmentalMetrics?.windExposure,
+            amenities: analysis.amenities,
+            narrative: analysis.aiNarrative,
+          },
+        };
+      }
+
+      default:
+        return { error: `Unknown tool: ${name}` };
+    }
+  }
+
+  app.post("/api/cartoai/chat", async (req, res) => {
+    const { message, history, location } = req.body;
+    if (!message || typeof message !== "string") {
+      return res.status(400).json({ error: "message is required" });
+    }
+    if (!GEMINI_AVAILABLE) {
+      return res.status(503).json({ error: "Gemini AI Integration not available" });
+    }
+
+    try {
+      const systemInstruction = `You are CartoAI, an intelligent geospatial assistant built into TerraLogic AI. You help users explore maps, analyze locations, find places, and understand spatial data. You can interact with the map directly through function calls.
+
+When users ask about a place, navigate the map there. When they ask to find things nearby, search for them. When they ask about site suitability, run an analysis. You can add markers, draw areas, and clear the map.
+
+${location ? `The user is currently viewing: ${location.name} (${location.lat.toFixed(4)}°, ${location.lon.toFixed(4)}°). Use this as context for relative queries like "nearby" or "around here".` : "No location is currently selected."}
+
+Be concise and helpful. Use markdown for formatting. When you perform map actions, briefly explain what you did.`;
+
+      const chatHistory = (history || []).slice(-10).map((m: any) => ({
+        role: m.role === "user" ? "user" as const : "model" as const,
+        parts: [{ text: m.content }],
+      }));
+
+      const contents = [
+        ...chatHistory,
+        { role: "user" as const, parts: [{ text: message }] },
+      ];
+
+      const result = await geminiAI.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents,
+        config: {
+          systemInstruction,
+          maxOutputTokens: 2048,
+          tools: [{ functionDeclarations: cartoAITools }],
+        },
+      });
+
+      const mapActions: any[] = [];
+      let textResponse = "";
+
+      const parts = result.candidates?.[0]?.content?.parts || [];
+      const functionCalls = parts.filter((p: any) => p.functionCall);
+      const textParts = parts.filter((p: any) => p.text);
+      textResponse = textParts.map((p: any) => p.text).join("");
+
+      if (functionCalls.length > 0) {
+        const toolResults: any[] = [];
+        for (const part of functionCalls) {
+          const fc = part.functionCall!;
+          const toolResult = await executeCartoAITool(fc.name!, fc.args as any);
+          mapActions.push(toolResult);
+          toolResults.push({
+            functionResponse: {
+              name: fc.name,
+              response: toolResult,
+            },
+          });
+        }
+
+        const followUp = await geminiAI.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: [
+            ...contents,
+            { role: "model" as const, parts: functionCalls },
+            { role: "user" as const, parts: toolResults },
+          ],
+          config: {
+            systemInstruction,
+            maxOutputTokens: 1024,
+          },
+        });
+        const followUpText = followUp.text || "";
+        if (followUpText) textResponse = followUpText;
+      }
+
+      if (!textResponse && mapActions.length > 0) {
+        textResponse = "Done! I've updated the map for you.";
+      }
+      if (!textResponse) {
+        textResponse = "I'm not sure how to help with that. Try asking me to find places, navigate to a location, or analyze a site.";
+      }
+
+      res.json({ content: textResponse, mapActions, model: "CartoAI" });
+    } catch (error: any) {
+      console.error("CartoAI error:", error.message);
+      res.status(500).json({ error: "CartoAI failed", message: error.message });
     }
   });
 

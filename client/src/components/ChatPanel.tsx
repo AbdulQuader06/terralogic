@@ -2,37 +2,37 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Bot, User, Loader2, Sparkles, Map, Compass, Zap, ChevronDown } from "lucide-react";
+import { Send, Bot, User, Loader2, MapPin, Navigation, Trash2, Search, BarChart3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+export interface MapAction {
+  action: string;
+  lat?: number;
+  lon?: number;
+  zoom?: number;
+  name?: string;
+  label?: string;
+  color?: string;
+  geojson?: any;
+  query?: string;
+  places?: Array<{ name: string; lat: number; lon: number; tags?: any }>;
+  count?: number;
+  analysis?: any;
+}
 
 interface ChatPanelProps {
   location: { lat: number; lon: number; name: string } | null;
   onToggleLayer?: (layerId: string) => void;
   activeLayers?: string[];
+  onMapAction?: (action: MapAction) => void;
 }
 
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
-  model?: string;
+  mapActions?: MapAction[];
 }
-
-interface AIModel {
-  id: string;
-  name: string;
-  description: string;
-  available: boolean;
-  icon: string;
-}
-
-const MODEL_ICONS: Record<string, any> = {
-  sparkles: Sparkles,
-  map: Map,
-  compass: Compass,
-  bot: Bot,
-  zap: Zap,
-};
 
 function renderMarkdown(text: string) {
   const lines = text.split("\n");
@@ -73,32 +73,58 @@ function renderInline(text: string) {
   });
 }
 
-export default function ChatPanel({ location, onToggleLayer, activeLayers }: ChatPanelProps) {
+function ActionChip({ action, onClick }: { action: MapAction; onClick: () => void }) {
+  const icons: Record<string, any> = {
+    update_map_view: Navigation,
+    add_marker: MapPin,
+    clear_map: Trash2,
+    search_results: Search,
+    analyze_site: BarChart3,
+    add_geojson: MapPin,
+  };
+  const labels: Record<string, string> = {
+    update_map_view: action.name ? `Navigate to ${action.name}` : "Map updated",
+    add_marker: action.label ? `Marker: ${action.label}` : "Marker added",
+    clear_map: "Map cleared",
+    search_results: `${action.count || 0} ${action.query || "places"} found`,
+    analyze_site: `Analysis: ${action.analysis?.score}/100`,
+    add_geojson: action.label || "Overlay added",
+  };
+  const Icon = icons[action.action] || MapPin;
+  const label = labels[action.action] || action.action;
+
+  return (
+    <button
+      onClick={onClick}
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-[10px] font-medium text-primary hover:bg-primary/20 transition-colors cursor-pointer"
+      data-testid={`action-chip-${action.action}`}
+    >
+      <Icon className="w-3 h-3" />
+      <span className="truncate max-w-[150px]">{label}</span>
+    </button>
+  );
+}
+
+const SUGGESTIONS = [
+  "Show me hospitals near here",
+  "Navigate to Tokyo, Japan",
+  "Analyze this site for construction",
+  "Find parks within 2km",
+  "What's the flood risk here?",
+];
+
+export default function ChatPanel({ location, onToggleLayer, activeLayers, onMapAction }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
-      id: "1",
+      id: "welcome",
       role: "assistant",
-      content: "Hello! I'm **TerraLogic AI**, your spatial analysis assistant. Select a location on the map, and I can analyze its suitability.\n\nSwitch between AI models using the selector below.",
-      model: "System"
+      content: "Hi! I'm **CartoAI**, your intelligent map assistant. I can navigate to places, find nearby amenities, analyze sites, and add markers to the map.\n\nTry asking me something, or use a suggestion below.",
     }
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [models, setModels] = useState<AIModel[]>([]);
-  const [selectedModel, setSelectedModel] = useState("auto");
-  const [showModelPicker, setShowModelPicker] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  const prevLocationRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    fetch("/api/chat/models")
-      .then(r => r.json())
-      .then(data => {
-        setModels(data.models || []);
-      })
-      .catch(() => {});
-  }, []);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -107,116 +133,81 @@ export default function ChatPanel({ location, onToggleLayer, activeLayers }: Cha
     }
   }, [messages, isLoading]);
 
-  useEffect(() => {
-    if (location) {
-      const locKey = `${location.lat.toFixed(4)},${location.lon.toFixed(4)}`;
-      if (prevLocationRef.current !== locKey) {
-        prevLocationRef.current = locKey;
-        if (messages.length <= 2) {
-          setMessages(prev => [...prev, {
-            id: Date.now().toString(),
-            role: "assistant",
-            content: `Analyzing **${location.name}** (${location.lat.toFixed(4)}, ${location.lon.toFixed(4)}).\n\n* Flood risks and elevation\n* Infrastructure proximity\n* Soil composition\n* Sun path & solar potential\n* Construction suitability`,
-            model: "System"
-          }]);
-        }
-      }
-    }
-  }, [location]);
+  const executeMapAction = (action: MapAction) => {
+    if (!onMapAction) return;
+    onMapAction(action);
+  };
 
-  const handleSend = async () => {
-    if (!input.trim()) return;
-    const userMessage: Message = { id: Date.now().toString(), role: "user", content: input };
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
+  const sendMessage = async (text: string) => {
+    if (!text.trim()) return;
+    const userMessage: Message = { id: `u-${Date.now()}`, role: "user", content: text };
+    setMessages(prev => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
+
     try {
-      const history = newMessages.slice(1).map(m => ({ role: m.role, content: m.content }));
-      const response = await fetch("/api/chat", {
+      const history = [
+        ...messages.filter(m => m.id !== "welcome").map(m => ({ role: m.role, content: m.content })),
+        { role: "user", content: text },
+      ];
+
+      const response = await fetch("/api/cartoai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: input,
-          locationName: location?.name,
-          lat: location?.lat,
-          lon: location?.lon,
+          message: text,
           history,
-          model: selectedModel,
+          location: location || undefined,
         }),
       });
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to get response");
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || "Failed to get response");
       }
+
       const data = await response.json();
+      const mapActions: MapAction[] = data.mapActions || [];
+
+      for (const action of mapActions) {
+        executeMapAction(action);
+      }
+
       setMessages(prev => [...prev, {
-        id: Date.now().toString(),
+        id: `a-${Date.now()}`,
         role: "assistant",
         content: data.content,
-        model: data.model || selectedModel
+        mapActions: mapActions.length > 0 ? mapActions : undefined,
       }]);
-      if (data.action?.type === "toggleLayer" && data.action.layer && onToggleLayer) {
-        if (!activeLayers?.includes(data.action.layer)) {
-          onToggleLayer(data.action.layer);
-        }
-      }
     } catch (error: any) {
-      toast({ title: "AI Error", description: error.message || "Could not reach AI service.", variant: "destructive" });
+      toast({ title: "CartoAI Error", description: error.message || "Could not reach AI service.", variant: "destructive" });
       setMessages(prev => [...prev, {
-        id: Date.now().toString(),
+        id: `e-${Date.now()}`,
         role: "assistant",
-        content: "I couldn't reach the AI service. Please try again or switch to a different model.",
-        model: "Error"
+        content: "I couldn't process that request. Please try again.",
       }]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const currentModel = models.find(m => m.id === selectedModel);
-  const ModelIcon = currentModel ? MODEL_ICONS[currentModel.icon] || Bot : Zap;
+  const handleSend = () => sendMessage(input);
 
   return (
     <div className="flex flex-col h-full w-full">
       <div className="px-3 pt-2 pb-1.5 border-b border-border">
-        <div className="relative">
-          <button
-            onClick={() => setShowModelPicker(!showModelPicker)}
-            className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-muted/40 border border-border hover:bg-muted/60 transition-colors text-left"
-            data-testid="button-model-selector"
-          >
-            <ModelIcon className="w-3.5 h-3.5 text-primary shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-medium text-foreground truncate">{currentModel?.name || "Auto"}</p>
-              <p className="text-[9px] text-muted-foreground truncate">{currentModel?.description || "Best available model"}</p>
-            </div>
-            <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform ${showModelPicker ? "rotate-180" : ""}`} />
-          </button>
-          {showModelPicker && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-xl z-50 overflow-hidden" data-testid="model-picker-dropdown">
-              {models.map(model => {
-                const Icon = MODEL_ICONS[model.icon] || Bot;
-                return (
-                  <button
-                    key={model.id}
-                    onClick={() => { setSelectedModel(model.id); setShowModelPicker(false); }}
-                    disabled={!model.available}
-                    className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors ${
-                      model.id === selectedModel ? "bg-primary/10" : "hover:bg-muted/40"
-                    } ${!model.available ? "opacity-40 cursor-not-allowed" : ""}`}
-                    data-testid={`model-option-${model.id}`}
-                  >
-                    <Icon className={`w-3.5 h-3.5 shrink-0 ${model.id === selectedModel ? "text-primary" : "text-muted-foreground"}`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[11px] font-medium text-foreground">{model.name}</p>
-                      <p className="text-[9px] text-muted-foreground">{model.description}</p>
-                    </div>
-                    {!model.available && <span className="text-[9px] text-muted-foreground">No API key</span>}
-                    {model.id === selectedModel && <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />}
-                  </button>
-                );
-              })}
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+            <Bot className="w-4 h-4 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold text-foreground">CartoAI</p>
+            <p className="text-[9px] text-muted-foreground">Geospatial Assistant</p>
+          </div>
+          {location && (
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted/50 border border-border">
+              <MapPin className="w-2.5 h-2.5 text-primary" />
+              <span className="text-[9px] text-muted-foreground truncate max-w-[100px]">{location.name}</span>
             </div>
           )}
         </div>
@@ -226,13 +217,10 @@ export default function ChatPanel({ location, onToggleLayer, activeLayers }: Cha
         <div className="flex flex-col gap-3 pb-3">
           {messages.map((msg) => (
             <div key={msg.id} className={`flex gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`} data-testid={`chat-message-${msg.role}-${msg.id}`}>
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-muted' : 'bg-primary/20'}`}>
-                {msg.role === 'user' ? <User className="w-3 h-3 text-muted-foreground" /> : <Bot className="w-3 h-3 text-primary" />}
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-muted' : 'bg-gradient-to-br from-emerald-500/20 to-teal-600/20'}`}>
+                {msg.role === 'user' ? <User className="w-3 h-3 text-muted-foreground" /> : <Bot className="w-3 h-3 text-emerald-500" />}
               </div>
-              <div className="max-w-[85%]">
-                {msg.role === 'assistant' && msg.model && (
-                  <p className="text-[9px] text-muted-foreground mb-0.5 ml-1">{msg.model}</p>
-                )}
+              <div className="max-w-[85%] space-y-1.5">
                 <div className={`p-2.5 rounded-lg text-xs leading-relaxed ${
                   msg.role === 'user'
                     ? 'bg-primary/15 text-foreground rounded-tr-none'
@@ -240,22 +228,46 @@ export default function ChatPanel({ location, onToggleLayer, activeLayers }: Cha
                 }`}>
                   {msg.role === 'user' ? msg.content : renderMarkdown(msg.content)}
                 </div>
+                {msg.mapActions && msg.mapActions.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {msg.mapActions.map((action, i) => (
+                      <ActionChip key={i} action={action} onClick={() => executeMapAction(action)} />
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           ))}
+
           {isLoading && (
             <div className="flex gap-2 flex-row">
-              <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 bg-primary/20">
-                <Loader2 className="w-3 h-3 animate-spin text-primary" />
+              <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-emerald-500/20 to-teal-600/20">
+                <Loader2 className="w-3 h-3 animate-spin text-emerald-500" />
               </div>
               <div className="max-w-[85%]">
-                <p className="text-[9px] text-muted-foreground mb-0.5 ml-1">{currentModel?.name || "AI"} is thinking...</p>
                 <div className="p-2.5 rounded-lg bg-muted/50 border border-border rounded-tl-none flex items-center gap-1.5">
-                  <span className="w-1 h-1 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }} />
-                  <span className="w-1 h-1 rounded-full bg-primary animate-bounce" style={{ animationDelay: "150ms" }} />
-                  <span className="w-1 h-1 rounded-full bg-primary animate-bounce" style={{ animationDelay: "300ms" }} />
+                  <span className="text-[10px] text-muted-foreground">CartoAI is thinking</span>
+                  <span className="w-1 h-1 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: "0ms" }} />
+                  <span className="w-1 h-1 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: "150ms" }} />
+                  <span className="w-1 h-1 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: "300ms" }} />
                 </div>
               </div>
+            </div>
+          )}
+
+          {messages.length <= 1 && !isLoading && (
+            <div className="space-y-1.5 mt-1">
+              <p className="text-[10px] text-muted-foreground font-medium px-1">Try asking:</p>
+              {SUGGESTIONS.map((s, i) => (
+                <button
+                  key={i}
+                  onClick={() => sendMessage(s)}
+                  className="w-full text-left px-3 py-2 rounded-lg bg-muted/30 border border-border/50 text-[11px] text-foreground hover:bg-muted/60 hover:border-border transition-colors"
+                  data-testid={`suggestion-${i}`}
+                >
+                  {s}
+                </button>
+              ))}
             </div>
           )}
         </div>
@@ -266,12 +278,12 @@ export default function ChatPanel({ location, onToggleLayer, activeLayers }: Cha
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about site suitability..."
+            placeholder="Ask CartoAI anything..."
             className="flex-1 bg-input border-border text-xs h-8"
             disabled={isLoading}
             data-testid="input-chat-message"
           />
-          <Button type="submit" size="icon" disabled={!input.trim() || isLoading} className="h-8 w-8 bg-primary hover:bg-primary/90" data-testid="button-send-message">
+          <Button type="submit" size="icon" disabled={!input.trim() || isLoading} className="h-8 w-8 bg-emerald-600 hover:bg-emerald-700" data-testid="button-send-message">
             <Send className="w-3 h-3" />
           </Button>
         </form>

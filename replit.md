@@ -7,12 +7,19 @@ AI-powered GIS spatial analysis platform with dark Figma-matched UI. Evaluates c
 - **Frontend**: React + Vite + Tailwind CSS v4 + shadcn/ui + recharts
 - **Backend**: Express.js with API routes for GIS data proxying, AI chat, and analysis
 - **Map**: Leaflet + react-leaflet with Esri ArcGIS basemaps (Dark/Light/Satellite/Road/Terrain switcher, theme-aware auto-switch), server-side geocoding (Nominatim/ArcGIS)
-- **AI Models**: Multi-model system with automatic fallback:
-  - Google Gemini 2.0 Flash (primary) — general GIS analysis
+- **AI Models**: Multi-model system via Replit AI Integrations with automatic fallback:
+  - Google Gemini 2.5 Flash (primary, via Replit AI Integration) — general GIS analysis
   - MapGPT persona (Gemini-backed) — geospatial specialist
   - CompassAI persona (Gemini-backed) — navigation & terrain specialist
-  - OpenAI GPT-4o mini (optional fallback) — general purpose
+  - OpenAI GPT-4o mini (via Replit AI Integration) — general purpose
   - TerraLogic Local GIS (always-available fallback) — rule-based responses from real GIS data
+- **CartoAI Chatbot**: Gemini 2.5 Flash function-calling chatbot with 6 tools:
+  - `update_map_view` — navigate to locations
+  - `add_marker` — add map markers
+  - `add_geojson` — add GeoJSON overlays
+  - `clear_map` — clear map overlays
+  - `search_places` — search nearby amenities via Overpass API
+  - `analyze_site` — run full GIS suitability analysis
 - **GIS Data Sources**:
   - OpenStreetMap Overpass API (schools, hospitals, transit, parks, landuse, water, infrastructure)
   - FEMA NFHL (flood zones via ArcGIS feature layer)
@@ -31,7 +38,7 @@ Three-panel dark theme layout:
 - **Left Panel** (300px): Project Overview heading, geocoder search input, three tabs (Layers | QuickOSM | AI):
   - **Layers tab**: Dark-themed layer toggle cards with icons for 10 data layers
   - **QuickOSM tab**: Interactive OSM query builder + OpenCity India CKAN data browser
-  - **AI tab**: Multi-model chatbot with model selector dropdown (Gemini/MapGPT/CompassAI/ChatGPT/Auto)
+  - **AI tab**: CartoAI chatbot (Gemini 2.5 Flash function-calling) — can navigate map, add markers, search places, analyze sites, add GeoJSON overlays
   - **Custom Overlays section**: Lists loaded QuickOSM/OpenCity overlays with remove buttons
   - Footer: Active layer count and analysis status
 - **Center**: Leaflet map with Esri ArcGIS basemaps (Dark/Light/Satellite/Road/Terrain with label overlays, auto-switches with theme), custom zoom/coordinate/fullscreen controls, basemap picker UI, Esri identify popup on click (reverse geocode + layer info), drawing tools (polygon/circle/rectangle) for region-based filtering, GeoJSON layer rendering for 10 data layers + custom overlays
