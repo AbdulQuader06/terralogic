@@ -1106,43 +1106,34 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
     if (!container || exporting) return;
     setExporting(true);
     try {
+      const map = mapInstanceRef.current;
+      const regionBounds = getDrawnRegionBounds(drawnRegion || null);
+      let previousCenter: L.LatLng | null = null;
+      let previousZoom: number | null = null;
+
+      if (regionBounds && map) {
+        previousCenter = map.getCenter();
+        previousZoom = map.getZoom();
+        const padded = regionBounds.pad(0.2);
+        map.fitBounds(padded, { animate: false, padding: [30, 30] });
+        await new Promise(resolve => setTimeout(resolve, 800));
+      }
+
       const bgColor = getComputedStyle(document.documentElement).getPropertyValue("--background").trim();
       const exportBg = bgColor ? `hsl(${bgColor})` : "#0B1010";
       const fullCanvas = await html2canvas(container, {
         useCORS: true, allowTaint: false, backgroundColor: exportBg, scale: 2, logging: false,
-        ignoreElements: (el) => el.getAttribute("data-testid") === "map-zoom-controls" || el.getAttribute("data-testid") === "button-export-map",
+        ignoreElements: (el) => el.getAttribute("data-testid") === "map-zoom-controls" || el.getAttribute("data-testid") === "button-export-map" || el.classList.contains("leaflet-control-container"),
       });
 
-      let finalCanvas: HTMLCanvasElement = fullCanvas;
-      const regionBounds = getDrawnRegionBounds(drawnRegion || null);
-      const map = mapInstanceRef.current;
-      if (regionBounds && map) {
-        const padded = regionBounds.pad(0.15);
-        const topLeft = map.latLngToContainerPoint(padded.getNorthWest());
-        const bottomRight = map.latLngToContainerPoint(padded.getSouthEast());
-        const scale = 2;
-        const sx = Math.max(0, Math.min(fullCanvas.width, Math.round(topLeft.x * scale)));
-        const sy = Math.max(0, Math.min(fullCanvas.height, Math.round(topLeft.y * scale)));
-        const ex = Math.max(0, Math.min(fullCanvas.width, Math.round(bottomRight.x * scale)));
-        const ey = Math.max(0, Math.min(fullCanvas.height, Math.round(bottomRight.y * scale)));
-        const sw = ex - sx;
-        const sh = ey - sy;
-        if (sw > 10 && sh > 10) {
-          const cropped = document.createElement("canvas");
-          cropped.width = sw;
-          cropped.height = sh;
-          const ctx = cropped.getContext("2d");
-          if (ctx) {
-            ctx.drawImage(fullCanvas, sx, sy, sw, sh, 0, 0, sw, sh);
-            finalCanvas = cropped;
-          }
-        }
+      if (previousCenter && previousZoom !== null && map) {
+        map.setView(previousCenter, previousZoom, { animate: false });
       }
 
       const link = document.createElement("a");
       const dateStr = new Date().toISOString().slice(0, 10);
       link.download = `TerraLogic_Map_${dateStr}.${format === "jpeg" ? "jpg" : "png"}`;
-      link.href = finalCanvas.toDataURL(format === "jpeg" ? "image/jpeg" : "image/png", format === "jpeg" ? 0.92 : undefined);
+      link.href = fullCanvas.toDataURL(format === "jpeg" ? "image/jpeg" : "image/png", format === "jpeg" ? 0.92 : undefined);
       link.click();
     } catch (e) {
       console.error("Map export failed:", e);
