@@ -13,13 +13,16 @@ AI-powered GIS spatial analysis platform with dark Figma-matched UI. Evaluates c
   - CompassAI persona (Gemini-backed) — navigation & terrain specialist
   - OpenAI GPT-4o mini (via Replit AI Integration) — general purpose
   - TerraLogic Local GIS (always-available fallback) — rule-based responses from real GIS data
-- **CartoAI Chatbot**: Gemini 2.5 Flash function-calling chatbot with 6 tools:
+- **CartoAI Chatbot**: Gemini 2.5 Flash function-calling chatbot with 8 tools:
   - `update_map_view` — navigate to locations
   - `add_marker` — add map markers
   - `add_geojson` — add GeoJSON overlays
   - `clear_map` — clear map overlays
   - `search_places` — search nearby amenities via Overpass API
   - `analyze_site` — run full GIS suitability analysis
+  - `search_web` — search for open GIS data sources, datasets, and download links
+  - `fetch_open_data` — fetch GeoJSON/CSV from trusted open data portals and display on map
+  - **GIS Knowledge Base**: Comprehensive system prompt with knowledge of 50+ global open data sources (Natural Earth, GADM, SEDAC, USGS, Copernicus, HDX, World Bank, FAO, DataMeet, etc.), India-specific sources (Data.gov.in, OpenCity.in, Bhuvan, WRIS), US sources (Census, FEMA, EPA, NOAA), Europe sources (EEA, Eurostat, Copernicus), Overpass query patterns for all OSM tags, spatial analysis concepts, and data format expertise
   - **Data Catalog**: 20-category GIS data catalog (200+ items) with accordion UI, clickable items send queries to CartoAI
 - **GIS Data Sources**:
   - OpenStreetMap Overpass API (schools, hospitals, transit, parks, landuse, water, infrastructure)

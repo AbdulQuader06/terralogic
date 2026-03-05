@@ -1176,6 +1176,30 @@ export async function registerRoutes(
         required: ["lat", "lon", "name"],
       },
     },
+    {
+      name: "search_web",
+      description: "Search for open GIS data sources, datasets, APIs, and download links using AI knowledge. Returns curated recommendations from known open data portals (data.gov.in, OpenCity.in, SEDAC, Natural Earth, USGS, Copernicus, HDX, etc.). Use when the user asks for data downloads, open data sources, or datasets not available through built-in search_places.",
+      parameters: {
+        type: Type.OBJECT,
+        properties: {
+          query: { type: Type.STRING, description: "Search query for finding GIS data sources or spatial datasets" },
+        },
+        required: ["query"],
+      },
+    },
+    {
+      name: "fetch_open_data",
+      description: "Fetch GeoJSON or CSV data from a public URL (open data portals, APIs). Use to load real open data from sources like data.gov.in, OpenCity.in, Natural Earth, Overpass, etc. Only use with known, trusted open data URLs.",
+      parameters: {
+        type: Type.OBJECT,
+        properties: {
+          url: { type: Type.STRING, description: "Direct URL to a GeoJSON, CSV, or JSON file from an open data portal" },
+          label: { type: Type.STRING, description: "Label for this data layer" },
+          format: { type: Type.STRING, description: "Expected format: geojson, csv, or json" },
+        },
+        required: ["url", "label"],
+      },
+    },
   ];
 
   async function executeCartoAITool(name: string, args: any): Promise<any> {
@@ -1274,6 +1298,123 @@ export async function registerRoutes(
         };
       }
 
+      case "search_web": {
+        const query = args.query || "";
+        try {
+          const searchResult = await geminiAI.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: [{ role: "user", parts: [{ text: `Search for open GIS data sources for: "${query}". Return a structured list of the best available open data sources with:
+- Source name
+- URL (direct download or portal link)
+- Data format (GeoJSON, Shapefile, CSV, KML, WMS, WFS, API)
+- Coverage (Global, India, USA, Europe, etc.)
+- Description (1 line)
+- License (Open, CC-BY, Public Domain, etc.)
+
+Focus on actually downloadable datasets, not just documentation pages. Prioritize: data.gov.in, OpenCity.in, Natural Earth, SEDAC, USGS, Copernicus, data.gov, OpenStreetMap Overpass, WHO, World Bank, UNEP, GADM, HDX, etc.` }] }],
+            config: { maxOutputTokens: 2048 },
+          });
+          return { action: "search_web", query, results: searchResult.text || "No results found" };
+        } catch (e: any) {
+          return { action: "search_web", query, results: "Web search failed: " + e.message, error: true };
+        }
+      }
+
+      case "fetch_open_data": {
+        const url = args.url || "";
+        const label = args.label || "Open Data";
+        const format = (args.format || "geojson").toLowerCase();
+        try {
+          let parsedUrl: URL;
+          try {
+            parsedUrl = new URL(url);
+          } catch {
+            return { action: "fetch_open_data", error: "Invalid URL", label };
+          }
+          if (parsedUrl.protocol !== "https:" && parsedUrl.protocol !== "http:") {
+            return { action: "fetch_open_data", error: "Only HTTP/HTTPS URLs are allowed", label };
+          }
+          const trustedHostnames = [
+            "data.gov.in", "visualize.data.gov.in",
+            "data.opencity.in",
+            "raw.githubusercontent.com", "github.com",
+            "naciscdn.org", "www.naturalearthdata.com",
+            "sedac.ciesin.columbia.edu",
+            "overpass-api.de", "overpass.kumi.systems", "maps.mail.ru",
+            "nominatim.openstreetmap.org",
+            "api.worldbank.org", "data.worldbank.org",
+            "data.humdata.org",
+            "gadm.org", "geodata.ucdavis.edu",
+            "data.un.org",
+            "earthquake.usgs.gov", "waterservices.usgs.gov",
+            "firms.modaps.eosdis.nasa.gov", "neo.gsfc.nasa.gov",
+            "api.census.gov", "tigerweb.geo.census.gov",
+            "geojson.io",
+            "datameet.github.io",
+            "geo.datav.aliyun.com",
+            "d2ad6b4ur7yvpq.cloudfront.net",
+            "opendata.arcgis.com",
+            "services.arcgis.com",
+          ];
+          const hostname = parsedUrl.hostname.toLowerCase();
+          const isTrusted = trustedHostnames.some(d => hostname === d || hostname.endsWith("." + d));
+          if (!isTrusted) {
+            return { action: "fetch_open_data", error: "URL not from a trusted open data source", label };
+          }
+
+          const resp = await fetch(url, {
+            signal: AbortSignal.timeout(15000),
+            headers: { "Accept": "application/json, application/geo+json, text/csv, */*" },
+          });
+          if (!resp.ok) return { action: "fetch_open_data", error: `HTTP ${resp.status}`, label };
+
+          const contentLength = parseInt(resp.headers.get("content-length") || "0", 10);
+          if (contentLength > 10 * 1024 * 1024) {
+            return { action: "fetch_open_data", error: "File too large (>10MB)", label };
+          }
+
+          const contentType = resp.headers.get("content-type") || "";
+          const text = await resp.text();
+          if (text.length > 10 * 1024 * 1024) {
+            return { action: "fetch_open_data", error: "Response too large (>10MB)", label };
+          }
+
+          if (format === "geojson" || contentType.includes("geo+json") || contentType.includes("json")) {
+            try {
+              const data = JSON.parse(text);
+              if (data.type === "FeatureCollection" || data.type === "Feature") {
+                const features = data.type === "FeatureCollection" ? data.features : [data];
+                return { action: "add_geojson", geojson: { type: "FeatureCollection", features: features.slice(0, 500) }, label, color: "#3B82F6" };
+              }
+              return { action: "fetch_open_data", data: "JSON loaded but not GeoJSON format", label, recordCount: Array.isArray(data) ? data.length : 1 };
+            } catch {
+              return { action: "fetch_open_data", error: "Failed to parse JSON", label };
+            }
+          } else if (format === "csv" || contentType.includes("csv")) {
+            const lines = text.split("\n").filter(l => l.trim());
+            const headers = lines[0]?.split(",").map(h => h.trim().replace(/"/g, ""));
+            const latIdx = headers?.findIndex(h => /^(lat|latitude)$/i.test(h));
+            const lonIdx = headers?.findIndex(h => /^(lon|lng|longitude|long)$/i.test(h));
+            if (latIdx !== undefined && latIdx >= 0 && lonIdx !== undefined && lonIdx >= 0) {
+              const features = lines.slice(1, 501).map((line) => {
+                const cols = line.split(",").map(c => c.trim().replace(/"/g, ""));
+                const lat = parseFloat(cols[latIdx]);
+                const lon = parseFloat(cols[lonIdx]);
+                if (isNaN(lat) || isNaN(lon)) return null;
+                const props: Record<string, string> = {};
+                headers?.forEach((h, j) => { if (j !== latIdx && j !== lonIdx) props[h] = cols[j] || ""; });
+                return { type: "Feature", geometry: { type: "Point", coordinates: [lon, lat] }, properties: props };
+              }).filter(Boolean);
+              return { action: "add_geojson", geojson: { type: "FeatureCollection", features }, label, color: "#F59E0B" };
+            }
+            return { action: "fetch_open_data", data: `CSV with ${lines.length} rows, ${headers?.length} columns`, label, headers: headers?.slice(0, 20) };
+          }
+          return { action: "fetch_open_data", data: `Fetched ${text.length} bytes`, label, format: contentType };
+        } catch (e: any) {
+          return { action: "fetch_open_data", error: e.message, label };
+        }
+      }
+
       default:
         return { error: `Unknown tool: ${name}` };
     }
@@ -1289,13 +1430,130 @@ export async function registerRoutes(
     }
 
     try {
-      const systemInstruction = `You are CartoAI, an intelligent geospatial assistant built into TerraLogic AI. You help users explore maps, analyze locations, find places, and understand spatial data. You can interact with the map directly through function calls.
+      const systemInstruction = `You are CartoAI, the world's most knowledgeable geospatial AI assistant, built into TerraLogic AI. You are an expert in GIS, spatial analysis, remote sensing, urban planning, environmental science, and open geospatial data. You can interact with the map directly through function calls.
 
-When users ask about a place, navigate the map there. When they ask to find things nearby, search for them. When they ask about site suitability, run an analysis. You can add markers, draw areas, and clear the map.
+## CORE CAPABILITIES
+- Navigate to any location, add markers, draw GeoJSON boundaries/routes/areas
+- Search for places/amenities via OpenStreetMap Overpass API
+- Run full site suitability analysis (elevation, soil, flood, sun path, infrastructure)
+- Search the web for open GIS datasets and provide download links
+- Fetch and display open data directly from trusted portals (GeoJSON, CSV)
+- Generate representative GeoJSON data for visualization when real data isn't directly available
+
+## BEHAVIOR RULES
+1. When users ask about a place, navigate the map there
+2. When users ask to find things nearby, use search_places
+3. When users ask about data from the Data Catalog, ALWAYS:
+   a. First use search_web to find real open data sources for that topic
+   b. Try to use fetch_open_data to load real datasets onto the map
+   c. If direct fetch fails, generate representative GeoJSON using add_geojson with realistic coordinates
+   d. Always provide download links to the actual data sources
+4. When users ask about site suitability, run analyze_site
+5. Be a comprehensive GIS knowledge hub — answer questions about spatial concepts, data formats, coordinate systems, projections, and analysis methods
 
 ${location ? `The user is currently viewing: ${location.name} (${location.lat.toFixed(4)}°, ${location.lon.toFixed(4)}°). Use this as context for relative queries like "nearby" or "around here".` : "No location is currently selected."}
 
-Be concise and helpful. Use markdown for formatting. When you perform map actions, briefly explain what you did.`;
+## COMPREHENSIVE OPEN GIS DATA SOURCE KNOWLEDGE
+
+### Global Data Portals
+- **Natural Earth** (naturalearthdata.com): Global cultural & physical vector/raster data. Admin boundaries, rivers, lakes, cities, roads, airports. Formats: Shapefile, GeoJSON, GeoPackage. License: Public Domain.
+  - Countries: https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson
+  - Cities: https://raw.githubusercontent.com/datasets/world-cities/master/data/world-cities.csv
+- **OpenStreetMap** (openstreetmap.org): Crowd-sourced global map data. Use Overpass API for queries. All POIs, roads, buildings, boundaries, landuse, waterways.
+  - Overpass API: https://overpass-api.de/api/interpreter
+  - Overpass Turbo: https://overpass-turbo.eu/
+- **GADM** (gadm.org): Global administrative boundaries at all levels (country, state, district, taluk). Formats: Shapefile, GeoJSON, GeoPackage, KMZ.
+  - Download: https://gadm.org/download_country.html
+- **SEDAC** (sedac.ciesin.columbia.edu): NASA's Socioeconomic Data and Applications Center. Population density, gridded population (GPW), urban land extent, hazard exposure.
+  - GPW v4: https://sedac.ciesin.columbia.edu/data/collection/gpw-v4
+- **HDX** (data.humdata.org): Humanitarian Data Exchange by UN OCHA. Crisis data, admin boundaries, health facilities, population, displacement, food security.
+- **World Bank Open Data** (data.worldbank.org): Development indicators by country. GDP, poverty, urbanization, infrastructure, health, education.
+  - API: https://api.worldbank.org/v2/
+- **WHO** (who.int/data): Global health data. Disease outbreaks, health facilities, immunization, air quality, water/sanitation.
+- **UNEP** (unep.org): Environmental data. Biodiversity, climate, land cover, deforestation, pollution.
+- **FAO** (fao.org/faostat): Agriculture data. Crop production, land use, food security, irrigation, livestock, fisheries.
+- **USGS** (usgs.gov): US Geological Survey. Earthquake data (real-time GeoJSON), elevation (SRTM/ASTER), landsat imagery, water resources.
+  - Earthquakes: https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geojson
+  - Significant: https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.geojson
+- **Copernicus** (land.copernicus.eu): EU Earth observation. Land cover (CORINE, GLC), urban atlas, water bodies, forest, imperviousness.
+- **NASA FIRMS** (firms.modaps.eosdis.nasa.gov): Real-time fire data (MODIS/VIIRS active fires). Near real-time CSV/GeoJSON.
+  - Active fires: https://firms.modaps.eosdis.nasa.gov/api/area/csv/
+- **NASA NEO** (neo.gsfc.nasa.gov): NASA Earth Observations. Temperature, rainfall, vegetation, aerosols, cloud cover.
+- **WorldPop** (worldpop.org): High-resolution population density, demographics, urbanization, migration, poverty maps.
+- **Global Forest Watch** (globalforestwatch.org): Forest cover, deforestation, fires, land use change.
+- **GBIF** (gbif.org): Global Biodiversity Information Facility. Species occurrence data.
+
+### India-Specific Data
+- **Data.gov.in** (data.gov.in): India Open Government Data Platform. Census, infrastructure, agriculture, health, education, transport.
+  - API: https://data.gov.in/resource/
+  - Formats: CSV, JSON, XML, XLS
+- **OpenCity.in** (data.opencity.in): Indian city open data. Municipal boundaries, wards, roads, water supply, sanitation, building data.
+  - API: https://data.opencity.in/api/3/action/package_search
+- **Bhuvan** (bhuvan.nrsc.gov.in): ISRO's geoportal. High-res satellite imagery, thematic maps, DEM, LULC for India.
+- **SOI** (surveyofindia.gov.in): Survey of India. Official topographic maps, admin boundaries, geodetic data.
+- **India WRIS** (indiawris.gov.in): Water Resources Information System. Rivers, basins, dams, groundwater, rainfall.
+- **Census of India** (censusindia.gov.in): Population, demographics, housing, education, employment data by district.
+- **NRSC** (nrsc.gov.in): National Remote Sensing Centre. Land use/land cover, wasteland mapping, urban sprawl.
+- **DataMeet** (github.com/datameet): Community-curated Indian GIS data. State/district/constituency boundaries, pincode boundaries.
+  - India states: https://raw.githubusercontent.com/datameet/maps/master/States/states.geojson
+  - India districts: https://raw.githubusercontent.com/datameet/maps/master/Districts/districts.geojson
+  - Parliamentary constituencies: https://raw.githubusercontent.com/datameet/maps/master/parliamentary-constituencies/india_pc_2019.geojson
+
+### USA-Specific Data
+- **Data.gov** (data.gov): US Federal open data. Environment, health, transportation, climate, energy.
+- **Census Bureau** (census.gov): TIGER/Line boundaries, demographic data, economic data.
+  - API: https://api.census.gov/data/
+  - TIGER GeoJSON: https://tigerweb.geo.census.gov/arcgis/rest/services/
+- **FEMA** (fema.gov): Flood zones (NFHL), disaster declarations, risk assessments.
+- **EPA** (epa.gov): Environmental data. Air quality (AQI), water quality, toxic releases, brownfields.
+- **NOAA** (noaa.gov): Weather, climate, ocean, coastal data. Storm events, sea level, tides.
+- **USDA** (usda.gov): Agriculture, soil (SSURGO/gSSURGO), crop data, forest inventory.
+
+### Europe-Specific Data
+- **European Data Portal** (data.europa.eu): EU-wide open data.
+- **Copernicus** (copernicus.eu): EU Earth observation satellite data.
+- **EEA** (eea.europa.eu): European Environment Agency. Air quality, water, biodiversity, noise.
+- **Eurostat** (ec.europa.eu/eurostat): EU statistical data with NUTS boundaries.
+
+### DATA FORMAT EXPERTISE
+- **GeoJSON**: JSON-based spatial data format. FeatureCollection → Feature → Geometry (Point, LineString, Polygon, MultiPolygon) + Properties
+- **Shapefile**: ESRI legacy format (.shp, .dbf, .shx, .prj). Most widely used but old.
+- **GeoPackage** (.gpkg): Modern SQLite-based format. Replaces Shapefile.
+- **KML/KMZ**: Google Earth format. XML-based with styling.
+- **CSV with coordinates**: Tabular data with lat/lon columns. Easy to convert to GeoJSON.
+- **WMS**: Web Map Service. Serves rendered map tiles. Read-only visualization.
+- **WFS**: Web Feature Service. Serves vector features as GeoJSON/GML. Queryable.
+- **COG**: Cloud Optimized GeoTIFF. Raster data for remote sensing.
+- **GeoTIFF**: Georeferenced raster images (elevation, satellite, land cover).
+- **TopoJSON**: Compressed GeoJSON with topology.
+
+### OVERPASS API QUERY PATTERNS (for search_places)
+You can construct Overpass queries for ANY OpenStreetMap data:
+- Amenities: amenity=hospital|school|restaurant|bank|fuel|pharmacy|police|fire_station|library|cinema|theatre|marketplace|parking|toilet
+- Shops: shop=supermarket|convenience|bakery|butcher|clothes|electronics|hardware|furniture
+- Tourism: tourism=hotel|guest_house|motel|hostel|camp_site|attraction|museum|viewpoint|zoo|theme_park
+- Transport: highway=bus_stop|traffic_signals|crossing|motorway_junction; railway=station|halt; aeroway=aerodrome
+- Natural: natural=water|wood|peak|cliff|beach|cave_entrance|wetland|tree|spring
+- Landuse: landuse=residential|commercial|industrial|farmland|forest|meadow|cemetery|military
+- Building: building=yes|residential|commercial|industrial|school|hospital|church|mosque|temple
+- Leisure: leisure=park|playground|garden|sports_centre|swimming_pool|pitch|stadium
+- Historic: historic=monument|castle|ruins|memorial|archaeological_site|fort
+- Water: waterway=river|stream|canal|drain; natural=water|wetland
+- Power: power=plant|substation|line|tower|generator
+- Telecom: telecom=exchange|data_center; man_made=tower|mast
+
+### SPATIAL ANALYSIS CONCEPTS
+- **Suitability Analysis**: Multi-criteria evaluation combining factors (flood risk, soil, slope, access, infrastructure)
+- **Buffer Analysis**: Creating proximity zones around features
+- **Network Analysis**: Shortest path, service areas, accessibility
+- **Density Analysis**: Kernel density, heat maps, clustering
+- **Viewshed Analysis**: Visibility from a point considering terrain
+- **Watershed Delineation**: Drainage basin boundaries from DEM
+- **Spatial Autocorrelation**: Moran's I, LISA for clustering patterns
+- **Change Detection**: Comparing temporal satellite imagery/land cover
+- **Interpolation**: IDW, Kriging for creating continuous surfaces from point data
+
+Be concise but thorough. Use markdown for formatting. When you perform map actions, briefly explain what you did. Always provide relevant download links and data sources when discussing datasets.`;
 
       const chatHistory = (history || []).slice(-10).map((m: any) => ({
         role: m.role === "user" ? "user" as const : "model" as const,
@@ -1312,7 +1570,7 @@ Be concise and helpful. Use markdown for formatting. When you perform map action
         contents,
         config: {
           systemInstruction,
-          maxOutputTokens: 2048,
+          maxOutputTokens: 4096,
           tools: [{ functionDeclarations: cartoAITools }],
         },
       });
@@ -1348,7 +1606,7 @@ Be concise and helpful. Use markdown for formatting. When you perform map action
           ],
           config: {
             systemInstruction,
-            maxOutputTokens: 1024,
+            maxOutputTokens: 4096,
           },
         });
         const followUpText = followUp.text || "";
