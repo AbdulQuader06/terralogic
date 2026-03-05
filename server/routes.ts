@@ -1305,8 +1305,11 @@ export async function registerRoutes(
         try {
           const degOffset = r / 111000;
           const gridRes = 10;
-          const latMin = clat - degOffset, latMax = clat + degOffset;
-          const lonMin = clon - degOffset, lonMax = clon + degOffset;
+          const floodPolyBbox = parseBboxFromPolygon(polyStr);
+          const latMin = floodPolyBbox ? floodPolyBbox.latMin : clat - degOffset;
+          const latMax = floodPolyBbox ? floodPolyBbox.latMax : clat + degOffset;
+          const lonMin = floodPolyBbox ? floodPolyBbox.lonMin : clon - degOffset;
+          const lonMax = floodPolyBbox ? floodPolyBbox.lonMax : clon + degOffset;
           const latStep = (latMax - latMin) / (gridRes - 1);
           const lonStep = (lonMax - lonMin) / (gridRes - 1);
           const elevLats: number[] = [], elevLons: number[] = [];
@@ -1378,17 +1381,19 @@ export async function registerRoutes(
 
           const cellLat = latMin + row * latStep;
           const cellLon = lonMin + col * lonStep;
+
+          const floodCellCorners: [number, number][] = [
+            [cellLon, cellLat],
+            [cellLon + lonStep, cellLat],
+            [cellLon + lonStep, cellLat + latStep],
+            [cellLon, cellLat + latStep],
+          ];
+          if (polyStr && !clipPolygonCellToPolygon(floodCellCorners, polyStr)) continue;
           features.push({
             type: "Feature",
             geometry: {
               type: "Polygon",
-              coordinates: [[
-                [cellLon, cellLat],
-                [cellLon + lonStep, cellLat],
-                [cellLon + lonStep, cellLat + latStep],
-                [cellLon, cellLat + latStep],
-                [cellLon, cellLat],
-              ]],
+              coordinates: [[...floodCellCorners, floodCellCorners[0]]],
             },
             properties: {
               layer: "flood",
@@ -1449,24 +1454,29 @@ export async function registerRoutes(
 
   // Soil data — SoilGrids (ISRIC) real classification + colored polygons
   app.get("/api/layers/soil", async (req, res) => {
-    const { lat, lon, radius } = req.query;
+    const { lat, lon, radius, polygon } = req.query;
     if (!lat || !lon) return res.status(400).json({ error: "lat and lon required" });
     const clat = Number(lat), clon = Number(lon);
     const r = Number(radius) || 3000;
     const degOffset = r / 111000;
+    const polyStr = polygon as string | undefined;
+    const polyBbox = parseBboxFromPolygon(polyStr);
 
     try {
       const gridSize = 5;
-      const latStep = (degOffset * 2) / gridSize;
-      const lonStep = (degOffset * 2) / gridSize;
+      const bboxLatMin = polyBbox ? polyBbox.latMin : clat - degOffset;
+      const bboxLatMax = polyBbox ? polyBbox.latMax : clat + degOffset;
+      const bboxLonMin = polyBbox ? polyBbox.lonMin : clon - degOffset;
+      const bboxLonMax = polyBbox ? polyBbox.lonMax : clon + degOffset;
+      const latStep = (bboxLatMax - bboxLatMin) / gridSize;
+      const lonStep = (bboxLonMax - bboxLonMin) / gridSize;
       const points: { lat: number; lon: number; row: number; col: number }[] = [];
       for (let row = 0; row <= gridSize; row++) {
         for (let col = 0; col <= gridSize; col++) {
-          points.push({
-            lat: clat - degOffset + row * latStep,
-            lon: clon - degOffset + col * lonStep,
-            row, col,
-          });
+          const ptLat = bboxLatMin + row * latStep;
+          const ptLon = bboxLonMin + col * lonStep;
+          if (polyStr && !pointInPolygon(ptLat, ptLon, polyStr)) continue;
+          points.push({ lat: ptLat, lon: ptLon, row, col });
         }
       }
 
@@ -1497,21 +1507,22 @@ export async function registerRoutes(
       if (soilResults.length >= 4) {
         const features: any[] = [];
         for (const sr of soilResults) {
-          const cellLat = clat - degOffset + sr.row * latStep;
-          const cellLon = clon - degOffset + sr.col * lonStep;
+          const cellLat = bboxLatMin + sr.row * latStep;
+          const cellLon = bboxLonMin + sr.col * lonStep;
           const halfLat = latStep / 2;
           const halfLon = lonStep / 2;
+          const cellCorners: [number, number][] = [
+            [cellLon - halfLon, cellLat - halfLat],
+            [cellLon + halfLon, cellLat - halfLat],
+            [cellLon + halfLon, cellLat + halfLat],
+            [cellLon - halfLon, cellLat + halfLat],
+          ];
+          if (polyStr && !clipPolygonCellToPolygon(cellCorners, polyStr)) continue;
           features.push({
             type: "Feature",
             geometry: {
               type: "Polygon",
-              coordinates: [[
-                [cellLon - halfLon, cellLat - halfLat],
-                [cellLon + halfLon, cellLat - halfLat],
-                [cellLon + halfLon, cellLat + halfLat],
-                [cellLon - halfLon, cellLat + halfLat],
-                [cellLon - halfLon, cellLat - halfLat],
-              ]],
+              coordinates: [[...cellCorners, cellCorners[0]]],
             },
             properties: {
               layer: "soil",
@@ -1534,18 +1545,20 @@ export async function registerRoutes(
 
   // Elevation contour lines — real DEM from Open-Meteo + marching squares
   app.get("/api/layers/elevation", async (req, res) => {
-    const { lat, lon, radius } = req.query;
+    const { lat, lon, radius, polygon } = req.query;
     if (!lat || !lon) return res.status(400).json({ error: "lat and lon required" });
     const clat = Number(lat), clon = Number(lon);
     const r = Number(radius) || 3000;
     const degOffset = r / 111000;
+    const polyStr = polygon as string | undefined;
+    const polyBbox = parseBboxFromPolygon(polyStr);
 
     try {
       const gridRes = 20;
-      const latMin = clat - degOffset;
-      const latMax = clat + degOffset;
-      const lonMin = clon - degOffset;
-      const lonMax = clon + degOffset;
+      const latMin = polyBbox ? polyBbox.latMin : clat - degOffset;
+      const latMax = polyBbox ? polyBbox.latMax : clat + degOffset;
+      const lonMin = polyBbox ? polyBbox.lonMin : clon - degOffset;
+      const lonMax = polyBbox ? polyBbox.lonMax : clon + degOffset;
       const latStep = (latMax - latMin) / (gridRes - 1);
       const lonStep = (lonMax - lonMin) / (gridRes - 1);
 
@@ -1599,6 +1612,22 @@ export async function registerRoutes(
       }
 
       const contourFeatures = generateContourLines(grid, latMin, latMax, lonMin, lonMax, levels);
+      if (polyStr) {
+        const clippedFeatures: any[] = [];
+        for (const f of contourFeatures.features) {
+          if (!f.geometry?.coordinates) continue;
+          const clipped = clipLineToPolygon(f.geometry.coordinates as [number, number][], polyStr);
+          for (const segment of clipped) {
+            if (segment.length >= 2) {
+              clippedFeatures.push({
+                ...f,
+                geometry: { type: "LineString", coordinates: segment },
+              });
+            }
+          }
+        }
+        contourFeatures.features = clippedFeatures;
+      }
       res.json(contourFeatures);
     } catch (e: any) {
       console.error("Elevation contour error:", e.message);
@@ -1672,6 +1701,102 @@ function getSoilDescription(soilClass: string): string {
     Umbrisols: "Acidic, humus-rich mountain soils",
   };
   return map[soilClass] || "Classified soil unit (WRB)";
+}
+
+function parseBboxFromPolygon(polygonParam?: string): { latMin: number; latMax: number; lonMin: number; lonMax: number } | null {
+  if (!polygonParam) return null;
+  try {
+    const coords: [number, number][] = JSON.parse(polygonParam);
+    if (!Array.isArray(coords) || coords.length < 3) return null;
+    const lats = coords.map(c => c[0]);
+    const lons = coords.map(c => c[1]);
+    return {
+      latMin: Math.min(...lats),
+      latMax: Math.max(...lats),
+      lonMin: Math.min(...lons),
+      lonMax: Math.max(...lons),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function pointInPolygon(lat: number, lon: number, polygonParam?: string): boolean {
+  if (!polygonParam) return true;
+  try {
+    const coords: [number, number][] = JSON.parse(polygonParam);
+    if (!Array.isArray(coords) || coords.length < 3) return true;
+    let inside = false;
+    for (let i = 0, j = coords.length - 1; i < coords.length; j = i++) {
+      const [yi, xi] = coords[i];
+      const [yj, xj] = coords[j];
+      if (((yi > lat) !== (yj > lat)) && (lon < (xj - xi) * (lat - yi) / (yj - yi) + xi)) {
+        inside = !inside;
+      }
+    }
+    return inside;
+  } catch {
+    return true;
+  }
+}
+
+function clipLineToPolygon(line: [number, number][], polygonParam: string): [number, number][][] {
+  let coords: [number, number][];
+  try {
+    coords = JSON.parse(polygonParam);
+    if (!Array.isArray(coords) || coords.length < 3) return [line];
+  } catch {
+    return [line];
+  }
+
+  const isInside = (lon: number, lat: number) => {
+    let inside = false;
+    for (let i = 0, j = coords.length - 1; i < coords.length; j = i++) {
+      const [yi, xi] = coords[i];
+      const [yj, xj] = coords[j];
+      if (((yi > lat) !== (yj > lat)) && (lon < (xj - xi) * (lat - yi) / (yj - yi) + xi)) {
+        inside = !inside;
+      }
+    }
+    return inside;
+  };
+
+  const segments: [number, number][][] = [];
+  let current: [number, number][] = [];
+  for (const [lon, lat] of line) {
+    if (isInside(lon, lat)) {
+      current.push([lon, lat]);
+    } else {
+      if (current.length >= 2) segments.push(current);
+      current = [];
+    }
+  }
+  if (current.length >= 2) segments.push(current);
+  return segments.length > 0 ? segments : [];
+}
+
+function clipPolygonCellToPolygon(cellCoords: [number, number][], polygonParam: string): boolean {
+  let coords: [number, number][];
+  try {
+    coords = JSON.parse(polygonParam);
+    if (!Array.isArray(coords) || coords.length < 3) return true;
+  } catch {
+    return true;
+  }
+
+  const isInside = (lon: number, lat: number) => {
+    let inside = false;
+    for (let i = 0, j = coords.length - 1; i < coords.length; j = i++) {
+      const [yi, xi] = coords[i];
+      const [yj, xj] = coords[j];
+      if (((yi > lat) !== (yj > lat)) && (lon < (xj - xi) * (lat - yi) / (yj - yi) + xi)) {
+        inside = !inside;
+      }
+    }
+    return inside;
+  };
+
+  return cellCoords.some(([lon, lat]) => isInside(lon, lat));
 }
 
 function generateContourLines(

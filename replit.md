@@ -94,7 +94,13 @@ Uses 2 combined Overpass queries + 3 parallel API calls + sun path + AI narrativ
 - **Always-available models**: MapGPT, CompassAI, and Auto are always available — they use Gemini when API is available, otherwise fall back to persona-flavored local GIS engine
 - **Auto-analysis**: Chat endpoint auto-generates site analysis if not cached
 - **Overpass mirror fallback**: All Overpass API calls try 3 mirror endpoints (overpass-api.de, kumi.systems, maps.mail.ru) for reliability
-- **Draw-to-filter**: Users can draw polygon/circle/rectangle on the map; all layer fetches and QuickOSM queries use Overpass `poly:` filter to constrain results to the drawn area. Without drawing, default `around:radius` is used.
+- **Draw-to-filter**: Users can draw polygon/circle/rectangle on the map; all layer fetches and QuickOSM queries are spatially confined within the drawn borders:
+  - **Overpass-based layers** (schools, hospitals, transit, parks, landuse, water, infrastructure): Use Overpass `poly:` filter to fetch only features within the polygon
+  - **Soil layer**: Grid sampling points are bounded by polygon bbox and filtered by point-in-polygon; grid cells outside polygon are excluded via cell-corner overlap test
+  - **Elevation layer**: DEM grid bounded by polygon bbox; contour lines are clipped to the polygon boundary (segments outside are removed)
+  - **Flood layer**: OSM flood data uses Overpass `poly:` filter; elevation-based flood grid bounded by polygon bbox with cell-corner overlap filtering
+  - **QuickOSM**: Passes polygon to Overpass `poly:` filter for spatial confinement
+  - Without drawing, default `around:radius` is used for all layers
 
 ## Environment Variables
 
