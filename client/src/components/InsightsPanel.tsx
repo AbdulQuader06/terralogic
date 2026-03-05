@@ -7,21 +7,23 @@ import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip as RechartsTooltip, Area, AreaChart,
 } from "recharts";
+import { useTheme } from "@/lib/theme";
 
 interface InsightsPanelProps {
   location: { lat: number; lon: number; name: string } | null;
   onAnalysisReady?: () => void;
 }
 
-function CircularGauge({ score, size = 80 }: { score: number; size?: number }) {
+function CircularGauge({ score, size = 80, isDark = true }: { score: number; size?: number; isDark?: boolean }) {
   const radius = (size - 8) / 2;
   const circumference = 2 * Math.PI * radius;
   const progress = (score / 100) * circumference;
   const color = score >= 75 ? "#00C853" : score >= 55 ? "#F59E0B" : "#EF4444";
+  const trackColor = isDark ? "hsl(150 20% 14%)" : "hsl(150 12% 88%)";
 
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="hsl(150 20% 14%)" strokeWidth="4" />
+      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={trackColor} strokeWidth="4" />
       <circle
         cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={color} strokeWidth="4"
         strokeDasharray={`${progress} ${circumference - progress}`}
@@ -48,6 +50,17 @@ function MetricBar({ value, color, max = 100 }: { value: number; color: string; 
 }
 
 export default function InsightsPanel({ location, onAnalysisReady }: InsightsPanelProps) {
+  const { isDark } = useTheme();
+  const chartAxisColor = isDark ? "#7A8A82" : "#94A3B8";
+  const chartGridColor = isDark ? "#1C2A23" : "#E2E8F0";
+  const tooltipStyle = {
+    background: isDark ? "#111916" : "#FFFFFF",
+    border: `1px solid ${isDark ? "#1C2A23" : "#E2E8F0"}`,
+    borderRadius: 8,
+    fontSize: 11,
+    color: isDark ? "#E8EDEB" : "#1A2E1F",
+  };
+
   const { data: analysis, isLoading } = useQuery<SiteAnalysis>({
     queryKey: ["analysis", location?.lat, location?.lon],
     queryFn: async () => {
@@ -115,7 +128,7 @@ export default function InsightsPanel({ location, onAnalysisReady }: InsightsPan
                   </div>
                   <p className="text-sm font-medium mt-1" style={{ color: scoreColor }}>{scoreLabel}</p>
                 </div>
-                <CircularGauge score={analysis.overallScore} />
+                <CircularGauge score={analysis.overallScore} isDark={isDark} />
               </div>
               {analysis.aiNarrative ? (
                 <p className="text-[11px] text-muted-foreground mt-3 leading-relaxed" data-testid="text-ai-narrative">
@@ -284,19 +297,19 @@ export default function InsightsPanel({ location, onAnalysisReady }: InsightsPan
                     <XAxis
                       dataKey="distance"
                       tickFormatter={(v) => `${v}m`}
-                      tick={{ fontSize: 9, fill: "#7A8A82" }}
-                      axisLine={{ stroke: "#1C2A23" }}
+                      tick={{ fontSize: 9, fill: chartAxisColor }}
+                      axisLine={{ stroke: chartGridColor }}
                       tickLine={false}
                     />
                     <YAxis
-                      tick={{ fontSize: 9, fill: "#7A8A82" }}
-                      axisLine={{ stroke: "#1C2A23" }}
+                      tick={{ fontSize: 9, fill: chartAxisColor }}
+                      axisLine={{ stroke: chartGridColor }}
                       tickLine={false}
                       width={35}
                       tickFormatter={(v) => `${v}m`}
                     />
                     <RechartsTooltip
-                      contentStyle={{ background: "#111916", border: "1px solid #1C2A23", borderRadius: 8, fontSize: 11, color: "#E8EDEB" }}
+                      contentStyle={tooltipStyle}
                       formatter={(value: number) => [`${value}m`, "Elevation"]}
                       labelFormatter={(label) => `Distance: ${label}m`}
                     />
@@ -313,12 +326,12 @@ export default function InsightsPanel({ location, onAnalysisReady }: InsightsPan
               <div className="bg-muted/40 border border-border rounded-xl p-3 h-[200px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <RadarChart data={radarData} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
-                    <PolarGrid stroke="#1C2A23" />
-                    <PolarAngleAxis dataKey="axis" tick={{ fontSize: 10, fill: "#7A8A82" }} />
+                    <PolarGrid stroke={chartGridColor} />
+                    <PolarAngleAxis dataKey="axis" tick={{ fontSize: 10, fill: chartAxisColor }} />
                     <PolarRadiusAxis
                       angle={90}
                       domain={[0, 100]}
-                      tick={{ fontSize: 8, fill: "#7A8A82" }}
+                      tick={{ fontSize: 8, fill: chartAxisColor }}
                       axisLine={false}
                     />
                     <Radar

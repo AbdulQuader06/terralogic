@@ -27,7 +27,7 @@ AI-powered GIS spatial analysis platform with dark Figma-matched UI. Evaluates c
 ## UI Layout
 
 Three-panel dark theme layout:
-- **Header**: TerraLogic AI logo, project location selector, Export Map (PNG) button, Export Report button
+- **Header**: TerraLogic AI logo, project location selector, Case Study button (Hyderabad demo), dark/light theme toggle, Export Map (PNG) button, Export Report button
 - **Left Panel** (300px): Project Overview heading, geocoder search input, three tabs (Layers | QuickOSM | AI):
   - **Layers tab**: Dark-themed layer toggle cards with icons for 10 data layers
   - **QuickOSM tab**: Interactive OSM query builder + OpenCity India CKAN data browser
@@ -57,7 +57,8 @@ Three-panel dark theme layout:
 - `server/routes.ts` - Real GIS data analysis + multi-model AI + layer endpoints + QuickOSM + OpenCity + geocoding
 - `server/storage.ts` - In-memory storage for site analyses
 - `shared/schema.ts` - Zod schemas and TypeScript types (SiteAnalysis with aiNarrative, sunPathData)
-- `client/src/index.css` - Dark theme CSS variables, Leaflet dark styling
+- `client/src/lib/theme.tsx` - ThemeProvider context + useTheme hook, localStorage persistence
+- `client/src/index.css` - Dark/light theme CSS variables, Leaflet theming, map control CSS custom properties
 
 ## API Endpoints
 
@@ -101,8 +102,17 @@ Uses 2 combined Overpass queries + 3 parallel API calls + sun path + AI narrativ
 - `GEMINI_API_KEY` - Google Gemini API key for AI chat and narrative generation
 - `OPENAI_API_KEY` - (Optional) OpenAI API key for ChatGPT fallback
 
-## Color Palette (Dark Theme)
+## Theme System
 
+Dark/Light mode toggle with localStorage persistence (`terralogic-theme` key). ThemeProvider at `client/src/lib/theme.tsx` wraps App with `useTheme()` hook exposing `{ theme, toggleTheme, isDark }`.
+
+- Theme class (`.dark` / `.light`) set on `<html>` element
+- All CSS variables defined per-theme in `client/src/index.css`
+- Map controls, legend, popups, tooltips use CSS custom properties (`--map-ctrl-bg`, `--map-ctrl-text`, etc.)
+- Recharts use theme-derived colors via `useTheme()` in InsightsPanel
+- Header has sun/moon toggle button + "Case Study" button (loads Hyderabad, India)
+
+### Dark Theme Colors
 - Primary: #00C853 (emerald green)
 - Background: ~#0B1010 (very dark green-black)
 - Card/Panel: ~#111916
@@ -110,3 +120,11 @@ Uses 2 combined Overpass queries + 3 parallel API calls + sun path + AI narrativ
 - Muted: ~#7A8A82
 - Border: ~#1C2A23
 - Warning: #F59E0B (amber)
+
+### Light Theme Colors
+- Primary: hsl(145 80% 36%)
+- Background: ~#F9FBF9 (near white with green tint)
+- Card: white
+- Foreground: ~#1A2E1F (dark green)
+- Muted text: hsl(150 8% 45%)
+- Border: hsl(150 12% 88%)

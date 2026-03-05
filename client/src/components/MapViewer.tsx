@@ -76,7 +76,7 @@ const ESRI_BASEMAPS: Record<BasemapType, { url: string; attribution: string; max
 
 const markerIcon = new L.DivIcon({
   className: "custom-marker",
-  html: `<div style="width:18px;height:18px;background:#00C853;border:3px solid #0B1010;border-radius:50%;box-shadow:0 0 8px rgba(0,200,83,0.5);transform:translate(-50%,-50%)"></div>`,
+  html: `<div style="width:18px;height:18px;background:#00C853;border:3px solid hsl(var(--background));border-radius:50%;box-shadow:0 0 8px rgba(0,200,83,0.5);transform:translate(-50%,-50%)"></div>`,
   iconSize: [18, 18],
   iconAnchor: [0, 0],
 });
@@ -177,16 +177,16 @@ function ClickHandler({ onLocationSelect, disabled }: { onLocationSelect: (lat: 
         .then(data => {
           if (!data.address && (!data.layers || data.layers.length === 0)) return;
           const addr = data.address || {};
-          let html = `<div style="font-family:Inter,sans-serif;font-size:12px;max-width:280px;color:#E8EDEB;">`;
+          let html = `<div style="font-family:Inter,sans-serif;font-size:12px;max-width:280px;color:var(--tooltip-text);">`;
           if (addr.LongLabel || addr.Address) {
             html += `<div style="font-weight:600;font-size:13px;margin-bottom:6px;color:#00C853;">${addr.LongLabel || addr.Address}</div>`;
             const details = [addr.City, addr.Region, addr.CountryCode].filter(Boolean).join(", ");
-            if (details) html += `<div style="color:#7A8A82;margin-bottom:4px;">${details}</div>`;
-            if (addr.Postal) html += `<div style="color:#7A8A82;font-size:11px;">Postal: ${addr.Postal}</div>`;
-            if (addr.Type) html += `<div style="color:#7A8A82;font-size:11px;">Type: ${addr.Type}</div>`;
+            if (details) html += `<div style="color:hsl(var(--muted-foreground));margin-bottom:4px;">${details}</div>`;
+            if (addr.Postal) html += `<div style="color:hsl(var(--muted-foreground));font-size:11px;">Postal: ${addr.Postal}</div>`;
+            if (addr.Type) html += `<div style="color:hsl(var(--muted-foreground));font-size:11px;">Type: ${addr.Type}</div>`;
           }
           if (data.layers && data.layers.length > 0) {
-            html += `<div style="margin-top:6px;padding-top:6px;border-top:1px solid #1C2A23;">`;
+            html += `<div style="margin-top:6px;padding-top:6px;border-top:1px solid hsl(var(--border));">`;
             const seen = new Set<string>();
             for (const layer of data.layers.slice(0, 5)) {
               const key = `${layer.layerName}-${layer.value}`;
@@ -262,21 +262,38 @@ function MapControls({ position, basemap, onBasemapChange }: { position: [number
   const latDir = lat >= 0 ? "N" : "S";
   const lonDir = lon >= 0 ? "E" : "W";
 
+  const ctrlStyle: React.CSSProperties = {
+    width: "34px",
+    height: "34px",
+    background: "var(--map-ctrl-bg)",
+    border: "1px solid var(--map-ctrl-border)",
+    borderRadius: "8px",
+    color: "var(--map-ctrl-text)",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    backdropFilter: "blur(8px)",
+    transition: "all 0.2s ease",
+    boxShadow: "0 2px 8px rgb(0 0 0 / 0.15)",
+  };
+
   return (
     <>
       <div
         className="absolute top-3 left-3 z-[1000]"
         data-testid="zoom-indicator"
         style={{
-          background: "hsl(150 19% 8% / 0.9)",
-          border: "1px solid hsl(150 20% 14%)",
-          borderRadius: "6px",
-          padding: "4px 10px",
+          background: "var(--map-ctrl-bg)",
+          border: "1px solid var(--map-ctrl-border)",
+          borderRadius: "8px",
+          padding: "5px 12px",
           fontSize: "12px",
           fontFamily: "Inter, sans-serif",
-          color: "hsl(150 12% 92%)",
-          fontWeight: 500,
+          color: "var(--map-ctrl-text)",
+          fontWeight: 600,
           backdropFilter: "blur(8px)",
+          boxShadow: "0 2px 8px rgb(0 0 0 / 0.15)",
         }}
       >
         Zoom: {zoom}
@@ -286,88 +303,29 @@ function MapControls({ position, basemap, onBasemapChange }: { position: [number
         className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000]"
         data-testid="coordinate-display"
         style={{
-          background: "hsl(145 100% 39% / 0.15)",
-          border: "1px solid hsl(145 100% 39% / 0.4)",
+          background: "var(--map-coord-bg)",
+          border: "1px solid var(--map-coord-border)",
           borderRadius: "20px",
-          padding: "5px 14px",
+          padding: "5px 16px",
           fontSize: "12px",
           fontFamily: "'Inter', monospace",
-          color: "#00C853",
+          color: "var(--map-coord-text)",
           fontWeight: 600,
           backdropFilter: "blur(8px)",
           letterSpacing: "0.02em",
+          boxShadow: "0 2px 8px rgb(0 0 0 / 0.1)",
         }}
       >
         {Math.abs(lat).toFixed(4)}°{latDir} / {Math.abs(lon).toFixed(4)}°{lonDir}
       </div>
 
       <div
-        className="absolute top-3 right-3 z-[1000] flex flex-col gap-1"
+        className="absolute top-3 right-3 z-[1000] flex flex-col gap-1.5"
         data-testid="map-zoom-controls"
       >
-        <button
-          onClick={handleZoomIn}
-          data-testid="button-zoom-in"
-          style={{
-            width: "32px",
-            height: "32px",
-            background: "hsl(150 19% 8% / 0.9)",
-            border: "1px solid hsl(150 20% 14%)",
-            borderRadius: "6px",
-            color: "hsl(150 12% 92%)",
-            fontSize: "18px",
-            fontWeight: 600,
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            backdropFilter: "blur(8px)",
-            lineHeight: 1,
-          }}
-        >
-          +
-        </button>
-        <button
-          onClick={handleZoomOut}
-          data-testid="button-zoom-out"
-          style={{
-            width: "32px",
-            height: "32px",
-            background: "hsl(150 19% 8% / 0.9)",
-            border: "1px solid hsl(150 20% 14%)",
-            borderRadius: "6px",
-            color: "hsl(150 12% 92%)",
-            fontSize: "18px",
-            fontWeight: 600,
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            backdropFilter: "blur(8px)",
-            lineHeight: 1,
-          }}
-        >
-          −
-        </button>
-        <button
-          onClick={toggleFullscreen}
-          data-testid="button-fullscreen"
-          style={{
-            width: "32px",
-            height: "32px",
-            background: "hsl(150 19% 8% / 0.9)",
-            border: "1px solid hsl(150 20% 14%)",
-            borderRadius: "6px",
-            color: "hsl(150 12% 92%)",
-            fontSize: "14px",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            backdropFilter: "blur(8px)",
-            marginTop: "4px",
-          }}
-        >
+        <button onClick={handleZoomIn} data-testid="button-zoom-in" style={{ ...ctrlStyle, fontSize: "18px", fontWeight: 700, lineHeight: 1 }}>+</button>
+        <button onClick={handleZoomOut} data-testid="button-zoom-out" style={{ ...ctrlStyle, fontSize: "18px", fontWeight: 700, lineHeight: 1 }}>−</button>
+        <button onClick={toggleFullscreen} data-testid="button-fullscreen" style={{ ...ctrlStyle, marginTop: "4px", fontSize: "14px" }}>
           {isFullscreen ? (
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="4 14 10 14 10 20" /><polyline points="20 10 14 10 14 4" />
@@ -421,7 +379,7 @@ function MapControls({ position, basemap, onBasemapChange }: { position: [number
                   width: active ? "64px" : "56px",
                   height: active ? "64px" : "56px",
                   borderRadius: "8px",
-                  border: `2.5px solid ${active ? "#00C853" : "hsl(150 20% 14%)"}`,
+                  border: `2.5px solid ${active ? "#00C853" : "var(--map-ctrl-border)"}`,
                   overflow: "hidden",
                   boxShadow: active ? "0 0 12px rgba(0,200,83,0.4)" : "0 2px 8px rgb(0 0 0 / 0.5)",
                   transition: "all 0.2s ease",
@@ -461,8 +419,8 @@ function MapControls({ position, basemap, onBasemapChange }: { position: [number
                   fontSize: "10px",
                   fontFamily: "Inter, sans-serif",
                   fontWeight: active ? 700 : 500,
-                  color: active ? "#00C853" : "hsl(150 12% 80%)",
-                  textShadow: "0 1px 3px rgb(0 0 0 / 0.8)",
+                  color: active ? "#00C853" : "var(--map-ctrl-text)",
+                  textShadow: "0 1px 3px rgb(0 0 0 / 0.6)",
                   transition: "color 0.2s ease",
                 }}
               >
@@ -578,16 +536,18 @@ function DrawingTools({ drawnRegion, onDrawRegion, onDrawingStateChange }: { dra
   const btnStyle = (active: boolean): React.CSSProperties => ({
     width: "32px",
     height: "32px",
-    background: active ? "hsl(145 100% 39% / 0.3)" : "hsl(150 19% 8% / 0.9)",
-    border: `1px solid ${active ? "#00C853" : "hsl(150 20% 14%)"}`,
-    borderRadius: "6px",
-    color: active ? "#00C853" : "hsl(150 12% 92%)",
+    background: active ? "hsl(145 100% 39% / 0.3)" : "var(--map-ctrl-bg)",
+    border: `1px solid ${active ? "#00C853" : "var(--map-ctrl-border)"}`,
+    borderRadius: "8px",
+    color: active ? "#00C853" : "var(--map-ctrl-text)",
     fontSize: "12px",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     backdropFilter: "blur(8px)",
+    boxShadow: "0 2px 8px rgb(0 0 0 / 0.15)",
+    transition: "all 0.2s ease",
   });
 
   const drawStyle = {
@@ -663,13 +623,13 @@ function DrawingTools({ drawnRegion, onDrawRegion, onDrawingStateChange }: { dra
         <div
           className="absolute bottom-14 left-1/2 -translate-x-1/2 z-[1000]"
           style={{
-            background: "hsl(150 19% 8% / 0.95)",
-            border: "1px solid hsl(145 100% 39% / 0.4)",
+            background: "var(--map-coord-bg)",
+            border: "1px solid var(--map-coord-border)",
             borderRadius: "8px",
             padding: "6px 14px",
             fontSize: "12px",
             fontFamily: "Inter, sans-serif",
-            color: "#00C853",
+            color: "var(--map-coord-text)",
             backdropFilter: "blur(8px)",
             whiteSpace: "nowrap",
           }}
@@ -679,7 +639,7 @@ function DrawingTools({ drawnRegion, onDrawRegion, onDrawingStateChange }: { dra
           {drawMode === "polygon" && drawingPoints.length > 0 && drawingPoints.length < 3 && `${drawingPoints.length} point${drawingPoints.length > 1 ? "s" : ""} — keep clicking to add more`}
           {drawMode === "polygon" && drawingPoints.length >= 3 && (
             <span>
-              {drawingPoints.length} points — <button onClick={finishPolygon} style={{ textDecoration: "underline", cursor: "pointer", background: "none", border: "none", color: "#00C853", font: "inherit" }}>finish</button> or right-click
+              {drawingPoints.length} points — <button onClick={finishPolygon} style={{ textDecoration: "underline", cursor: "pointer", background: "none", border: "none", color: "inherit", font: "inherit" }}>finish</button> or right-click
             </span>
           )}
           {drawMode === "circle" && !circleStart && "Click to place circle center"}
@@ -1004,10 +964,12 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
       if (!container || exporting) return;
       setExporting(true);
       try {
+        const bgColor = getComputedStyle(document.documentElement).getPropertyValue("--background").trim();
+        const exportBg = bgColor ? `hsl(${bgColor})` : "#0B1010";
         const canvas = await html2canvas(container, {
           useCORS: true,
           allowTaint: false,
-          backgroundColor: "#0B1010",
+          backgroundColor: exportBg,
           scale: 2,
           logging: false,
           ignoreElements: (el) => {
@@ -1025,7 +987,7 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
           const canvas = await html2canvas(container, {
             useCORS: false,
             allowTaint: true,
-            backgroundColor: "#0B1010",
+            backgroundColor: null,
             scale: 2,
             logging: false,
           });
@@ -1170,12 +1132,12 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
           className="absolute bottom-4 left-4 z-[500]"
           data-testid="map-legend"
           style={{
-            background: "hsl(150 19% 8% / 0.9)",
-            border: "1px solid hsl(150 20% 14%)",
+            background: "var(--map-ctrl-bg)",
+            border: "1px solid var(--map-ctrl-border)",
             borderRadius: "8px",
             padding: "10px 12px",
             backdropFilter: "blur(8px)",
-            boxShadow: "0 4px 16px rgb(0 0 0 / 0.4)",
+            boxShadow: "0 4px 16px rgb(0 0 0 / 0.2)",
           }}
         >
           <p style={{
@@ -1183,7 +1145,7 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
             fontWeight: 600,
             textTransform: "uppercase",
             letterSpacing: "0.05em",
-            color: "hsl(150 7% 51%)",
+            color: "hsl(var(--muted-foreground))",
             marginBottom: "8px",
             fontFamily: "Inter, sans-serif",
           }}>
@@ -1202,13 +1164,13 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
                       height: "10px",
                       borderRadius: "50%",
                       background: LAYER_COLORS[id] || "#666",
-                      border: "1.5px solid hsl(150 20% 14%)",
+                      border: "1.5px solid var(--map-ctrl-border)",
                       boxShadow: `0 0 4px ${LAYER_COLORS[id] || "#666"}40`,
                     }}
                   />
-                  <span style={{ color: "hsl(150 12% 92%)", textTransform: "capitalize" }}>{id}</span>
+                  <span style={{ color: "var(--map-ctrl-text)", textTransform: "capitalize" }}>{id}</span>
                   {data?.features && (
-                    <span style={{ color: "hsl(150 7% 51%)", fontSize: "10px" }}>({data.features.length})</span>
+                    <span style={{ color: "hsl(var(--muted-foreground))", fontSize: "10px" }}>({data.features.length})</span>
                   )}
                 </div>
               );
@@ -1221,13 +1183,13 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
                     height: "10px",
                     borderRadius: "50%",
                     background: overlay.color,
-                    border: "1.5px solid hsl(150 20% 14%)",
+                    border: "1.5px solid var(--map-ctrl-border)",
                     boxShadow: `0 0 4px ${overlay.color}40`,
                   }}
                 />
-                <span style={{ color: "hsl(150 12% 92%)" }}>{overlay.label}</span>
+                <span style={{ color: "var(--map-ctrl-text)" }}>{overlay.label}</span>
                 {overlay.data?.features && (
-                  <span style={{ color: "hsl(150 7% 51%)", fontSize: "10px" }}>({overlay.data.features.length})</span>
+                  <span style={{ color: "hsl(var(--muted-foreground))", fontSize: "10px" }}>({overlay.data.features.length})</span>
                 )}
               </div>
             ))}
@@ -1238,7 +1200,7 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
       {exporting && (
         <div
           className="absolute inset-0 z-[2000] flex items-center justify-center"
-          style={{ background: "rgba(11, 16, 16, 0.6)", backdropFilter: "blur(2px)" }}
+          style={{ background: "hsl(var(--background) / 0.6)", backdropFilter: "blur(2px)" }}
           data-testid="export-overlay"
         >
           <div className="bg-card border border-border rounded-xl px-6 py-4 flex items-center gap-3 shadow-xl">
