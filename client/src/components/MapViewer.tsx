@@ -229,7 +229,6 @@ function MapControls({ position, basemap, onBasemapChange }: { position: [number
   const map = useMap();
   const [zoom, setZoom] = useState(map.getZoom());
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [showBasemapPicker, setShowBasemapPicker] = useState(false);
 
   useMapEvents({
     zoomend() {
@@ -381,87 +380,98 @@ function MapControls({ position, basemap, onBasemapChange }: { position: [number
             </svg>
           )}
         </button>
-        <button
-          onClick={() => setShowBasemapPicker(p => !p)}
-          data-testid="button-basemap-picker"
-          title="Change basemap"
-          style={{
-            width: "32px",
-            height: "32px",
-            background: showBasemapPicker ? "hsl(145 100% 39% / 0.3)" : "hsl(150 19% 8% / 0.9)",
-            border: `1px solid ${showBasemapPicker ? "#00C853" : "hsl(150 20% 14%)"}`,
-            borderRadius: "6px",
-            color: showBasemapPicker ? "#00C853" : "hsl(150 12% 92%)",
-            fontSize: "14px",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            backdropFilter: "blur(8px)",
-            marginTop: "4px",
-          }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
-            <rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
-          </svg>
-        </button>
       </div>
 
-      {showBasemapPicker && (
-        <div
-          className="absolute top-3 z-[1000]"
-          data-testid="basemap-picker"
-          style={{
-            right: "44px",
-            background: "hsl(150 19% 8% / 0.95)",
-            border: "1px solid hsl(150 20% 14%)",
-            borderRadius: "8px",
-            padding: "6px",
-            backdropFilter: "blur(12px)",
-            boxShadow: "0 4px 20px rgb(0 0 0 / 0.5)",
-            display: "flex",
-            gap: "4px",
-          }}
-        >
-          {(["dark", "satellite", "road", "terrain"] as BasemapType[]).map(type => {
-            const active = basemap === type;
-            const labels: Record<BasemapType, string> = { dark: "Dark", satellite: "Satellite", road: "Road", terrain: "Terrain" };
-            const icons: Record<BasemapType, JSX.Element> = {
-              dark: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>,
-              satellite: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>,
-              road: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19L8 5" /><path d="M16 5L20 19" /><line x1="12" y1="6" x2="12" y2="8" /><line x1="12" y1="11" x2="12" y2="13" /><line x1="12" y1="16" x2="12" y2="18" /></svg>,
-              terrain: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m8 3 4 8 5-5 5 15H2L8 3z" /></svg>,
-            };
-            return (
-              <button
-                key={type}
-                onClick={() => { onBasemapChange(type); setShowBasemapPicker(false); }}
-                data-testid={`basemap-${type}`}
+      <div
+        className="absolute bottom-6 left-3 z-[1000]"
+        data-testid="basemap-picker"
+        style={{
+          display: "flex",
+          gap: "6px",
+          alignItems: "flex-end",
+        }}
+      >
+        {(["dark", "satellite", "road", "terrain"] as BasemapType[]).map(type => {
+          const active = basemap === type;
+          const labels: Record<BasemapType, string> = { dark: "Dark", satellite: "Satellite", road: "Road", terrain: "Terrain" };
+          const thumbnails: Record<BasemapType, string> = {
+            dark: "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/4/6/4",
+            satellite: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/4/6/4",
+            road: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/4/6/4",
+            terrain: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/4/6/4",
+          };
+          return (
+            <button
+              key={type}
+              onClick={() => onBasemapChange(type)}
+              data-testid={`basemap-${type}`}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "3px",
+                cursor: "pointer",
+                background: "none",
+                border: "none",
+                padding: 0,
+              }}
+            >
+              <div
                 style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: "4px",
-                  padding: "8px 10px",
-                  borderRadius: "6px",
-                  border: `1.5px solid ${active ? "#00C853" : "transparent"}`,
-                  background: active ? "hsl(145 100% 39% / 0.15)" : "transparent",
-                  color: active ? "#00C853" : "hsl(150 12% 92%)",
-                  cursor: "pointer",
-                  fontSize: "10px",
-                  fontFamily: "Inter, sans-serif",
-                  fontWeight: active ? 600 : 400,
-                  minWidth: "56px",
+                  width: active ? "64px" : "56px",
+                  height: active ? "64px" : "56px",
+                  borderRadius: "8px",
+                  border: `2.5px solid ${active ? "#00C853" : "hsl(150 20% 14%)"}`,
+                  overflow: "hidden",
+                  boxShadow: active ? "0 0 12px rgba(0,200,83,0.4)" : "0 2px 8px rgb(0 0 0 / 0.5)",
+                  transition: "all 0.2s ease",
+                  position: "relative",
                 }}
               >
-                {icons[type]}
+                <img
+                  src={thumbnails[type]}
+                  alt={labels[type]}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    display: "block",
+                  }}
+                  crossOrigin="anonymous"
+                />
+                {active && (
+                  <div style={{
+                    position: "absolute",
+                    top: "3px",
+                    right: "3px",
+                    width: "14px",
+                    height: "14px",
+                    borderRadius: "50%",
+                    background: "#00C853",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}>
+                    <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
+                  </div>
+                )}
+              </div>
+              <span
+                style={{
+                  fontSize: "10px",
+                  fontFamily: "Inter, sans-serif",
+                  fontWeight: active ? 700 : 500,
+                  color: active ? "#00C853" : "hsl(150 12% 80%)",
+                  textShadow: "0 1px 3px rgb(0 0 0 / 0.8)",
+                  transition: "color 0.2s ease",
+                }}
+              >
                 {labels[type]}
-              </button>
-            );
-          })}
-        </div>
-      )}
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </>
   );
 }
