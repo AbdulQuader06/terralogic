@@ -182,6 +182,13 @@
   .leaflet-popup-close-button:hover {
     color: hsl(150 12% 92%) !important;
   }
+  .esri-identify-popup .leaflet-popup-content-wrapper {
+    background-color: hsl(150 19% 8% / 0.97);
+    border: 1px solid hsl(145 100% 39% / 0.3);
+  }
+  .esri-identify-popup .leaflet-popup-tip {
+    background-color: hsl(150 19% 8% / 0.97);
+  }
   
   .leaflet-control-zoom a {
     background-color: hsl(150 19% 8%) !important;

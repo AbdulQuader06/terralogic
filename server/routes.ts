@@ -896,6 +896,59 @@ export async function registerRoutes(
     res.json({ arcgisApiKey: ARCGIS_API_KEY });
   });
 
+  app.get("/api/esri/identify", async (req, res) => {
+    const { lat, lon, basemap } = req.query;
+    if (!lat || !lon) return res.status(400).json({ error: "lat and lon required" });
+    const clat = Number(lat), clon = Number(lon);
+
+    const results: any = { lat: clat, lon: clon, layers: [] };
+
+    try {
+      const reverseUrl = `https://geocode-api.arcgis.com/arcgis/rest/services/World/GeocodeServer/reverseGeocode?f=json&location=${clon},${clat}&langCode=en&token=${ARCGIS_API_KEY}`;
+      const geoResp = await fetch(reverseUrl, { signal: AbortSignal.timeout(8000) });
+      if (geoResp.ok) {
+        const geoData = await geoResp.json();
+        if (geoData.address) {
+          results.address = geoData.address;
+          results.location = geoData.location;
+        }
+      }
+    } catch {}
+
+    try {
+      const topoUrl = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/identify?f=json&geometry=${clon},${clat}&geometryType=esriGeometryPoint&sr=4326&tolerance=5&mapExtent=${clon-0.01},${clat-0.01},${clon+0.01},${clat+0.01}&imageDisplay=800,600,96&returnGeometry=false&layers=visible`;
+      const topoResp = await fetch(topoUrl, { signal: AbortSignal.timeout(8000) });
+      if (topoResp.ok) {
+        const topoData = await topoResp.json();
+        if (topoData.results) {
+          results.layers.push(...topoData.results.map((r: any) => ({
+            layerName: r.layerName,
+            value: r.value,
+            attributes: r.attributes,
+          })));
+        }
+      }
+    } catch {}
+
+    try {
+      const imageryUrl = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/identify?f=json&geometry=${clon},${clat}&geometryType=esriGeometryPoint&sr=4326&tolerance=5&mapExtent=${clon-0.01},${clat-0.01},${clon+0.01},${clat+0.01}&imageDisplay=800,600,96&returnGeometry=false&layers=visible`;
+      const imgResp = await fetch(imageryUrl, { signal: AbortSignal.timeout(8000) });
+      if (imgResp.ok) {
+        const imgData = await imgResp.json();
+        if (imgData.results) {
+          results.layers.push(...imgData.results.map((r: any) => ({
+            layerName: r.layerName,
+            value: r.value,
+            attributes: r.attributes,
+            source: "imagery",
+          })));
+        }
+      }
+    } catch {}
+
+    res.json(results);
+  });
+
   app.post("/api/analyze", async (req, res) => {
     const parsed = analyzeRequestSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "Invalid request", details: parsed.error.flatten() });
