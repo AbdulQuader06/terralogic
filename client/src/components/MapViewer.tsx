@@ -950,9 +950,92 @@ function CustomOverlayRenderer({ overlay }: { overlay: CustomOverlay }) {
   );
 }
 
+function geojsonToKML(geojson: any): string {
+  let placemarks = "";
+  for (const feature of (geojson.features || [])) {
+    const props = feature.properties || {};
+    const name = props.name || props.layer || props.soilType || "Feature";
+    const desc = Object.entries(props).map(([k, v]) => `${k}: ${v}`).join(", ");
+    const geom = feature.geometry;
+    if (!geom) continue;
+
+    let coordStr = "";
+    if (geom.type === "Point") {
+      const [lon, lat] = geom.coordinates;
+      coordStr = `<Point><coordinates>${lon},${lat},0</coordinates></Point>`;
+    } else if (geom.type === "LineString") {
+      const coords = geom.coordinates.map(([lon, lat]: number[]) => `${lon},${lat},0`).join(" ");
+      coordStr = `<LineString><coordinates>${coords}</coordinates></LineString>`;
+    } else if (geom.type === "Polygon") {
+      const ring = (geom.coordinates[0] || []).map(([lon, lat]: number[]) => `${lon},${lat},0`).join(" ");
+      coordStr = `<Polygon><outerBoundaryIs><LinearRing><coordinates>${ring}</coordinates></LinearRing></outerBoundaryIs></Polygon>`;
+    } else if (geom.type === "MultiPolygon") {
+      const polys = geom.coordinates.map((poly: number[][][]) => {
+        const ring = (poly[0] || []).map(([lon, lat]: number[]) => `${lon},${lat},0`).join(" ");
+        return `<Polygon><outerBoundaryIs><LinearRing><coordinates>${ring}</coordinates></LinearRing></outerBoundaryIs></Polygon>`;
+      }).join("");
+      coordStr = `<MultiGeometry>${polys}</MultiGeometry>`;
+    }
+    if (coordStr) {
+      placemarks += `<Placemark><name>${escapeXml(name)}</name><description>${escapeXml(desc)}</description>${coordStr}</Placemark>\n`;
+    }
+  }
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+<name>TerraLogic AI Export</name>
+${placemarks}
+</Document>
+</kml>`;
+}
+
+function escapeXml(s: string): string {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function geojsonToDXF(geojson: any): string {
+  let entities = "";
+  for (const feature of (geojson.features || [])) {
+    const geom = feature.geometry;
+    if (!geom) continue;
+    const layer = feature.properties?.layer || "0";
+
+    if (geom.type === "Point") {
+      const [x, y] = geom.coordinates;
+      entities += `  0\nPOINT\n  8\n${layer}\n 10\n${x}\n 20\n${y}\n 30\n0.0\n`;
+    } else if (geom.type === "LineString") {
+      entities += `  0\nPOLYLINE\n  8\n${layer}\n 66\n1\n`;
+      for (const [x, y] of geom.coordinates) {
+        entities += `  0\nVERTEX\n  8\n${layer}\n 10\n${x}\n 20\n${y}\n 30\n0.0\n`;
+      }
+      entities += `  0\nSEQEND\n  8\n${layer}\n`;
+    } else if (geom.type === "Polygon") {
+      const ring = geom.coordinates[0] || [];
+      entities += `  0\nPOLYLINE\n  8\n${layer}\n 66\n1\n 70\n1\n`;
+      for (const [x, y] of ring) {
+        entities += `  0\nVERTEX\n  8\n${layer}\n 10\n${x}\n 20\n${y}\n 30\n0.0\n`;
+      }
+      entities += `  0\nSEQEND\n  8\n${layer}\n`;
+    } else if (geom.type === "MultiPolygon") {
+      for (const poly of geom.coordinates) {
+        const ring = poly[0] || [];
+        entities += `  0\nPOLYLINE\n  8\n${layer}\n 66\n1\n 70\n1\n`;
+        for (const [x, y] of ring) {
+          entities += `  0\nVERTEX\n  8\n${layer}\n 10\n${x}\n 20\n${y}\n 30\n0.0\n`;
+        }
+        entities += `  0\nSEQEND\n  8\n${layer}\n`;
+      }
+    }
+  }
+
+  return `  0\nSECTION\n  2\nHEADER\n  0\nENDSEC\n  0\nSECTION\n  2\nENTITIES\n${entities}  0\nENDSEC\n  0\nEOF\n`;
+}
+
 export interface MapViewerHandle {
   exportMapAsPNG: () => Promise<void>;
+  exportMapAs: (format: string) => Promise<void>;
   isExporting: () => boolean;
+  getLayerGeoJSON: () => any;
 }
 
 const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer({ onLocationSelect, arcgisApiKey, activeLayers, onLayerLoading, selectedLocation, customOverlays = [], drawnRegion, onDrawRegion }, ref) {
@@ -979,51 +1062,80 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
     setUserPickedBasemap(true);
   }, []);
 
+  const getLayerGeoJSONFn = useCallback(() => {
+    const allFeatures: any[] = [];
+    Object.values(layerData).forEach((data: any) => {
+      if (data?.features) allFeatures.push(...data.features);
+    });
+    customOverlays.forEach(overlay => {
+      if (overlay.data?.features) allFeatures.push(...overlay.data.features);
+    });
+    return { type: "FeatureCollection", features: allFeatures };
+  }, [layerData, customOverlays]);
+
+  const exportImageFn = useCallback(async (format: "png" | "jpeg") => {
+    const container = mapContainerRef.current;
+    if (!container || exporting) return;
+    setExporting(true);
+    try {
+      const bgColor = getComputedStyle(document.documentElement).getPropertyValue("--background").trim();
+      const exportBg = bgColor ? `hsl(${bgColor})` : "#0B1010";
+      const canvas = await html2canvas(container, {
+        useCORS: true, allowTaint: false, backgroundColor: exportBg, scale: 2, logging: false,
+        ignoreElements: (el) => el.getAttribute("data-testid") === "map-zoom-controls" || el.getAttribute("data-testid") === "button-export-map",
+      });
+      const link = document.createElement("a");
+      const dateStr = new Date().toISOString().slice(0, 10);
+      link.download = `TerraLogic_Map_${dateStr}.${format === "jpeg" ? "jpg" : "png"}`;
+      link.href = canvas.toDataURL(format === "jpeg" ? "image/jpeg" : "image/png", format === "jpeg" ? 0.92 : undefined);
+      link.click();
+    } catch (e) {
+      console.error("Map export failed:", e);
+      try {
+        const canvas = await html2canvas(container!, { useCORS: false, allowTaint: true, backgroundColor: null, scale: 2, logging: false });
+        const link = document.createElement("a");
+        link.download = `TerraLogic_Map_${new Date().toISOString().slice(0, 10)}.${format === "jpeg" ? "jpg" : "png"}`;
+        link.href = canvas.toDataURL(format === "jpeg" ? "image/jpeg" : "image/png");
+        link.click();
+      } catch (e2) {
+        console.error("Map export fallback also failed:", e2);
+        alert("Map export failed. Try zooming in first, then export again.");
+      }
+    } finally {
+      setExporting(false);
+    }
+  }, [exporting]);
+
+  const downloadBlob = useCallback((content: string | Uint8Array, filename: string, mimeType: string) => {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.download = filename;
+    link.href = url;
+    link.click();
+    URL.revokeObjectURL(url);
+  }, []);
+
   useImperativeHandle(ref, () => ({
     isExporting: () => exporting,
-    async exportMapAsPNG() {
-      const container = mapContainerRef.current;
-      if (!container || exporting) return;
-      setExporting(true);
-      try {
-        const bgColor = getComputedStyle(document.documentElement).getPropertyValue("--background").trim();
-        const exportBg = bgColor ? `hsl(${bgColor})` : "#0B1010";
-        const canvas = await html2canvas(container, {
-          useCORS: true,
-          allowTaint: false,
-          backgroundColor: exportBg,
-          scale: 2,
-          logging: false,
-          ignoreElements: (el) => {
-            return el.getAttribute("data-testid") === "map-zoom-controls" ||
-              el.getAttribute("data-testid") === "button-export-map";
-          },
-        });
-        const link = document.createElement("a");
-        link.download = `TerraLogic_Map_${new Date().toISOString().slice(0, 10)}.png`;
-        link.href = canvas.toDataURL("image/png");
-        link.click();
-      } catch (e) {
-        console.error("Map export failed:", e);
-        try {
-          const canvas = await html2canvas(container, {
-            useCORS: false,
-            allowTaint: true,
-            backgroundColor: null,
-            scale: 2,
-            logging: false,
-          });
-          const link = document.createElement("a");
-          link.download = `TerraLogic_Map_${new Date().toISOString().slice(0, 10)}.png`;
-          link.href = canvas.toDataURL("image/png");
-          link.click();
-        } catch (e2) {
-          console.error("Map export fallback also failed:", e2);
-          alert("Map export failed. Try zooming in first, then export again.");
-        }
-      } finally {
-        setExporting(false);
+    getLayerGeoJSON: getLayerGeoJSONFn,
+    async exportMapAs(format: string) {
+      const dateStr = new Date().toISOString().slice(0, 10);
+      if (format === "png" || format === "jpeg") {
+        await exportImageFn(format);
+      } else if (format === "geojson") {
+        const geojson = getLayerGeoJSONFn();
+        downloadBlob(JSON.stringify(geojson, null, 2), `TerraLogic_Map_${dateStr}.geojson`, "application/geo+json");
+      } else if (format === "kml") {
+        const geojson = getLayerGeoJSONFn();
+        downloadBlob(geojsonToKML(geojson), `TerraLogic_Map_${dateStr}.kml`, "application/vnd.google-earth.kml+xml");
+      } else if (format === "dxf") {
+        const geojson = getLayerGeoJSONFn();
+        downloadBlob(geojsonToDXF(geojson), `TerraLogic_Map_${dateStr}.dxf`, "application/dxf");
       }
+    },
+    async exportMapAsPNG() {
+      await exportImageFn("png");
     }
   }));
 

@@ -74,6 +74,8 @@ export interface SiteAnalysis {
     buildingFootprint: number;
     infrastructureCoverage: number;
   };
+  landUseMix?: { label: string; value: number; color: string }[];
+  amenityMix?: { label: string; value: number; color: string }[];
   aiNarrative?: string;
   sunPathData?: {
     sunrise: string;

@@ -678,8 +678,47 @@ async function generateSiteAnalysis(lat: number, lon: number, name: string): Pro
     aiNarrative = `${name} sits at ${centerElev.toFixed(1)}m elevation on ${soilClassName} soil (${soilDrainageLabel}). The site scores ${overallScore}/100 for construction suitability with ${floodRiskLabel.toLowerCase()} flood risk. ${schoolCount} schools, ${hospitalCount} hospitals, and ${transitCount} transit stops serve the area within 3km. Sun exposure is ${sunExposure}% with ${sunPathData.dayLength} hours of daylight.`;
   }
 
+  const landUseCategories: Record<string, string> = {
+    residential: "Residential", commercial: "Commercial", industrial: "Industrial",
+    retail: "Retail", grass: "Green/Leisure", forest: "Green/Leisure",
+    farmland: "Agricultural", meadow: "Green/Leisure", recreation_ground: "Green/Leisure",
+    construction: "Construction", military: "Institutional", railway: "Transport",
+    cemetery: "Institutional", orchard: "Agricultural", vineyard: "Agricultural",
+    quarry: "Industrial", allotments: "Agricultural", basin: "Water",
+    reservoir: "Water",
+  };
+  const luCategoryCounts: Record<string, number> = {};
+  zoningTypes.forEach((z: string) => {
+    const cat = landUseCategories[z] || "Other";
+    luCategoryCounts[cat] = (luCategoryCounts[cat] || 0) + 1;
+  });
+  const luTotal = Object.values(luCategoryCounts).reduce((a, b) => a + b, 0) || 1;
+  const luCatColors: Record<string, string> = {
+    "Residential": "#EF4444", "Commercial": "#F59E0B", "Industrial": "#6366F1",
+    "Green/Leisure": "#22C55E", "Agricultural": "#84CC16", "Institutional": "#64748B",
+    "Transport": "#78716C", "Construction": "#F97316", "Retail": "#EC4899",
+    "Water": "#3B82F6", "Other": "#9CA3AF",
+  };
+  const landUseMix = Object.entries(luCategoryCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6)
+    .map(([label, count]) => ({
+      label,
+      value: Math.round((count / luTotal) * 100),
+      color: luCatColors[label] || "#9CA3AF",
+    }));
+
+  const amenityTotal = schoolCount + hospitalCount + transitCount + parkCount + infraCount || 1;
+  const amenityMix = [
+    { label: "Transit", value: Math.round((transitCount / amenityTotal) * 100), color: "#3B82F6" },
+    { label: "Schools", value: Math.round((schoolCount / amenityTotal) * 100), color: "#F59E0B" },
+    { label: "Healthcare", value: Math.round((hospitalCount / amenityTotal) * 100), color: "#EF4444" },
+    { label: "Parks", value: Math.round((parkCount / amenityTotal) * 100), color: "#22C55E" },
+    { label: "Infrastructure", value: Math.round((infraCount / amenityTotal) * 100), color: "#8B5CF6" },
+  ].filter(a => a.value > 0).sort((a, b) => b.value - a.value);
+
   return {
-    overallScore, rating, aiNarrative, sunPathData,
+    overallScore, rating, aiNarrative, sunPathData, landUseMix, amenityMix,
     factors: [
       { name: "Flood Risk", value: floodRiskScore, category: "risk" },
       { name: "Soil Stability", value: soilScore, category: "benefit" },

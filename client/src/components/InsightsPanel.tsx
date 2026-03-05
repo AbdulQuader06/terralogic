@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip as RechartsTooltip, Area, AreaChart,
+  PieChart, Pie, Cell,
 } from "recharts";
 import { useTheme } from "@/lib/theme";
 
@@ -308,6 +309,88 @@ export default function InsightsPanel({ location, onAnalysisReady }: InsightsPan
               </div>
             </div>
           )}
+
+          {(analysis.landUseMix && analysis.landUseMix.length > 0) || (analysis.amenityMix && analysis.amenityMix.length > 0) ? (
+            <div className="grid grid-cols-2 gap-3" data-testid="grid-mix-charts">
+              {analysis.landUseMix && analysis.landUseMix.length > 0 && (
+                <div className="border rounded-xl p-3" style={{ background: isDark ? "rgba(99,102,241,0.05)" : "rgba(99,102,241,0.03)", borderColor: isDark ? "rgba(99,102,241,0.15)" : "rgba(99,102,241,0.12)" }} data-testid="card-landuse-mix">
+                  <h4 className="text-[11px] font-bold text-foreground mb-0.5">Land Use Mix</h4>
+                  <p className="text-[9px] text-muted-foreground mb-2 leading-snug">
+                    {analysis.landUseMix[0]?.label}-dominant area
+                    {analysis.landUseMix[1] ? ` with ${analysis.landUseMix[1].label.toLowerCase()} presence` : ""}
+                  </p>
+                  <div className="flex justify-center">
+                    <ResponsiveContainer width={100} height={100}>
+                      <PieChart>
+                        <Pie
+                          data={analysis.landUseMix}
+                          dataKey="value"
+                          nameKey="label"
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={28}
+                          outerRadius={45}
+                          strokeWidth={2}
+                          stroke={isDark ? "#111916" : "#FFFFFF"}
+                        >
+                          {analysis.landUseMix.map((entry, idx) => (
+                            <Cell key={idx} fill={entry.color} />
+                          ))}
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="space-y-1 mt-2">
+                    {analysis.landUseMix.map((item, idx) => (
+                      <div key={idx} className="flex items-center gap-1.5 text-[10px]">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: item.color }} />
+                        <span className="text-muted-foreground">{item.value}</span>
+                        <span className="text-foreground truncate">{item.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {analysis.amenityMix && analysis.amenityMix.length > 0 && (
+                <div className="border rounded-xl p-3" style={{ background: isDark ? "rgba(59,130,246,0.05)" : "rgba(59,130,246,0.03)", borderColor: isDark ? "rgba(59,130,246,0.15)" : "rgba(59,130,246,0.12)" }} data-testid="card-amenity-mix">
+                  <h4 className="text-[11px] font-bold text-foreground mb-0.5">Amenity Mix (POIs)</h4>
+                  <p className="text-[9px] text-muted-foreground mb-2 leading-snug">
+                    {analysis.amenityMix[0]?.label} and {analysis.amenityMix[1]?.label?.toLowerCase() || "others"} dominate
+                  </p>
+                  <div className="flex justify-center">
+                    <ResponsiveContainer width={100} height={100}>
+                      <PieChart>
+                        <Pie
+                          data={analysis.amenityMix}
+                          dataKey="value"
+                          nameKey="label"
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={28}
+                          outerRadius={45}
+                          strokeWidth={2}
+                          stroke={isDark ? "#111916" : "#FFFFFF"}
+                        >
+                          {analysis.amenityMix.map((entry, idx) => (
+                            <Cell key={idx} fill={entry.color} />
+                          ))}
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="space-y-1 mt-2">
+                    {analysis.amenityMix.map((item, idx) => (
+                      <div key={idx} className="flex items-center gap-1.5 text-[10px]">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: item.color }} />
+                        <span className="text-muted-foreground">{item.value}</span>
+                        <span className="text-foreground truncate">{item.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : null}
 
           {analysis.sunPathData && (
             <div>
