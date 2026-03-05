@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents, useMap, GeoJSON, CircleM
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import html2canvas from "html2canvas";
+import { useTheme } from "@/lib/theme";
 
 export type DrawnRegion = {
   type: "polygon";
@@ -43,15 +44,22 @@ export function drawnRegionToPolygonParam(region: DrawnRegion): string | undefin
   return undefined;
 }
 
-type BasemapType = "dark" | "satellite" | "road" | "terrain";
+type BasemapType = "dark" | "light" | "satellite" | "road" | "terrain";
 
 const ESRI_BASEMAPS: Record<BasemapType, { url: string; attribution: string; maxZoom: number; label?: string; labelUrl?: string }> = {
   dark: {
     url: "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
     attribution: 'Esri, HERE, Garmin, &copy; OpenStreetMap contributors',
     maxZoom: 16,
-    label: "Dark Gray",
+    label: "Dark",
     labelUrl: "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}",
+  },
+  light: {
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",
+    attribution: 'Esri, HERE, Garmin, &copy; OpenStreetMap contributors',
+    maxZoom: 16,
+    label: "Light",
+    labelUrl: "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}",
   },
   satellite: {
     url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
@@ -349,11 +357,12 @@ function MapControls({ position, basemap, onBasemapChange }: { position: [number
           alignItems: "flex-end",
         }}
       >
-        {(["dark", "satellite", "road", "terrain"] as BasemapType[]).map(type => {
+        {(["dark", "light", "satellite", "road", "terrain"] as BasemapType[]).map(type => {
           const active = basemap === type;
-          const labels: Record<BasemapType, string> = { dark: "Dark", satellite: "Satellite", road: "Road", terrain: "Terrain" };
+          const labels: Record<BasemapType, string> = { dark: "Dark", light: "Light", satellite: "Satellite", road: "Road", terrain: "Terrain" };
           const thumbnails: Record<BasemapType, string> = {
             dark: "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/4/6/4",
+            light: "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/4/6/4",
             satellite: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/4/6/4",
             road: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/4/6/4",
             terrain: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/4/6/4",
@@ -953,9 +962,22 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
   const abortRef = useRef<AbortController | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
+  const { isDark } = useTheme();
   const [exporting, setExporting] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [basemap, setBasemap] = useState<BasemapType>("dark");
+  const [basemap, setBasemap] = useState<BasemapType>(isDark ? "dark" : "light");
+  const [userPickedBasemap, setUserPickedBasemap] = useState(false);
+
+  useEffect(() => {
+    if (!userPickedBasemap) {
+      setBasemap(isDark ? "dark" : "light");
+    }
+  }, [isDark, userPickedBasemap]);
+
+  const handleBasemapChange = useCallback((b: BasemapType) => {
+    setBasemap(b);
+    setUserPickedBasemap(true);
+  }, []);
 
   useImperativeHandle(ref, () => ({
     isExporting: () => exporting,
@@ -1122,7 +1144,7 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
 
         <Marker position={position} icon={markerIcon} />
         <ClickHandler onLocationSelect={handleLocationSelect} disabled={isDrawing} />
-        <MapControls position={position} basemap={basemap} onBasemapChange={setBasemap} />
+        <MapControls position={position} basemap={basemap} onBasemapChange={handleBasemapChange} />
         {onDrawRegion && <DrawingTools drawnRegion={drawnRegion || null} onDrawRegion={onDrawRegion} onDrawingStateChange={setIsDrawing} />}
         {selectedLocation && <FlyToLocation lat={selectedLocation.lat} lon={selectedLocation.lon} />}
       </MapContainer>

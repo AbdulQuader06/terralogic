@@ -6,7 +6,7 @@ AI-powered GIS spatial analysis platform with dark Figma-matched UI. Evaluates c
 
 - **Frontend**: React + Vite + Tailwind CSS v4 + shadcn/ui + recharts
 - **Backend**: Express.js with API routes for GIS data proxying, AI chat, and analysis
-- **Map**: Leaflet + react-leaflet with Esri ArcGIS basemaps (Dark/Satellite/Road/Terrain switcher), server-side geocoding (Nominatim/ArcGIS)
+- **Map**: Leaflet + react-leaflet with Esri ArcGIS basemaps (Dark/Light/Satellite/Road/Terrain switcher, theme-aware auto-switch), server-side geocoding (Nominatim/ArcGIS)
 - **AI Models**: Multi-model system with automatic fallback:
   - Google Gemini 2.0 Flash (primary) — general GIS analysis
   - MapGPT persona (Gemini-backed) — geospatial specialist
@@ -34,7 +34,7 @@ Three-panel dark theme layout:
   - **AI tab**: Multi-model chatbot with model selector dropdown (Gemini/MapGPT/CompassAI/ChatGPT/Auto)
   - **Custom Overlays section**: Lists loaded QuickOSM/OpenCity overlays with remove buttons
   - Footer: Active layer count and analysis status
-- **Center**: Leaflet dark map with Esri ArcGIS basemaps (Dark/Satellite/Road/Terrain switcher with label overlays), custom zoom/coordinate/fullscreen controls, basemap picker UI, Esri identify popup on click (reverse geocode + layer info), drawing tools (polygon/circle/rectangle) for region-based filtering, GeoJSON layer rendering for 10 data layers + custom overlays
+- **Center**: Leaflet map with Esri ArcGIS basemaps (Dark/Light/Satellite/Road/Terrain with label overlays, auto-switches with theme), custom zoom/coordinate/fullscreen controls, basemap picker UI, Esri identify popup on click (reverse geocode + layer info), drawing tools (polygon/circle/rectangle) for region-based filtering, GeoJSON layer rendering for 10 data layers + custom overlays
 - **Right Panel** (320px): Scrollable InsightsPanel with:
   - AI narrative (Gemini-generated or fallback data summary)
   - Circular SVG score gauge

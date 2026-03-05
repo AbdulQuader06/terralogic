@@ -25,9 +25,12 @@ function calculateSunPath(lat: number, lon: number, date: Date = new Date()) {
   const hourAngle = Math.acos(clampedCosHA) * 180 / Math.PI;
   const dayLengthHours = (2 * hourAngle) / 15;
   const eqOfTime = 229.18 * (0.000075 + 0.001868 * Math.cos(2 * Math.PI * dayOfYear / 365) - 0.032077 * Math.sin(2 * Math.PI * dayOfYear / 365) - 0.014615 * Math.cos(4 * Math.PI * dayOfYear / 365) - 0.04089 * Math.sin(4 * Math.PI * dayOfYear / 365));
-  const solarNoonMin = 720 - 4 * lon - eqOfTime;
-  const sunriseMin = solarNoonMin - dayLengthHours * 30;
-  const sunsetMin = solarNoonMin + dayLengthHours * 30;
+  const solarNoonMinUTC = 720 - 4 * lon - eqOfTime;
+  const tzOffsetHours = Math.round(lon / 15);
+  const tzOffsetMin = tzOffsetHours * 60;
+  const solarNoonLocal = solarNoonMinUTC + tzOffsetMin;
+  const sunriseLocal = solarNoonLocal - dayLengthHours * 30;
+  const sunsetLocal = solarNoonLocal + dayLengthHours * 30;
   const formatTime = (min: number) => {
     const h = Math.floor(((min % 1440) + 1440) % 1440 / 60);
     const m = Math.round(((min % 1440) + 1440) % 1440 % 60);
@@ -41,13 +44,34 @@ function calculateSunPath(lat: number, lon: number, date: Date = new Date()) {
     sunriseAz = Math.acos(azArg) * 180 / Math.PI;
   }
   return {
-    sunrise: formatTime(sunriseMin),
-    sunset: formatTime(sunsetMin),
+    sunrise: formatTime(sunriseLocal),
+    sunset: formatTime(sunsetLocal),
     dayLength: Math.round(dayLengthHours * 10) / 10,
-    solarNoon: formatTime(solarNoonMin),
+    solarNoon: formatTime(solarNoonLocal),
     maxAltitude: Math.round(maxAlt * 10) / 10,
     azimuthRange: { min: Math.round(sunriseAz * 10) / 10, max: Math.round((360 - sunriseAz) * 10) / 10 },
   };
+}
+
+async function fetchSunTimes(lat: number, lon: number): Promise<{ sunrise: string; sunset: string } | null> {
+  try {
+    const resp = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=sunrise,sunset&timezone=auto&forecast_days=1`,
+      { signal: AbortSignal.timeout(5000) }
+    );
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data.daily?.sunrise?.[0] && data.daily?.sunset?.[0]) {
+        const sr = data.daily.sunrise[0];
+        const ss = data.daily.sunset[0];
+        return {
+          sunrise: sr.includes("T") ? sr.split("T")[1].slice(0, 5) : sr,
+          sunset: ss.includes("T") ? ss.split("T")[1].slice(0, 5) : ss,
+        };
+      }
+    }
+  } catch {}
+  return null;
 }
 
 async function callGemini(systemPrompt: string, message: string, history?: { role: string; content: string }[]): Promise<string> {
@@ -630,6 +654,15 @@ async function generateSiteAnalysis(lat: number, lon: number, name: string): Pro
   const densityLabel = densityIndex >= 75 ? "High Density" : densityIndex >= 40 ? "Medium Density" : "Low Density";
 
   const sunPathData = calculateSunPath(lat, lon);
+  const realSunTimes = await fetchSunTimes(lat, lon);
+  if (realSunTimes) {
+    sunPathData.sunrise = realSunTimes.sunrise;
+    sunPathData.sunset = realSunTimes.sunset;
+    const [srH, srM] = realSunTimes.sunrise.split(":").map(Number);
+    const [ssH, ssM] = realSunTimes.sunset.split(":").map(Number);
+    const realDayLen = ((ssH * 60 + ssM) - (srH * 60 + srM)) / 60;
+    if (realDayLen > 0) sunPathData.dayLength = Math.round(realDayLen * 10) / 10;
+  }
 
   let aiNarrative = "";
   try {
