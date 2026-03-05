@@ -27,7 +27,7 @@ AI-powered GIS spatial analysis platform with dark Figma-matched UI. Evaluates c
 ## UI Layout
 
 Three-panel dark theme layout:
-- **Header**: TerraLogic AI logo, project location selector, Case Study button (Hyderabad demo), dark/light theme toggle, Export Map (PNG) button, Export Report button
+- **Header**: TerraLogic AI logo, project location selector, dark/light theme toggle, Export Map dropdown (PNG/JPEG/GeoJSON/KML/DXF), Export Report dropdown (PDF/CSV/TXT)
 - **Left Panel** (300px): Project Overview heading, geocoder search input, three tabs (Layers | QuickOSM | AI):
   - **Layers tab**: Dark-themed layer toggle cards with icons for 10 data layers
   - **QuickOSM tab**: Interactive OSM query builder + OpenCity India CKAN data browser
@@ -44,7 +44,10 @@ Three-panel dark theme layout:
   - Sun Path Data section (sunrise, sunset, day length, solar noon, max altitude, azimuth range)
   - Elevation profile AreaChart (real multi-point data)
   - Radar chart (Solar, Soil, Wind, Water, Access)
+  - Land Use Mix & Amenity Mix donut charts with hover tooltips (label + percentage)
+  - Drawn Region metrics card (shape type, area, perimeter) when polygon/circle/rectangle is drawn
   - AI recommendation cards
+  - Map export crops to drawn region bounds + 15% padding when a shape is drawn
 
 ## Key Files
 

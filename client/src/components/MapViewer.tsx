@@ -220,6 +220,33 @@ function ClickHandler({ onLocationSelect, disabled }: { onLocationSelect: (lat: 
   return null;
 }
 
+function MapInstanceCapture({ mapRef }: { mapRef: React.MutableRefObject<L.Map | null> }) {
+  const map = useMap();
+  useEffect(() => {
+    mapRef.current = map;
+  }, [map, mapRef]);
+  return null;
+}
+
+function getDrawnRegionBounds(region: DrawnRegion): L.LatLngBounds | null {
+  if (!region) return null;
+  if (region.type === "polygon") {
+    const lats = region.coords.map(c => c[0]);
+    const lons = region.coords.map(c => c[1]);
+    return L.latLngBounds(
+      [Math.min(...lats), Math.min(...lons)],
+      [Math.max(...lats), Math.max(...lons)]
+    );
+  } else if (region.type === "circle") {
+    const center = L.latLng(region.center[0], region.center[1]);
+    const ne = center.toBounds(region.radius * 2);
+    return ne;
+  } else if (region.type === "rectangle") {
+    return L.latLngBounds(region.bounds[0], region.bounds[1]);
+  }
+  return null;
+}
+
 function FlyToLocation({ lat, lon }: { lat: number; lon: number }) {
   const map = useMap();
   const prevRef = useRef(`${lat},${lon}`);
@@ -1044,6 +1071,7 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
   const layerDataRef = useRef<LayerData>({});
   const abortRef = useRef<AbortController | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<L.Map | null>(null);
 
   const { isDark } = useTheme();
   const [exporting, setExporting] = useState(false);
@@ -1080,14 +1108,41 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
     try {
       const bgColor = getComputedStyle(document.documentElement).getPropertyValue("--background").trim();
       const exportBg = bgColor ? `hsl(${bgColor})` : "#0B1010";
-      const canvas = await html2canvas(container, {
+      const fullCanvas = await html2canvas(container, {
         useCORS: true, allowTaint: false, backgroundColor: exportBg, scale: 2, logging: false,
         ignoreElements: (el) => el.getAttribute("data-testid") === "map-zoom-controls" || el.getAttribute("data-testid") === "button-export-map",
       });
+
+      let finalCanvas: HTMLCanvasElement = fullCanvas;
+      const regionBounds = getDrawnRegionBounds(drawnRegion || null);
+      const map = mapInstanceRef.current;
+      if (regionBounds && map) {
+        const padded = regionBounds.pad(0.15);
+        const topLeft = map.latLngToContainerPoint(padded.getNorthWest());
+        const bottomRight = map.latLngToContainerPoint(padded.getSouthEast());
+        const scale = 2;
+        const sx = Math.max(0, Math.min(fullCanvas.width, Math.round(topLeft.x * scale)));
+        const sy = Math.max(0, Math.min(fullCanvas.height, Math.round(topLeft.y * scale)));
+        const ex = Math.max(0, Math.min(fullCanvas.width, Math.round(bottomRight.x * scale)));
+        const ey = Math.max(0, Math.min(fullCanvas.height, Math.round(bottomRight.y * scale)));
+        const sw = ex - sx;
+        const sh = ey - sy;
+        if (sw > 10 && sh > 10) {
+          const cropped = document.createElement("canvas");
+          cropped.width = sw;
+          cropped.height = sh;
+          const ctx = cropped.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(fullCanvas, sx, sy, sw, sh, 0, 0, sw, sh);
+            finalCanvas = cropped;
+          }
+        }
+      }
+
       const link = document.createElement("a");
       const dateStr = new Date().toISOString().slice(0, 10);
       link.download = `TerraLogic_Map_${dateStr}.${format === "jpeg" ? "jpg" : "png"}`;
-      link.href = canvas.toDataURL(format === "jpeg" ? "image/jpeg" : "image/png", format === "jpeg" ? 0.92 : undefined);
+      link.href = finalCanvas.toDataURL(format === "jpeg" ? "image/jpeg" : "image/png", format === "jpeg" ? 0.92 : undefined);
       link.click();
     } catch (e) {
       console.error("Map export failed:", e);
@@ -1104,7 +1159,7 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
     } finally {
       setExporting(false);
     }
-  }, [exporting]);
+  }, [exporting, drawnRegion]);
 
   const downloadBlob = useCallback((content: string | Uint8Array, filename: string, mimeType: string) => {
     const blob = new Blob([content], { type: mimeType });
@@ -1254,6 +1309,7 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
           <CustomOverlayRenderer key={overlay.id} overlay={overlay} />
         ))}
 
+        <MapInstanceCapture mapRef={mapInstanceRef} />
         <Marker position={position} icon={markerIcon} />
         <ClickHandler onLocationSelect={handleLocationSelect} disabled={isDrawing} />
         <MapControls position={position} basemap={basemap} onBasemapChange={handleBasemapChange} />

@@ -10,9 +10,85 @@ import {
 } from "recharts";
 import { useTheme } from "@/lib/theme";
 
+type DrawnRegion = {
+  type: "polygon";
+  coords: [number, number][];
+} | {
+  type: "circle";
+  center: [number, number];
+  radius: number;
+} | {
+  type: "rectangle";
+  bounds: [[number, number], [number, number]];
+} | null;
+
 interface InsightsPanelProps {
   location: { lat: number; lon: number; name: string } | null;
   onAnalysisReady?: () => void;
+  drawnRegion?: DrawnRegion;
+}
+
+function computeRegionMetrics(region: DrawnRegion): { areaSqM: number; perimeterM: number } | null {
+  if (!region) return null;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371000;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  };
+  const sphericalPolygonArea = (coords: [number, number][]) => {
+    const R = 6371000;
+    let total = 0;
+    const n = coords.length;
+    for (let i = 0; i < n; i++) {
+      const [lat1, lon1] = coords[i];
+      const [lat2, lon2] = coords[(i + 1) % n];
+      total += toRad(lon2 - lon1) * (2 + Math.sin(toRad(lat1)) + Math.sin(toRad(lat2)));
+    }
+    return Math.abs((total * R * R) / 2);
+  };
+
+  if (region.type === "polygon") {
+    let coords = [...region.coords];
+    if (coords.length < 3) return null;
+    const last = coords[coords.length - 1];
+    const first = coords[0];
+    if (coords.length > 3 && Math.abs(last[0] - first[0]) < 1e-9 && Math.abs(last[1] - first[1]) < 1e-9) {
+      coords = coords.slice(0, -1);
+    }
+    const areaSqM = sphericalPolygonArea(coords);
+    let perimeterM = 0;
+    for (let i = 0; i < coords.length; i++) {
+      const next = (i + 1) % coords.length;
+      perimeterM += haversine(coords[i][0], coords[i][1], coords[next][0], coords[next][1]);
+    }
+    return { areaSqM, perimeterM };
+  } else if (region.type === "circle") {
+    const areaSqM = Math.PI * region.radius * region.radius;
+    const perimeterM = 2 * Math.PI * region.radius;
+    return { areaSqM, perimeterM };
+  } else if (region.type === "rectangle") {
+    const [[rlat1, rlon1], [rlat2, rlon2]] = region.bounds;
+    const minLat = Math.min(rlat1, rlat2), maxLat = Math.max(rlat1, rlat2);
+    const minLon = Math.min(rlon1, rlon2), maxLon = Math.max(rlon1, rlon2);
+    const width = haversine(minLat, minLon, minLat, maxLon);
+    const height = haversine(minLat, minLon, maxLat, minLon);
+    return { areaSqM: width * height, perimeterM: 2 * (width + height) };
+  }
+  return null;
+}
+
+function formatArea(sqm: number): string {
+  if (sqm >= 1e6) return `${(sqm / 1e6).toFixed(2)} km²`;
+  if (sqm >= 1e4) return `${(sqm / 1e4).toFixed(2)} ha`;
+  return `${sqm.toFixed(0)} m²`;
+}
+
+function formatLength(m: number): string {
+  if (m >= 1000) return `${(m / 1000).toFixed(2)} km`;
+  return `${m.toFixed(0)} m`;
 }
 
 function CircularGauge({ score, size = 90, isDark = true }: { score: number; size?: number; isDark?: boolean }) {
@@ -73,7 +149,7 @@ function ColorDot({ color }: { color: string }) {
   );
 }
 
-export default function InsightsPanel({ location, onAnalysisReady }: InsightsPanelProps) {
+export default function InsightsPanel({ location, onAnalysisReady, drawnRegion }: InsightsPanelProps) {
   const { isDark } = useTheme();
   const chartAxisColor = isDark ? "#7A8A82" : "#94A3B8";
   const chartGridColor = isDark ? "#1C2A23" : "#E2E8F0";
@@ -247,6 +323,40 @@ export default function InsightsPanel({ location, onAnalysisReady }: InsightsPan
             </div>
           )}
 
+          {drawnRegion && (() => {
+            const metrics = computeRegionMetrics(drawnRegion);
+            if (!metrics) return null;
+            const typeLabel = drawnRegion.type === "polygon" ? "Polygon" : drawnRegion.type === "circle" ? "Circle" : "Rectangle";
+            return (
+              <div>
+                <h3 className="text-xs font-semibold text-foreground mb-3">Drawn Region</h3>
+                <div className="bg-muted/30 border border-border rounded-xl p-3.5 space-y-2.5" data-testid="card-drawn-region">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground flex items-center gap-2">
+                      <ColorDot color="#EC4899" />
+                      Shape
+                    </span>
+                    <span className="text-foreground font-semibold" data-testid="text-region-type">{typeLabel}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground flex items-center gap-2">
+                      <ColorDot color="#F59E0B" />
+                      Area
+                    </span>
+                    <span className="text-foreground font-semibold" data-testid="text-region-area">{formatArea(metrics.areaSqM)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground flex items-center gap-2">
+                      <ColorDot color="#3B82F6" />
+                      Perimeter
+                    </span>
+                    <span className="text-foreground font-semibold" data-testid="text-region-perimeter">{formatLength(metrics.perimeterM)}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           {analysis.environmentalMetrics && (
             <div>
               <h3 className="text-xs font-semibold text-foreground mb-3">Environmental Metrics</h3>
@@ -337,17 +447,37 @@ export default function InsightsPanel({ location, onAnalysisReady }: InsightsPan
                             <Cell key={idx} fill={entry.color} />
                           ))}
                         </Pie>
+                        <RechartsTooltip
+                          content={({ active, payload }) => {
+                            if (!active || !payload?.length) return null;
+                            const entry = payload[0].payload;
+                            const total = analysis.landUseMix!.reduce((s, e) => s + e.value, 0);
+                            const pct = total > 0 ? ((entry.value as number) / total * 100).toFixed(1) : "0";
+                            return (
+                              <div style={{ ...tooltipStyle, padding: "6px 10px" }}>
+                                <div style={{ fontWeight: 600, marginBottom: 2 }}>{entry.label}</div>
+                                <div>{entry.value} ({pct}%)</div>
+                              </div>
+                            );
+                          }}
+                        />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
                   <div className="space-y-1 mt-2">
-                    {analysis.landUseMix.map((item, idx) => (
-                      <div key={idx} className="flex items-center gap-1.5 text-[10px]">
-                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: item.color }} />
-                        <span className="text-muted-foreground">{item.value}</span>
-                        <span className="text-foreground truncate">{item.label}</span>
-                      </div>
-                    ))}
+                    {(() => {
+                      const total = analysis.landUseMix!.reduce((s, e) => s + e.value, 0);
+                      return analysis.landUseMix!.map((item, idx) => {
+                        const pct = total > 0 ? ((item.value / total) * 100).toFixed(1) : "0";
+                        return (
+                          <div key={idx} className="flex items-center gap-1.5 text-[10px]">
+                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: item.color }} />
+                            <span className="text-muted-foreground">{pct}%</span>
+                            <span className="text-foreground truncate">{item.label}</span>
+                          </div>
+                        );
+                      });
+                    })()}
                   </div>
                 </div>
               )}
@@ -375,17 +505,37 @@ export default function InsightsPanel({ location, onAnalysisReady }: InsightsPan
                             <Cell key={idx} fill={entry.color} />
                           ))}
                         </Pie>
+                        <RechartsTooltip
+                          content={({ active, payload }) => {
+                            if (!active || !payload?.length) return null;
+                            const entry = payload[0].payload;
+                            const total = analysis.amenityMix!.reduce((s, e) => s + e.value, 0);
+                            const pct = total > 0 ? ((entry.value as number) / total * 100).toFixed(1) : "0";
+                            return (
+                              <div style={{ ...tooltipStyle, padding: "6px 10px" }}>
+                                <div style={{ fontWeight: 600, marginBottom: 2 }}>{entry.label}</div>
+                                <div>{entry.value} ({pct}%)</div>
+                              </div>
+                            );
+                          }}
+                        />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
                   <div className="space-y-1 mt-2">
-                    {analysis.amenityMix.map((item, idx) => (
-                      <div key={idx} className="flex items-center gap-1.5 text-[10px]">
-                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: item.color }} />
-                        <span className="text-muted-foreground">{item.value}</span>
-                        <span className="text-foreground truncate">{item.label}</span>
-                      </div>
-                    ))}
+                    {(() => {
+                      const total = analysis.amenityMix!.reduce((s, e) => s + e.value, 0);
+                      return analysis.amenityMix!.map((item, idx) => {
+                        const pct = total > 0 ? ((item.value / total) * 100).toFixed(1) : "0";
+                        return (
+                          <div key={idx} className="flex items-center gap-1.5 text-[10px]">
+                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: item.color }} />
+                            <span className="text-muted-foreground">{pct}%</span>
+                            <span className="text-foreground truncate">{item.label}</span>
+                          </div>
+                        );
+                      });
+                    })()}
                   </div>
                 </div>
               )}
