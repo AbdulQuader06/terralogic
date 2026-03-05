@@ -20,6 +20,7 @@ AI-powered GIS spatial analysis platform with dark Figma-matched UI. Evaluates c
   - `clear_map` — clear map overlays
   - `search_places` — search nearby amenities via Overpass API
   - `analyze_site` — run full GIS suitability analysis
+  - **Data Catalog**: 20-category GIS data catalog (200+ items) with accordion UI, clickable items send queries to CartoAI
 - **GIS Data Sources**:
   - OpenStreetMap Overpass API (schools, hospitals, transit, parks, landuse, water, infrastructure)
   - FEMA NFHL (flood zones via ArcGIS feature layer)

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Bot, User, Loader2, MapPin, Navigation, Trash2, Search, BarChart3 } from "lucide-react";
+import { Send, Bot, User, Loader2, MapPin, Navigation, Trash2, Search, BarChart3, Database, X, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export interface MapAction {
@@ -33,6 +33,89 @@ interface Message {
   content: string;
   mapActions?: MapAction[];
 }
+
+const DATA_CATEGORIES = [
+  {
+    name: "Terrain & Physical Geography",
+    items: ["Elevation (DEM)", "Slope", "Aspect", "Terrain ruggedness", "Landforms", "Contours", "Watersheds", "Drainage basins", "Soil type", "Soil fertility"]
+  },
+  {
+    name: "Hydrology & Water Systems",
+    items: ["Rivers", "Streams", "Lakes", "Reservoirs", "Wetlands", "Flood risk zones", "Floodplains", "Groundwater aquifers", "Water table depth", "Drainage networks"]
+  },
+  {
+    name: "Climate & Environmental",
+    items: ["Rainfall distribution", "Temperature distribution", "Wind patterns", "Solar radiation", "Air pollution levels", "Noise pollution", "Heat island zones", "Climate zones", "Drought risk", "Storm paths"]
+  },
+  {
+    name: "Land & Ecology",
+    items: ["Land use", "Land cover", "Forest cover", "Deforestation areas", "Biodiversity hotspots", "Wildlife habitats", "Protected areas", "National parks", "Mangroves", "Grasslands"]
+  },
+  {
+    name: "Agriculture & Rural",
+    items: ["Cropland distribution", "Crop types", "Irrigation networks", "Agricultural productivity", "Soil moisture", "Pasture lands", "Agricultural suitability", "Farm boundaries", "Plantation areas", "Livestock density"]
+  },
+  {
+    name: "Urban & Built Environment",
+    items: ["Infrastructure", "Building footprints", "Building heights", "Land parcels", "Zoning areas", "Residential areas", "Commercial areas", "Industrial zones", "Slums", "Urban density"]
+  },
+  {
+    name: "Transportation & Mobility",
+    items: ["Road networks", "Railways", "Metro systems", "Bus routes", "Bus stops", "Airports", "Ports", "Bicycle lanes", "Pedestrian pathways", "Traffic congestion"]
+  },
+  {
+    name: "Public Services & Facilities",
+    items: ["Schools", "Colleges", "Hospitals", "Clinics", "Fire stations", "Police stations", "Government buildings", "Community centers", "Libraries", "Parks"]
+  },
+  {
+    name: "Utilities & Infrastructure",
+    items: ["Water supply pipelines", "Sewer networks", "Stormwater drainage", "Electricity grid lines", "Power substations", "Gas pipelines", "Telecommunication towers", "Internet fiber networks", "Waste collection zones", "Landfills"]
+  },
+  {
+    name: "Risk, Hazards & Social Data",
+    items: ["Landslide risk zones", "Earthquake hazard zones", "Coastal erosion zones", "Tsunami risk areas", "Fire risk zones", "Crime distribution", "Population density", "Demographic distribution", "Economic activity zones", "Poverty zones"]
+  },
+  {
+    name: "Urban Form & Building Data",
+    items: ["Floor area ratio (FAR)", "Building age", "Building construction type", "Roof type", "Roof materials", "Building energy consumption", "Historical buildings", "Vacant buildings", "Under-construction buildings", "Urban skyline profile"]
+  },
+  {
+    name: "Urban Planning & Development",
+    items: ["Master plan zones", "Development control zones", "Future land use plans", "Redevelopment zones", "Urban growth boundaries", "Special economic zones", "Smart city project areas", "Transit-oriented development zones", "Mixed-use development zones", "Land value zones"]
+  },
+  {
+    name: "Transportation Analytics",
+    items: ["Travel time surfaces", "Accessibility to public transport", "Commuting patterns", "Origin-destination travel flows", "Parking availability zones", "Electric vehicle charging stations", "Traffic accident hotspots", "Ride-sharing pickup zones", "Logistics hubs", "Freight routes"]
+  },
+  {
+    name: "Utilities & Urban Services",
+    items: ["Water demand zones", "Electricity demand zones", "Internet coverage quality", "Mobile network signal strength", "Street lighting coverage", "Smart sensors / IoT networks", "Waste recycling centers", "Waste generation zones", "Stormwater retention basins", "Urban drainage capacity"]
+  },
+  {
+    name: "Environmental Monitoring",
+    items: ["Tree canopy coverage", "Urban green corridors", "Urban biodiversity zones", "Air quality monitoring stations", "Carbon emission distribution", "Noise monitoring stations", "Soil contamination zones", "Brownfield sites", "Environmental remediation sites", "Ecological restoration zones"]
+  },
+  {
+    name: "Climate Adaptation & Sustainability",
+    items: ["Sea level rise risk areas", "Coastal flood projections", "Urban heat vulnerability", "Cooling corridors", "Renewable energy potential zones", "Solar rooftop potential", "Wind energy potential", "Carbon sequestration areas", "Climate resilience zones", "Green infrastructure networks"]
+  },
+  {
+    name: "Public Health & Social Infrastructure",
+    items: ["Disease outbreak hotspots", "Health accessibility zones", "Emergency response times", "Ambulance coverage areas", "Vaccination coverage zones", "Food deserts", "Nutrition access zones", "Childcare facilities", "Elder care facilities", "Disability accessibility infrastructure"]
+  },
+  {
+    name: "Economic & Commercial Activity",
+    items: ["Business density", "Retail clusters", "Industrial output zones", "Commercial footfall zones", "Tourism hotspots", "Night-time economy zones", "Market areas", "Property price distribution", "Rental value zones", "Employment density"]
+  },
+  {
+    name: "Cultural & Social Spaces",
+    items: ["Religious institutions", "Cultural heritage sites", "Museums and galleries", "Festivals and event zones", "Public art installations", "Historical districts", "Film shooting locations", "Cultural tourism routes", "Community gathering spaces", "Traditional craft clusters"]
+  },
+  {
+    name: "Advanced Spatial Analytics",
+    items: ["Suitability analysis results", "Multi-criteria decision analysis maps", "Network centrality maps", "Spatial autocorrelation results", "Hotspot analysis maps", "Predictive urban growth models", "Land change detection maps", "Risk probability maps", "Scenario simulation layers", "Spatial AI prediction outputs"]
+  }
+];
 
 function renderMarkdown(text: string) {
   const lines = text.split("\n");
@@ -118,11 +201,13 @@ export default function ChatPanel({ location, onToggleLayer, activeLayers, onMap
     {
       id: "welcome",
       role: "assistant",
-      content: "Hi! I'm **CartoAI**, your intelligent map assistant. I can navigate to places, find nearby amenities, analyze sites, and add markers to the map.\n\nTry asking me something, or use a suggestion below.",
+      content: "Hi! I'm **CartoAI**, your intelligent map assistant. I can navigate to places, find nearby amenities, analyze sites, and add markers to the map.\n\nTry asking me something, browse the **Data Catalog**, or use a suggestion below.",
     }
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showCatalog, setShowCatalog] = useState(false);
+  const [expandedCategory, setExpandedCategory] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -139,7 +224,8 @@ export default function ChatPanel({ location, onToggleLayer, activeLayers, onMap
   };
 
   const sendMessage = async (text: string) => {
-    if (!text.trim()) return;
+    if (!text.trim() || isLoading) return;
+    setShowCatalog(false);
     const userMessage: Message = { id: `u-${Date.now()}`, role: "user", content: text };
     setMessages(prev => [...prev, userMessage]);
     setInput("");
@@ -193,8 +279,13 @@ export default function ChatPanel({ location, onToggleLayer, activeLayers, onMap
 
   const handleSend = () => sendMessage(input);
 
+  const handleCatalogItemClick = (item: string) => {
+    const locationCtx = location ? ` near ${location.name}` : "";
+    sendMessage(`Find and show ${item}${locationCtx} on the map`);
+  };
+
   return (
-    <div className="flex flex-col h-full w-full">
+    <div className="flex flex-col h-full w-full relative">
       <div className="px-3 pt-2 pb-1.5 border-b border-border">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
@@ -204,14 +295,79 @@ export default function ChatPanel({ location, onToggleLayer, activeLayers, onMap
             <p className="text-xs font-semibold text-foreground">CartoAI</p>
             <p className="text-[9px] text-muted-foreground">Geospatial Assistant</p>
           </div>
-          {location && (
-            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted/50 border border-border">
-              <MapPin className="w-2.5 h-2.5 text-primary" />
-              <span className="text-[9px] text-muted-foreground truncate max-w-[100px]">{location.name}</span>
-            </div>
-          )}
+          <button
+            onClick={() => setShowCatalog(!showCatalog)}
+            className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium transition-colors ${
+              showCatalog
+                ? "bg-emerald-600 text-white"
+                : "bg-muted/50 border border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+            data-testid="button-data-catalog"
+          >
+            <Database className="w-3 h-3" />
+            Catalog
+          </button>
         </div>
+        {location && (
+          <div className="flex items-center gap-1 mt-1.5 px-1">
+            <MapPin className="w-2.5 h-2.5 text-primary shrink-0" />
+            <span className="text-[9px] text-muted-foreground truncate">{location.name}</span>
+          </div>
+        )}
       </div>
+
+      {showCatalog && (
+        <div className="absolute top-[52px] left-0 right-0 bottom-0 bg-background z-50 flex flex-col border-t border-border">
+          <div className="px-3 py-2 border-b border-border flex items-center justify-between bg-background">
+            <div className="flex items-center gap-2">
+              <Database className="w-4 h-4 text-emerald-500" />
+              <h2 className="text-xs font-semibold text-foreground">GIS Data Catalog</h2>
+            </div>
+            <button
+              onClick={() => setShowCatalog(false)}
+              className="p-1 hover:bg-muted rounded-md text-muted-foreground hover:text-foreground transition-colors"
+              data-testid="button-close-catalog"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <div className="px-3 py-1.5 bg-muted/30 border-b border-border">
+            <p className="text-[10px] text-muted-foreground">Click any item to ask CartoAI to find and display that data on the map.</p>
+          </div>
+          <ScrollArea className="flex-1">
+            <div className="px-2 py-2 space-y-0.5">
+              {DATA_CATEGORIES.map((category, idx) => (
+                <div key={idx}>
+                  <button
+                    onClick={() => setExpandedCategory(expandedCategory === idx ? null : idx)}
+                    className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted/50 transition-colors text-left group"
+                    data-testid={`catalog-category-${idx}`}
+                  >
+                    <ChevronRight className={`w-3 h-3 text-muted-foreground transition-transform ${expandedCategory === idx ? "rotate-90" : ""}`} />
+                    <span className="text-[10px] font-semibold text-foreground uppercase tracking-wider">{category.name}</span>
+                    <span className="text-[9px] text-muted-foreground ml-auto">{category.items.length}</span>
+                  </button>
+                  {expandedCategory === idx && (
+                    <div className="flex flex-wrap gap-1 px-2 pb-2 pt-1">
+                      {category.items.map((item, i) => (
+                        <button
+                          key={i}
+                          onClick={() => handleCatalogItemClick(item)}
+                          disabled={isLoading}
+                          className="px-2 py-1 bg-muted/40 border border-border/60 hover:border-emerald-500/40 hover:bg-emerald-500/10 text-foreground text-[10px] rounded-full transition-colors disabled:opacity-50"
+                          data-testid={`catalog-item-${idx}-${i}`}
+                        >
+                          {item}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
+      )}
 
       <ScrollArea className="flex-1 px-3 pt-2" ref={scrollRef}>
         <div className="flex flex-col gap-3 pb-3">
