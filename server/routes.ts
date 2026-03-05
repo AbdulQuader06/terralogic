@@ -1200,6 +1200,17 @@ export async function registerRoutes(
         required: ["url", "label"],
       },
     },
+    {
+      name: "query_knowledge_base",
+      description: "Query the advanced GIS/ML knowledge base for specific topics. Returns detailed information about data sources, ML methodologies, data formats, and sample data structures for any GIS category. Use when users ask about data from the Data Catalog or want to learn about GIS analysis techniques.",
+      parameters: {
+        type: Type.OBJECT,
+        properties: {
+          topic: { type: Type.STRING, description: "The GIS topic or data category to query (e.g., 'flood risk zones', 'urban heat islands', 'soil classification')" },
+        },
+        required: ["topic"],
+      },
+    },
   ];
 
   async function executeCartoAITool(name: string, args: any): Promise<any> {
@@ -1415,6 +1426,27 @@ Focus on actually downloadable datasets, not just documentation pages. Prioritiz
         }
       }
 
+      case "query_knowledge_base": {
+        const topic = args.topic || "";
+        try {
+          const kbResult = await geminiAI.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: [{ role: "user", parts: [{ text: `You are an advanced GIS Machine Learning Knowledge Base. Provide a highly detailed, technical response about the topic: "${topic}".
+Include:
+1. Best open data sources globally and for India (with URLs where possible).
+2. Standard data formats used (GeoJSON, TIFF, NetCDF, Shapefile, etc.).
+3. Advanced Machine Learning / Spatial AI methodologies used to analyze this data (e.g., CNNs for feature extraction, Random Forest for land classification, Spatial Autocorrelation with Moran's I, Kriging for interpolation, LSTM for temporal prediction, U-Net for semantic segmentation).
+4. A sample GeoJSON Feature structure representing this data type.
+5. Key agencies and organizations that produce this data.
+6. Resolution and accuracy considerations.` }] }],
+            config: { maxOutputTokens: 3072 },
+          });
+          return { action: "query_knowledge_base", topic, knowledge: kbResult.text || "No information found." };
+        } catch (e: any) {
+          return { action: "query_knowledge_base", topic, knowledge: "Knowledge base query failed: " + e.message, error: true };
+        }
+      }
+
       default:
         return { error: `Unknown tool: ${name}` };
     }
@@ -1552,6 +1584,25 @@ You can construct Overpass queries for ANY OpenStreetMap data:
 - **Spatial Autocorrelation**: Moran's I, LISA for clustering patterns
 - **Change Detection**: Comparing temporal satellite imagery/land cover
 - **Interpolation**: IDW, Kriging for creating continuous surfaces from point data
+
+## GENERATIVE AI GIS CAPABILITY
+If a user asks for data that is not readily available from open sources, or explicitly asks you to "generate", "estimate", or "simulate" spatial data, you MUST act as a Generative Spatial AI:
+1. Use 'search_web' to research the location and topic for contextual understanding.
+2. Use 'query_knowledge_base' to get ML methodologies and data formats for the topic.
+3. Synthesize geographical context, historical data patterns, and spatial relationships.
+4. GENERATE a realistic GeoJSON FeatureCollection representing the estimated data (e.g., approximate flood zones as polygons, estimated commercial corridors, predicted urban growth areas, simulated heat islands, estimated crime hotspots).
+5. Plot this using the 'add_geojson' tool with an appropriate color.
+6. CLEARLY explain to the user that this is an **"AI-Generated Spatial Estimate"** based on contextual data and ML modeling, NOT an official survey or authoritative data source.
+7. Provide links to real data sources where authoritative versions of this data may be available.
+
+## DATA CATALOG QUERY WORKFLOW
+When a user asks for data from ANY of the Data Catalog categories, follow this sequence:
+1. Use 'query_knowledge_base' to retrieve ML methodologies, data formats, and specific open data sources for that topic.
+2. Use 'search_web' to find real-time downloadable datasets from open portals.
+3. Try 'fetch_open_data' to load real datasets onto the map if direct URLs are known.
+4. If real data cannot be fetched directly, use 'add_geojson' to generate representative GeoJSON with realistic coordinates for the area the user is viewing.
+5. Always provide the user with download links to the original open data sources.
+6. Explain which ML techniques (CNNs, Random Forest, Kriging, Moran's I, etc.) can be applied to this data.
 
 Be concise but thorough. Use markdown for formatting. When you perform map actions, briefly explain what you did. Always provide relevant download links and data sources when discussing datasets.`;
 

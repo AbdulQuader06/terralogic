@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Bot, User, Loader2, MapPin, Navigation, Trash2, Search, BarChart3, Database, X, ChevronRight } from "lucide-react";
+import { Send, Bot, User, Loader2, MapPin, Navigation, Trash2, Search, BarChart3, Database, X, ChevronRight, BrainCircuit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export interface MapAction {
@@ -194,6 +194,7 @@ const SUGGESTIONS = [
   "Analyze this site for construction",
   "Find parks within 2km",
   "What's the flood risk here?",
+  "Generate an AI estimate of urban heat island zones based on population density and traffic data, then plot it on the map",
 ];
 
 export default function ChatPanel({ location, onToggleLayer, activeLayers, onMapAction }: ChatPanelProps) {
@@ -418,10 +419,15 @@ export default function ChatPanel({ location, onToggleLayer, activeLayers, onMap
                 <button
                   key={i}
                   onClick={() => sendMessage(s)}
-                  className="w-full text-left px-3 py-2 rounded-lg bg-muted/30 border border-border/50 text-[11px] text-foreground hover:bg-muted/60 hover:border-border transition-colors"
+                  className={`w-full text-left px-3 py-2 rounded-lg text-[11px] transition-colors ${
+                    i === SUGGESTIONS.length - 1
+                      ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-500/50 flex items-center gap-1.5 font-medium"
+                      : "bg-muted/30 border border-border/50 text-foreground hover:bg-muted/60 hover:border-border"
+                  }`}
                   data-testid={`suggestion-${i}`}
                 >
-                  {s}
+                  {i === SUGGESTIONS.length - 1 && <BrainCircuit className="w-3 h-3 shrink-0" />}
+                  {i === SUGGESTIONS.length - 1 ? "Generative AI GIS — Estimate & Plot Spatial Data" : s}
                 </button>
               ))}
             </div>

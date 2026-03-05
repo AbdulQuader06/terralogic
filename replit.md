@@ -22,8 +22,11 @@ AI-powered GIS spatial analysis platform with dark Figma-matched UI. Evaluates c
   - `analyze_site` — run full GIS suitability analysis
   - `search_web` — search for open GIS data sources, datasets, and download links
   - `fetch_open_data` — fetch GeoJSON/CSV from trusted open data portals and display on map
+  - `query_knowledge_base` — query advanced GIS/ML knowledge base for data sources, ML methodologies, data formats, and sample structures
   - **GIS Knowledge Base**: Comprehensive system prompt with knowledge of 50+ global open data sources (Natural Earth, GADM, SEDAC, USGS, Copernicus, HDX, World Bank, FAO, DataMeet, etc.), India-specific sources (Data.gov.in, OpenCity.in, Bhuvan, WRIS), US sources (Census, FEMA, EPA, NOAA), Europe sources (EEA, Eurostat, Copernicus), Overpass query patterns for all OSM tags, spatial analysis concepts, and data format expertise
+  - **Generative AI GIS**: Can generate estimated/simulated spatial data (flood zones, heat islands, commercial corridors) when real data isn't available, plotted as GeoJSON with clear "AI-Generated Spatial Estimate" labels
   - **Data Catalog**: 20-category GIS data catalog (200+ items) with accordion UI, clickable items send queries to CartoAI
+  - **Layer Visibility Toggle**: Custom overlays added by CartoAI have Eye/EyeOff visibility toggles and X remove buttons
 - **GIS Data Sources**:
   - OpenStreetMap Overpass API (schools, hospitals, transit, parks, landuse, water, infrastructure)
   - FEMA NFHL (flood zones via ArcGIS feature layer)
