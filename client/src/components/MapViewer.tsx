@@ -1101,10 +1101,15 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
     return { type: "FeatureCollection", features: allFeatures };
   }, [layerData, customOverlays]);
 
+  const exportingRef = useRef(false);
   const exportImageFn = useCallback(async (format: "png" | "jpeg") => {
     const container = mapContainerRef.current;
-    if (!container || exporting) return;
+    if (!container || exportingRef.current) return;
+    exportingRef.current = true;
     setExporting(true);
+
+    await new Promise(resolve => setTimeout(resolve, 100));
+
     try {
       const map = mapInstanceRef.current;
       const regionBounds = getDrawnRegionBounds(drawnRegion || null);
@@ -1121,7 +1126,19 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
 
       const bgColor = getComputedStyle(document.documentElement).getPropertyValue("--background").trim();
       const exportBg = bgColor ? `hsl(${bgColor})` : "#0B1010";
-      const uiElements = container.querySelectorAll('[data-testid="map-zoom-controls"], [data-testid="basemap-picker"], [data-testid="draw-tools-container"], .leaflet-control-zoom, .leaflet-control-attribution');
+      const hideSelectors = [
+        '[data-testid="map-zoom-controls"]',
+        '[data-testid="basemap-picker"]',
+        '[data-testid="draw-tools-container"]',
+        '[data-testid="zoom-indicator"]',
+        '[data-testid="coordinate-display"]',
+        '[data-testid="map-legend"]',
+        '[data-testid="export-overlay"]',
+        '[data-testid="button-export-map"]',
+        '.leaflet-control-zoom',
+        '.leaflet-control-attribution',
+      ];
+      const uiElements = container.querySelectorAll(hideSelectors.join(', '));
       uiElements.forEach(el => (el as HTMLElement).style.display = 'none');
 
       const svgOverlays = container.querySelectorAll('.leaflet-overlay-pane svg');
@@ -1131,13 +1148,14 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
 
       await new Promise(resolve => setTimeout(resolve, 200));
 
+      const ignoredTestIds = new Set(["map-zoom-controls", "basemap-picker", "draw-tools-container", "zoom-indicator", "coordinate-display", "map-legend", "export-overlay", "button-export-map"]);
       let fullCanvas;
       try {
         fullCanvas = await html2canvas(container, {
           useCORS: true, allowTaint: false, backgroundColor: exportBg, scale: 2, logging: false,
           ignoreElements: (el) => {
             const testId = el.getAttribute("data-testid");
-            return testId === "map-zoom-controls" || testId === "basemap-picker" || testId === "draw-tools-container";
+            return testId ? ignoredTestIds.has(testId) : false;
           },
         });
       } finally {
@@ -1166,9 +1184,10 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
         alert("Map export failed. Try zooming in first, then export again.");
       }
     } finally {
+      exportingRef.current = false;
       setExporting(false);
     }
-  }, [exporting, drawnRegion]);
+  }, [drawnRegion]);
 
   const downloadBlob = useCallback((content: string | Uint8Array, filename: string, mimeType: string) => {
     const blob = new Blob([content], { type: mimeType });
@@ -1243,7 +1262,7 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
     activeLayers.forEach(async (layerId) => {
       const regionSuffix = polyParam ? `-region` : "";
       const cacheKey = `${layerId}-${lat.toFixed(3)}-${lon.toFixed(3)}${regionSuffix}`;
-      if (layerDataRef.current[cacheKey]) return;
+      if (layerDataRef.current[cacheKey] && layerDataRef.current[cacheKey] !== "loading") return;
 
       layerDataRef.current[cacheKey] = "loading";
       onLayerLoading?.(layerId, true);
@@ -1266,7 +1285,7 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
           delete layerDataRef.current[cacheKey];
         }
       } finally {
-        if (!controller.signal.aborted) onLayerLoading?.(layerId, false);
+        onLayerLoading?.(layerId, false);
       }
     });
 
@@ -1328,7 +1347,7 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
 
       {(activeLayers.length > 0 || customOverlays.length > 0) && (
         <div
-          className="absolute bottom-4 left-4 z-[500]"
+          className="absolute bottom-[110px] left-4 z-[500]"
           data-testid="map-legend"
           style={{
             background: "var(--map-ctrl-bg)",
