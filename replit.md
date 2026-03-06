@@ -152,7 +152,10 @@ Dark/Light mode toggle with localStorage persistence (`terralogic-theme` key). T
 - Search results always work regardless of lock state
 
 ## Map Export
-- Export hides UI controls (zoom, basemap picker, drawing tools) during capture
-- UI restoration wrapped in try/finally to prevent stuck hidden elements on error
-- SVG overlay panes set to overflow:visible for html2canvas compatibility
-- Drawn region crops export to region bounds + 15% padding
+- Custom canvas-based export (no html2canvas for map layers) — manually composites tile images, canvas vector layers, SVG overlays, markers, tooltips, and legend
+- MapContainer uses `preferCanvas={true}` so GeoJSON/CircleMarker layers render as canvas (capturable)
+- SVG overlays serialized via XMLSerializer and drawn as images onto export canvas
+- Legend drawn programmatically with colored dots, layer names, and feature counts
+- Map centers on selected location before capture; drawn region uses fitBounds with padding
+- Basemap picker: bottom-right, vertical layout (below draw tools)
+- Active Layers legend: bottom-left with feature counts
