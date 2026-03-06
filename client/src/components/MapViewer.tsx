@@ -84,7 +84,7 @@ const ESRI_BASEMAPS: Record<BasemapType, { url: string; attribution: string; max
 
 const markerIcon = new L.DivIcon({
   className: "custom-marker",
-  html: `<div style="width:18px;height:18px;background:#00C853;border:3px solid hsl(var(--background));border-radius:50%;box-shadow:0 0 8px rgba(0,200,83,0.5);transform:translate(-50%,-50%)"></div>`,
+  html: `<div style="width:18px;height:18px;background:#2A9D8F;border:3px solid hsl(var(--background));border-radius:50%;box-shadow:0 0 8px rgba(42,157,143,0.5);transform:translate(-50%,-50%)"></div>`,
   iconSize: [18, 18],
   iconAnchor: [0, 0],
 });
@@ -120,7 +120,7 @@ const LAYER_COLORS: Record<string, string> = {
   infrastructure: "#F59E0B",
   flood: "#DC2626",
   soil: "#A16207",
-  elevation: "#059669",
+  elevation: "#2A9D8F",
   landuse: "#7C3AED",
 };
 
@@ -130,7 +130,7 @@ const LANDUSE_COLORS: Record<string, string> = {
   industrial: "#FCD34D",
   retail: "#C4B5FD",
   farmland: "#BBF7D0",
-  forest: "#059669",
+  forest: "#2A9D8F",
   grass: "#86EFAC",
   meadow: "#A7F3D0",
   orchard: "#6EE7B7",
@@ -187,7 +187,7 @@ function ClickHandler({ onLocationSelect, disabled }: { onLocationSelect: (lat: 
           const addr = data.address || {};
           let html = `<div style="font-family:Inter,sans-serif;font-size:12px;max-width:280px;color:var(--tooltip-text);">`;
           if (addr.LongLabel || addr.Address) {
-            html += `<div style="font-weight:600;font-size:13px;margin-bottom:6px;color:#00C853;">${addr.LongLabel || addr.Address}</div>`;
+            html += `<div style="font-weight:600;font-size:13px;margin-bottom:6px;color:#2A9D8F;">${addr.LongLabel || addr.Address}</div>`;
             const details = [addr.City, addr.Region, addr.CountryCode].filter(Boolean).join(", ");
             if (details) html += `<div style="color:hsl(var(--muted-foreground));margin-bottom:4px;">${details}</div>`;
             if (addr.Postal) html += `<div style="color:hsl(var(--muted-foreground));font-size:11px;">Postal: ${addr.Postal}</div>`;
@@ -200,7 +200,7 @@ function ClickHandler({ onLocationSelect, disabled }: { onLocationSelect: (lat: 
               const key = `${layer.layerName}-${layer.value}`;
               if (seen.has(key)) continue;
               seen.add(key);
-              html += `<div style="margin-bottom:3px;"><span style="color:#00C853;font-size:10px;">${layer.layerName}:</span> <span style="font-size:11px;">${layer.value || "—"}</span></div>`;
+              html += `<div style="margin-bottom:3px;"><span style="color:#2A9D8F;font-size:10px;">${layer.layerName}:</span> <span style="font-size:11px;">${layer.value || "—"}</span></div>`;
             }
             html += `</div>`;
           }
@@ -415,7 +415,7 @@ function MapControls({ position, basemap, onBasemapChange }: { position: [number
                   width: active ? "64px" : "56px",
                   height: active ? "64px" : "56px",
                   borderRadius: "8px",
-                  border: `2.5px solid ${active ? "#00C853" : "var(--map-ctrl-border)"}`,
+                  border: `2.5px solid ${active ? "#2A9D8F" : "var(--map-ctrl-border)"}`,
                   overflow: "hidden",
                   boxShadow: active ? "0 0 12px rgba(0,200,83,0.4)" : "0 2px 8px rgb(0 0 0 / 0.5)",
                   transition: "all 0.2s ease",
@@ -441,7 +441,7 @@ function MapControls({ position, basemap, onBasemapChange }: { position: [number
                     width: "14px",
                     height: "14px",
                     borderRadius: "50%",
-                    background: "#00C853",
+                    background: "#2A9D8F",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -455,7 +455,7 @@ function MapControls({ position, basemap, onBasemapChange }: { position: [number
                   fontSize: "10px",
                   fontFamily: "Inter, sans-serif",
                   fontWeight: active ? 700 : 500,
-                  color: active ? "#00C853" : "var(--map-ctrl-text)",
+                  color: active ? "#2A9D8F" : "var(--map-ctrl-text)",
                   textShadow: "0 1px 3px rgb(0 0 0 / 0.6)",
                   transition: "color 0.2s ease",
                 }}
@@ -573,9 +573,9 @@ function DrawingTools({ drawnRegion, onDrawRegion, onDrawingStateChange }: { dra
     width: "32px",
     height: "32px",
     background: active ? "hsl(145 100% 39% / 0.3)" : "var(--map-ctrl-bg)",
-    border: `1px solid ${active ? "#00C853" : "var(--map-ctrl-border)"}`,
+    border: `1px solid ${active ? "#2A9D8F" : "var(--map-ctrl-border)"}`,
     borderRadius: "8px",
-    color: active ? "#00C853" : "var(--map-ctrl-text)",
+    color: active ? "#2A9D8F" : "var(--map-ctrl-text)",
     fontSize: "12px",
     cursor: "pointer",
     display: "flex",
@@ -587,10 +587,10 @@ function DrawingTools({ drawnRegion, onDrawRegion, onDrawingStateChange }: { dra
   });
 
   const drawStyle = {
-    color: "#00C853",
+    color: "#2A9D8F",
     weight: 2,
     opacity: 0.8,
-    fillColor: "#00C853",
+    fillColor: "#2A9D8F",
     fillOpacity: 0.12,
     dashArray: "6 4",
   };
@@ -710,20 +710,20 @@ function DrawingTools({ drawnRegion, onDrawRegion, onDrawingStateChange }: { dra
       {drawnRegion && drawnRegion.type === "polygon" && (
         <RLPolygon
           positions={drawnRegion.coords as L.LatLngExpression[]}
-          pathOptions={{ color: "#00C853", weight: 2.5, opacity: 0.9, fillColor: "#00C853", fillOpacity: 0.1 }}
+          pathOptions={{ color: "#2A9D8F", weight: 2.5, opacity: 0.9, fillColor: "#2A9D8F", fillOpacity: 0.1 }}
         />
       )}
       {drawnRegion && drawnRegion.type === "circle" && (
         <RLCircle
           center={drawnRegion.center}
           radius={drawnRegion.radius}
-          pathOptions={{ color: "#00C853", weight: 2.5, opacity: 0.9, fillColor: "#00C853", fillOpacity: 0.1 }}
+          pathOptions={{ color: "#2A9D8F", weight: 2.5, opacity: 0.9, fillColor: "#2A9D8F", fillOpacity: 0.1 }}
         />
       )}
       {drawnRegion && drawnRegion.type === "rectangle" && (
         <RLRectangle
           bounds={drawnRegion.bounds}
-          pathOptions={{ color: "#00C853", weight: 2.5, opacity: 0.9, fillColor: "#00C853", fillOpacity: 0.1 }}
+          pathOptions={{ color: "#2A9D8F", weight: 2.5, opacity: 0.9, fillColor: "#2A9D8F", fillOpacity: 0.1 }}
         />
       )}
     </>

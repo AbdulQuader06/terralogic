@@ -40,10 +40,11 @@ AI-powered GIS spatial analysis platform with dark Figma-matched UI. Evaluates c
 
 ## UI Layout
 
-Three-panel dark theme layout:
+Three-panel layout with **light "research poster" theme** (default light mode):
+- **Color Palette**: Background `#F7F9FB`, Primary `#2C5282` (deep blue), Accent `#2A9D8F` (teal), Text `#1F2933`, Muted `#6B7280`, Dividers `#E5E7EB`
 - **Header**: TerraLogic AI logo, project location selector, dark/light theme toggle, Export Map dropdown (PNG/JPEG/GeoJSON/KML/DXF), Export Report dropdown (PDF/CSV/TXT)
 - **Left Panel** (300px): Project Overview heading, geocoder search input, three tabs (Layers | QuickOSM | AI):
-  - **Layers tab**: Dark-themed layer toggle cards with icons for 10 data layers
+  - **Layers tab**: Layer toggle cards with icons for 10 data layers
   - **QuickOSM tab**: Interactive OSM query builder + OpenCity India CKAN data browser
   - **AI tab**: CartoAI chatbot (Gemini 2.5 Flash function-calling) — can navigate map, add markers, search places, analyze sites, add GeoJSON overlays
   - **Custom Overlays section**: Lists loaded QuickOSM/OpenCity overlays with remove buttons

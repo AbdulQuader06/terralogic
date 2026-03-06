@@ -11,7 +11,7 @@ interface LayerConfig {
 }
 
 const LAYERS: LayerConfig[] = [
-  { id: "elevation", name: "Elevation", icon: "mountain", color: "#059669", description: "Terrain contours & height" },
+  { id: "elevation", name: "Elevation", icon: "mountain", color: "#2A9D8F", description: "Terrain contours & height" },
   { id: "soil", name: "Soil Type", icon: "soil", color: "#A16207", description: "Soil classification grid" },
   { id: "flood", name: "Flood Risk", icon: "flood", color: "#DC2626", description: "Flood zones & wetlands" },
   { id: "landuse", name: "Land Use", icon: "landuse", color: "#7C3AED", description: "Zoning & land classification" },

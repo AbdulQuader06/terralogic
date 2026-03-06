@@ -90,7 +90,7 @@ export default function QuickOSM({ location, onDataLoaded, drawnRegion }: QuickO
       const data = await resp.json();
       setResultCount(data.features?.length || 0);
       if (data.features?.length > 0) {
-        onDataLoaded(data, `${key}=${value || "*"}`, color || "#00C853");
+        onDataLoaded(data, `${key}=${value || "*"}`, color || "#2A9D8F");
       }
     } catch (e: any) {
       console.error("QuickOSM error:", e);

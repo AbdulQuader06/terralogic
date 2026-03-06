@@ -289,7 +289,7 @@ export default function ChatPanel({ location, onToggleLayer, activeLayers, onMap
     <div className="flex flex-col h-full w-full relative">
       <div className="px-3 pt-2 pb-1.5 border-b border-border">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "#2C5282" }}>
             <Bot className="w-4 h-4 text-white" />
           </div>
           <div className="flex-1 min-w-0">
@@ -300,9 +300,10 @@ export default function ChatPanel({ location, onToggleLayer, activeLayers, onMap
             onClick={() => setShowCatalog(!showCatalog)}
             className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium transition-colors ${
               showCatalog
-                ? "bg-emerald-600 text-white"
+                ? "text-white"
                 : "bg-muted/50 border border-border text-muted-foreground hover:bg-muted hover:text-foreground"
             }`}
+            style={showCatalog ? { background: "#2C5282" } : undefined}
             data-testid="button-data-catalog"
           >
             <Database className="w-3 h-3" />
@@ -321,7 +322,7 @@ export default function ChatPanel({ location, onToggleLayer, activeLayers, onMap
         <div className="absolute top-[52px] left-0 right-0 bottom-0 bg-background z-50 flex flex-col border-t border-border">
           <div className="px-3 py-2 border-b border-border flex items-center justify-between bg-background">
             <div className="flex items-center gap-2">
-              <Database className="w-4 h-4 text-emerald-500" />
+              <Database className="w-4 h-4" style={{ color: "#2C5282" }} />
               <h2 className="text-xs font-semibold text-foreground">GIS Data Catalog</h2>
             </div>
             <button
@@ -355,7 +356,7 @@ export default function ChatPanel({ location, onToggleLayer, activeLayers, onMap
                           key={i}
                           onClick={() => handleCatalogItemClick(item)}
                           disabled={isLoading}
-                          className="px-2 py-1 bg-muted/40 border border-border/60 hover:border-emerald-500/40 hover:bg-emerald-500/10 text-foreground text-[10px] rounded-full transition-colors disabled:opacity-50"
+                          className="px-2 py-1 bg-muted/40 border border-border/60 hover:border-[#2A9D8F]/40 hover:bg-[#2A9D8F]/10 text-foreground text-[10px] rounded-full transition-colors disabled:opacity-50"
                           data-testid={`catalog-item-${idx}-${i}`}
                         >
                           {item}
@@ -374,8 +375,8 @@ export default function ChatPanel({ location, onToggleLayer, activeLayers, onMap
         <div className="flex flex-col gap-3 pb-3">
           {messages.map((msg) => (
             <div key={msg.id} className={`flex gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`} data-testid={`chat-message-${msg.role}-${msg.id}`}>
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-muted' : 'bg-gradient-to-br from-emerald-500/20 to-teal-600/20'}`}>
-                {msg.role === 'user' ? <User className="w-3 h-3 text-muted-foreground" /> : <Bot className="w-3 h-3 text-emerald-500" />}
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-muted' : ''}`} style={msg.role !== 'user' ? { background: "rgba(44,82,130,0.12)" } : undefined}>
+                {msg.role === 'user' ? <User className="w-3 h-3 text-muted-foreground" /> : <Bot className="w-3 h-3" style={{ color: "#2C5282" }} />}
               </div>
               <div className="max-w-[85%] space-y-1.5">
                 <div className={`p-2.5 rounded-lg text-xs leading-relaxed ${
@@ -398,15 +399,15 @@ export default function ChatPanel({ location, onToggleLayer, activeLayers, onMap
 
           {isLoading && (
             <div className="flex gap-2 flex-row">
-              <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-emerald-500/20 to-teal-600/20">
-                <Loader2 className="w-3 h-3 animate-spin text-emerald-500" />
+              <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0" style={{ background: "rgba(44,82,130,0.12)" }}>
+                <Loader2 className="w-3 h-3 animate-spin" style={{ color: "#2C5282" }} />
               </div>
               <div className="max-w-[85%]">
                 <div className="p-2.5 rounded-lg bg-muted/50 border border-border rounded-tl-none flex items-center gap-1.5">
                   <span className="text-[10px] text-muted-foreground">CartoAI is thinking</span>
-                  <span className="w-1 h-1 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: "0ms" }} />
-                  <span className="w-1 h-1 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: "150ms" }} />
-                  <span className="w-1 h-1 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: "300ms" }} />
+                  <span className="w-1 h-1 rounded-full animate-bounce" style={{ background: "#2C5282", animationDelay: "0ms" }} />
+                  <span className="w-1 h-1 rounded-full animate-bounce" style={{ background: "#2C5282", animationDelay: "150ms" }} />
+                  <span className="w-1 h-1 rounded-full animate-bounce" style={{ background: "#2C5282", animationDelay: "300ms" }} />
                 </div>
               </div>
             </div>
@@ -421,9 +422,10 @@ export default function ChatPanel({ location, onToggleLayer, activeLayers, onMap
                   onClick={() => sendMessage(s)}
                   className={`w-full text-left px-3 py-2 rounded-lg text-[11px] transition-colors ${
                     i === SUGGESTIONS.length - 1
-                      ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-500/50 flex items-center gap-1.5 font-medium"
+                      ? "border flex items-center gap-1.5 font-medium"
                       : "bg-muted/30 border border-border/50 text-foreground hover:bg-muted/60 hover:border-border"
                   }`}
+                  style={i === SUGGESTIONS.length - 1 ? { background: "rgba(42,157,143,0.08)", borderColor: "rgba(42,157,143,0.3)", color: "#2A9D8F" } : undefined}
                   data-testid={`suggestion-${i}`}
                 >
                   {i === SUGGESTIONS.length - 1 && <BrainCircuit className="w-3 h-3 shrink-0" />}
@@ -445,7 +447,7 @@ export default function ChatPanel({ location, onToggleLayer, activeLayers, onMap
             disabled={isLoading}
             data-testid="input-chat-message"
           />
-          <Button type="submit" size="icon" disabled={!input.trim() || isLoading} className="h-8 w-8 bg-emerald-600 hover:bg-emerald-700" data-testid="button-send-message">
+          <Button type="submit" size="icon" disabled={!input.trim() || isLoading} className="h-8 w-8 text-white" style={{ background: "#2C5282" }} data-testid="button-send-message">
             <Send className="w-3 h-3" />
           </Button>
         </form>

@@ -91,13 +91,13 @@ function formatLength(m: number): string {
   return `${m.toFixed(0)} m`;
 }
 
-function CircularGauge({ score, size = 90, isDark = true }: { score: number; size?: number; isDark?: boolean }) {
+function CircularGauge({ score, size = 90 }: { score: number; size?: number }) {
   const radius = (size - 10) / 2;
   const circumference = 2 * Math.PI * radius;
   const progress = (score / 100) * circumference;
-  const color = score >= 75 ? "#00C853" : score >= 55 ? "#F59E0B" : "#EF4444";
-  const glowColor = score >= 75 ? "rgba(0,200,83,0.3)" : score >= 55 ? "rgba(245,158,11,0.3)" : "rgba(239,68,68,0.3)";
-  const trackColor = isDark ? "hsl(150 20% 14%)" : "hsl(150 12% 88%)";
+  const color = score >= 75 ? "#2A9D8F" : score >= 55 ? "#D4A843" : "#C53030";
+  const glowColor = score >= 75 ? "rgba(42,157,143,0.25)" : score >= 55 ? "rgba(212,168,67,0.25)" : "rgba(197,48,48,0.25)";
+  const trackColor = "#E5E7EB";
 
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
@@ -118,7 +118,7 @@ function CircularGauge({ score, size = 90, isDark = true }: { score: number; siz
       <text x={size / 2} y={size / 2 + 1} textAnchor="middle" fill={color} fontSize="18" fontWeight="800" fontFamily="Inter">
         {score}
       </text>
-      <text x={size / 2} y={size / 2 + 14} textAnchor="middle" fill={isDark ? "#7A8A82" : "#94A3B8"} fontSize="8" fontWeight="500">
+      <text x={size / 2} y={size / 2 + 14} textAnchor="middle" fill="#6B7280" fontSize="8" fontWeight="500">
         /100
       </text>
     </svg>
@@ -151,15 +151,15 @@ function ColorDot({ color }: { color: string }) {
 
 export default function InsightsPanel({ location, onAnalysisReady, drawnRegion }: InsightsPanelProps) {
   const { isDark } = useTheme();
-  const chartAxisColor = isDark ? "#7A8A82" : "#94A3B8";
-  const chartGridColor = isDark ? "#1C2A23" : "#E2E8F0";
+  const chartAxisColor = "#6B7280";
+  const chartGridColor = "#E5E7EB";
   const tooltipStyle = {
-    background: isDark ? "#111916" : "#FFFFFF",
-    border: `1px solid ${isDark ? "#1C2A23" : "#E2E8F0"}`,
+    background: "#FFFFFF",
+    border: "1px solid #E5E7EB",
     borderRadius: 8,
     fontSize: 11,
-    color: isDark ? "#E8EDEB" : "#1A2E1F",
-    boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+    color: "#1F2933",
+    boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
   };
 
   const { data: analysis, isLoading } = useQuery<SiteAnalysis>({
@@ -195,13 +195,13 @@ export default function InsightsPanel({ location, onAnalysisReady, drawnRegion }
 
   if (!analysis) return null;
 
-  const scoreColor = analysis.overallScore >= 75 ? "#00C853" : analysis.overallScore >= 55 ? "#F59E0B" : "#EF4444";
+  const scoreColor = analysis.overallScore >= 75 ? "#2A9D8F" : analysis.overallScore >= 55 ? "#D4A843" : "#C53030";
   const scoreLabel = analysis.overallScore >= 75 ? "Good Location" : analysis.overallScore >= 55 ? "Moderate" : "Poor";
   const scoreBg = analysis.overallScore >= 75
-    ? (isDark ? "rgba(0,200,83,0.08)" : "rgba(0,200,83,0.05)")
+    ? "rgba(42,157,143,0.06)"
     : analysis.overallScore >= 55
-    ? (isDark ? "rgba(245,158,11,0.08)" : "rgba(245,158,11,0.05)")
-    : (isDark ? "rgba(239,68,68,0.08)" : "rgba(239,68,68,0.05)");
+    ? "rgba(212,168,67,0.06)"
+    : "rgba(197,48,48,0.06)";
 
   const radarData = analysis.radarData ? [
     { axis: "Solar", value: analysis.radarData.solar },
@@ -218,7 +218,7 @@ export default function InsightsPanel({ location, onAnalysisReady, drawnRegion }
 
           <div>
             <h2 className="font-semibold text-base text-foreground flex items-center gap-2" data-testid="text-insights-title">
-              <span className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: "linear-gradient(135deg, #00C853, #00E676)" }}>
+              <span className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: "#2C5282" }}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M2 12c2-3 6-5 10-5s8 2 10 5c-2 3-6 5-10 5s-8-2-10-5z"/><circle cx="12" cy="12" r="3"/></svg>
               </span>
               AI Site Analysis
@@ -243,7 +243,7 @@ export default function InsightsPanel({ location, onAnalysisReady, drawnRegion }
                   </div>
                   <p className="text-sm font-semibold mt-1" style={{ color: scoreColor }}>{scoreLabel}</p>
                 </div>
-                <CircularGauge score={analysis.overallScore} isDark={isDark} />
+                <CircularGauge score={analysis.overallScore} />
               </div>
               {analysis.aiNarrative ? (
                 <p className="text-[11px] text-muted-foreground mt-3 leading-relaxed" data-testid="text-ai-narrative">
@@ -307,7 +307,7 @@ export default function InsightsPanel({ location, onAnalysisReady, drawnRegion }
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground flex items-center gap-2">
-                    <ColorDot color="#059669" />
+                    <ColorDot color="#2A9D8F" />
                     Elevation
                   </span>
                   <span className="text-foreground font-semibold" data-testid="text-elevation">{analysis.siteInfo.elevation} {analysis.siteInfo.elevationUnit}</span>
@@ -361,7 +361,7 @@ export default function InsightsPanel({ location, onAnalysisReady, drawnRegion }
             <div>
               <h3 className="text-xs font-semibold text-foreground mb-3">Environmental Metrics</h3>
               <div className="grid grid-cols-2 gap-2" data-testid="grid-environmental-metrics">
-                <div className="border rounded-lg p-3" style={{ background: isDark ? "rgba(245,158,11,0.06)" : "rgba(245,158,11,0.04)", borderColor: "rgba(245,158,11,0.2)" }} data-testid="card-sun-exposure">
+                <div className="border rounded-lg p-3" style={{ background: "rgba(245,158,11,0.04)", borderColor: "rgba(245,158,11,0.2)" }} data-testid="card-sun-exposure">
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <div className="w-5 h-5 rounded flex items-center justify-center" style={{ background: "linear-gradient(135deg, #F59E0B, #FBBF24)" }}>
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
@@ -371,30 +371,28 @@ export default function InsightsPanel({ location, onAnalysisReady, drawnRegion }
                   <p className="text-xl font-extrabold" style={{ color: "#F59E0B" }} data-testid="text-sun-exposure">{analysis.environmentalMetrics.sunExposure}%</p>
                   <MetricBar value={analysis.environmentalMetrics.sunExposure} color="#F59E0B" />
                 </div>
-                <div className="border rounded-lg p-3" style={{ background: isDark ? "rgba(34,197,94,0.06)" : "rgba(34,197,94,0.04)", borderColor: "rgba(34,197,94,0.2)" }}>
+                <div className="border rounded-lg p-3" style={{ background: "rgba(42,157,143,0.04)", borderColor: "rgba(42,157,143,0.2)" }}>
                   <div className="flex items-center gap-1.5 mb-1.5">
-                    <div className="w-5 h-5 rounded flex items-center justify-center" style={{ background: "linear-gradient(135deg, #22C55E, #4ADE80)" }}>
+                    <div className="w-5 h-5 rounded flex items-center justify-center" style={{ background: "#2A9D8F" }}>
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>
                     </div>
                     <span className="text-[10px] text-muted-foreground font-medium">Soil Quality</span>
                   </div>
-                  <p className="text-xl font-extrabold" style={{ color: "#22C55E" }}>{analysis.environmentalMetrics.soilQuality}%</p>
-                  <MetricBar value={analysis.environmentalMetrics.soilQuality} color="#22C55E" />
+                  <p className="text-xl font-extrabold" style={{ color: "#2A9D8F" }}>{analysis.environmentalMetrics.soilQuality}%</p>
+                  <MetricBar value={analysis.environmentalMetrics.soilQuality} color="#2A9D8F" />
                 </div>
-                <div className="border rounded-lg p-3" style={{ background: isDark ? "rgba(59,130,246,0.06)" : "rgba(59,130,246,0.04)", borderColor: "rgba(59,130,246,0.2)" }}>
+                <div className="border rounded-lg p-3" style={{ background: "rgba(44,82,130,0.04)", borderColor: "rgba(44,82,130,0.2)" }}>
                   <div className="flex items-center gap-1.5 mb-1.5">
-                    <div className="w-5 h-5 rounded flex items-center justify-center" style={{ background: "linear-gradient(135deg, #3B82F6, #60A5FA)" }}>
+                    <div className="w-5 h-5 rounded flex items-center justify-center" style={{ background: "#2C5282" }}>
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></svg>
                     </div>
                     <span className="text-[10px] text-muted-foreground font-medium">Wind Exposure</span>
                   </div>
-                  <p className="text-xl font-extrabold" style={{ color: "#3B82F6" }}>{analysis.environmentalMetrics.windExposure}%</p>
-                  <MetricBar value={analysis.environmentalMetrics.windExposure} color="#3B82F6" />
+                  <p className="text-xl font-extrabold" style={{ color: "#2C5282" }}>{analysis.environmentalMetrics.windExposure}%</p>
+                  <MetricBar value={analysis.environmentalMetrics.windExposure} color="#2C5282" />
                 </div>
                 <div className="border rounded-lg p-3" style={{
-                  background: isDark
-                    ? (analysis.environmentalMetrics.floodRisk === "High" ? "rgba(239,68,68,0.08)" : analysis.environmentalMetrics.floodRisk === "Moderate" ? "rgba(245,158,11,0.06)" : "rgba(34,197,94,0.06)")
-                    : (analysis.environmentalMetrics.floodRisk === "High" ? "rgba(239,68,68,0.05)" : analysis.environmentalMetrics.floodRisk === "Moderate" ? "rgba(245,158,11,0.04)" : "rgba(34,197,94,0.04)"),
+                  background: analysis.environmentalMetrics.floodRisk === "High" ? "rgba(197,48,48,0.05)" : analysis.environmentalMetrics.floodRisk === "Moderate" ? "rgba(212,168,67,0.04)" : "rgba(42,157,143,0.04)",
                   borderColor: analysis.environmentalMetrics.floodRisk === "High" ? "rgba(239,68,68,0.25)" : analysis.environmentalMetrics.floodRisk === "Moderate" ? "rgba(245,158,11,0.2)" : "rgba(34,197,94,0.2)",
                 }}>
                   <div className="flex items-center gap-1.5 mb-1.5">
@@ -403,7 +401,7 @@ export default function InsightsPanel({ location, onAnalysisReady, drawnRegion }
                         ? "linear-gradient(135deg, #EF4444, #F87171)"
                         : analysis.environmentalMetrics.floodRisk === "Moderate"
                         ? "linear-gradient(135deg, #F59E0B, #FBBF24)"
-                        : "linear-gradient(135deg, #22C55E, #4ADE80)",
+                        : "#2A9D8F",
                     }}>
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M2 12c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/><path d="M2 18c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/></svg>
                     </div>
@@ -423,7 +421,7 @@ export default function InsightsPanel({ location, onAnalysisReady, drawnRegion }
           {(analysis.landUseMix && analysis.landUseMix.length > 0) || (analysis.amenityMix && analysis.amenityMix.length > 0) ? (
             <div className="grid grid-cols-2 gap-3" data-testid="grid-mix-charts">
               {analysis.landUseMix && analysis.landUseMix.length > 0 && (
-                <div className="border rounded-xl p-3" style={{ background: isDark ? "rgba(99,102,241,0.05)" : "rgba(99,102,241,0.03)", borderColor: isDark ? "rgba(99,102,241,0.15)" : "rgba(99,102,241,0.12)" }} data-testid="card-landuse-mix">
+                <div className="border rounded-xl p-3" style={{ background: "rgba(44,82,130,0.03)", borderColor: "rgba(44,82,130,0.12)" }} data-testid="card-landuse-mix">
                   <h4 className="text-[11px] font-bold text-foreground mb-0.5">Land Use Mix</h4>
                   <p className="text-[9px] text-muted-foreground mb-2 leading-snug">
                     {analysis.landUseMix[0]?.label}-dominant area
@@ -441,7 +439,7 @@ export default function InsightsPanel({ location, onAnalysisReady, drawnRegion }
                           innerRadius={28}
                           outerRadius={45}
                           strokeWidth={2}
-                          stroke={isDark ? "#111916" : "#FFFFFF"}
+                          stroke="#FFFFFF"
                         >
                           {analysis.landUseMix.map((entry, idx) => (
                             <Cell key={idx} fill={entry.color} />
@@ -482,7 +480,7 @@ export default function InsightsPanel({ location, onAnalysisReady, drawnRegion }
                 </div>
               )}
               {analysis.amenityMix && analysis.amenityMix.length > 0 && (
-                <div className="border rounded-xl p-3" style={{ background: isDark ? "rgba(59,130,246,0.05)" : "rgba(59,130,246,0.03)", borderColor: isDark ? "rgba(59,130,246,0.15)" : "rgba(59,130,246,0.12)" }} data-testid="card-amenity-mix">
+                <div className="border rounded-xl p-3" style={{ background: "rgba(42,157,143,0.03)", borderColor: "rgba(42,157,143,0.12)" }} data-testid="card-amenity-mix">
                   <h4 className="text-[11px] font-bold text-foreground mb-0.5">Amenity Mix (POIs)</h4>
                   <p className="text-[9px] text-muted-foreground mb-2 leading-snug">
                     {analysis.amenityMix[0]?.label} and {analysis.amenityMix[1]?.label?.toLowerCase() || "others"} dominate
@@ -499,7 +497,7 @@ export default function InsightsPanel({ location, onAnalysisReady, drawnRegion }
                           innerRadius={28}
                           outerRadius={45}
                           strokeWidth={2}
-                          stroke={isDark ? "#111916" : "#FFFFFF"}
+                          stroke="#FFFFFF"
                         >
                           {analysis.amenityMix.map((entry, idx) => (
                             <Cell key={idx} fill={entry.color} />
@@ -551,7 +549,7 @@ export default function InsightsPanel({ location, onAnalysisReady, drawnRegion }
                 Sun Path Data
                 <span className="text-[9px] text-muted-foreground font-normal ml-auto">(Local Time)</span>
               </h3>
-              <div className="border rounded-xl p-4" style={{ background: isDark ? "rgba(245,158,11,0.05)" : "rgba(245,158,11,0.03)", borderColor: "rgba(245,158,11,0.15)" }} data-testid="card-sun-path">
+              <div className="border rounded-xl p-4" style={{ background: "rgba(245,158,11,0.03)", borderColor: "rgba(245,158,11,0.15)" }} data-testid="card-sun-path">
                 <div className="grid grid-cols-3 gap-3">
                   <div className="text-center">
                     <div className="w-8 h-8 mx-auto mb-1.5 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, #FBBF24, #F59E0B)" }}>
@@ -575,7 +573,7 @@ export default function InsightsPanel({ location, onAnalysisReady, drawnRegion }
                     <p className="text-sm font-bold" style={{ color: "#F97316" }}>{analysis.sunPathData.sunset}</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-3 mt-3 pt-3" style={{ borderTop: `1px solid ${isDark ? "rgba(245,158,11,0.1)" : "rgba(245,158,11,0.15)"}` }}>
+                <div className="grid grid-cols-3 gap-3 mt-3 pt-3" style={{ borderTop: "1px solid rgba(245,158,11,0.15)" }}>
                   <div className="text-center">
                     <p className="text-[10px] text-muted-foreground">Day Length</p>
                     <p className="text-sm font-bold text-foreground">{analysis.sunPathData.dayLength}h</p>
@@ -596,7 +594,7 @@ export default function InsightsPanel({ location, onAnalysisReady, drawnRegion }
           {analysis.elevationProfile && analysis.elevationProfile.length > 0 && (
             <div>
               <h3 className="text-xs font-semibold text-foreground mb-3 flex items-center gap-2">
-                <span className="w-5 h-5 rounded flex items-center justify-center" style={{ background: "linear-gradient(135deg, #059669, #10B981)" }}>
+                <span className="w-5 h-5 rounded flex items-center justify-center" style={{ background: "#2A9D8F" }}>
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>
                 </span>
                 Elevation Profile
@@ -606,8 +604,8 @@ export default function InsightsPanel({ location, onAnalysisReady, drawnRegion }
                   <AreaChart data={analysis.elevationProfile} margin={{ top: 5, right: 5, bottom: 5, left: 0 }}>
                     <defs>
                       <linearGradient id="elevGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                        <stop offset="5%" stopColor="#2A9D8F" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="#2A9D8F" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <XAxis
@@ -629,7 +627,7 @@ export default function InsightsPanel({ location, onAnalysisReady, drawnRegion }
                       formatter={(value: number) => [`${value}m`, "Elevation"]}
                       labelFormatter={(label) => `Distance: ${label}m`}
                     />
-                    <Area type="monotone" dataKey="elevation" stroke="#10B981" strokeWidth={2.5} fill="url(#elevGrad)" />
+                    <Area type="monotone" dataKey="elevation" stroke="#2A9D8F" strokeWidth={2.5} fill="url(#elevGrad)" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -679,9 +677,9 @@ export default function InsightsPanel({ location, onAnalysisReady, drawnRegion }
               <div className="space-y-2">
                 {analysis.recommendations.map((rec, i) => {
                   const colors = {
-                    success: { bg: "rgba(34,197,94,0.08)", border: "rgba(34,197,94,0.25)", icon: "#22C55E", gradient: "linear-gradient(135deg, #22C55E, #4ADE80)" },
-                    warning: { bg: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.25)", icon: "#F59E0B", gradient: "linear-gradient(135deg, #F59E0B, #FBBF24)" },
-                    info: { bg: "rgba(59,130,246,0.08)", border: "rgba(59,130,246,0.25)", icon: "#3B82F6", gradient: "linear-gradient(135deg, #3B82F6, #60A5FA)" },
+                    success: { bg: "rgba(42,157,143,0.06)", border: "rgba(42,157,143,0.2)", icon: "#2A9D8F", gradient: "#2A9D8F" },
+                    warning: { bg: "rgba(212,168,67,0.06)", border: "rgba(212,168,67,0.2)", icon: "#D4A843", gradient: "#D4A843" },
+                    info: { bg: "rgba(44,82,130,0.06)", border: "rgba(44,82,130,0.2)", icon: "#2C5282", gradient: "#2C5282" },
                   };
                   const c = colors[rec.type] || colors.info;
 
@@ -706,7 +704,7 @@ export default function InsightsPanel({ location, onAnalysisReady, drawnRegion }
           )}
 
           <div className="text-[10px] text-muted-foreground/60 italic pb-4 flex items-center gap-1.5">
-            <ColorDot color="#00C853" />
+            <ColorDot color="#2C5282" />
             Data sourced from FEMA NFHL, USGS, USDA, OpenStreetMap, Open-Meteo
           </div>
 
