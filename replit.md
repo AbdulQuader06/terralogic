@@ -136,19 +136,23 @@ Dark/Light mode toggle with localStorage persistence (`terralogic-theme` key). T
 - Recharts use theme-derived colors via `useTheme()` in InsightsPanel
 - Header has sun/moon toggle button + "Case Study" button (loads Hyderabad, India)
 
-### Dark Theme Colors
-- Primary: #00C853 (emerald green)
-- Background: ~#0B1010 (very dark green-black)
-- Card/Panel: ~#111916
-- Foreground: ~#E8EDEB (light gray)
-- Muted: ~#7A8A82
-- Border: ~#1C2A23
-- Warning: #F59E0B (amber)
+### Research Poster Theme (Default Light)
+- Background: #F7F9FB
+- Primary: #2C5282 (deep blue)
+- Accent: #2A9D8F (teal)
+- Text: #1F2933
+- Muted: #6B7280
+- Dividers: #E5E7EB
 
-### Light Theme Colors
-- Primary: hsl(145 80% 36%)
-- Background: ~#F9FBF9 (near white with green tint)
-- Card: white
-- Foreground: ~#1A2E1F (dark green)
-- Muted text: hsl(150 8% 45%)
-- Border: hsl(150 12% 88%)
+## Location Lock
+- Location starts locked by default (prevents accidental map clicks from changing analysis location)
+- Lock/unlock toggle button below search bar shows current location name with teal MapPin icon
+- When locked: map clicks are ignored; CartoAI `update_map_view` bypasses the lock by setting state directly
+- When unlocked: next map click selects new location and auto-locks again
+- Search results always work regardless of lock state
+
+## Map Export
+- Export hides UI controls (zoom, basemap picker, drawing tools) during capture
+- UI restoration wrapped in try/finally to prevent stuck hidden elements on error
+- SVG overlay panes set to overflow:visible for html2canvas compatibility
+- Drawn region crops export to region bounds + 15% padding

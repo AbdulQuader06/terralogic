@@ -603,7 +603,7 @@ function DrawingTools({ drawnRegion, onDrawRegion, onDrawingStateChange }: { dra
     <>
       <div
         className="absolute top-14 right-3 z-[1000] flex flex-col gap-1"
-        data-testid="draw-controls"
+        data-testid="draw-tools-container"
       >
         <button
           onClick={() => drawMode === "polygon" ? clearDraw() : startDraw("polygon")}
@@ -1121,10 +1121,28 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
 
       const bgColor = getComputedStyle(document.documentElement).getPropertyValue("--background").trim();
       const exportBg = bgColor ? `hsl(${bgColor})` : "#0B1010";
-      const fullCanvas = await html2canvas(container, {
-        useCORS: true, allowTaint: false, backgroundColor: exportBg, scale: 2, logging: false,
-        ignoreElements: (el) => el.getAttribute("data-testid") === "map-zoom-controls" || el.getAttribute("data-testid") === "button-export-map" || el.classList.contains("leaflet-control-container"),
+      const uiElements = container.querySelectorAll('[data-testid="map-zoom-controls"], [data-testid="basemap-picker"], [data-testid="draw-tools-container"], .leaflet-control-zoom, .leaflet-control-attribution');
+      uiElements.forEach(el => (el as HTMLElement).style.display = 'none');
+
+      const svgOverlays = container.querySelectorAll('.leaflet-overlay-pane svg');
+      svgOverlays.forEach(svg => {
+        (svg as SVGElement).style.overflow = 'visible';
       });
+
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      let fullCanvas;
+      try {
+        fullCanvas = await html2canvas(container, {
+          useCORS: true, allowTaint: false, backgroundColor: exportBg, scale: 2, logging: false,
+          ignoreElements: (el) => {
+            const testId = el.getAttribute("data-testid");
+            return testId === "map-zoom-controls" || testId === "basemap-picker" || testId === "draw-tools-container";
+          },
+        });
+      } finally {
+        uiElements.forEach(el => (el as HTMLElement).style.display = '');
+      }
 
       if (previousCenter && previousZoom !== null && map) {
         map.setView(previousCenter, previousZoom, { animate: false });
