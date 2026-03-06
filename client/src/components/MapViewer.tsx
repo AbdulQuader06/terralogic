@@ -376,7 +376,7 @@ function MapControls({ position, basemap, onBasemapChange }: { position: [number
       </div>
 
       <div
-        className="absolute bottom-6 left-3 z-[1000]"
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[1000]"
         data-testid="basemap-picker"
         style={{
           display: "flex",
@@ -1132,7 +1132,6 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
         '[data-testid="draw-tools-container"]',
         '[data-testid="zoom-indicator"]',
         '[data-testid="coordinate-display"]',
-        '[data-testid="map-legend"]',
         '[data-testid="export-overlay"]',
         '[data-testid="button-export-map"]',
         '.leaflet-control-zoom',
@@ -1148,7 +1147,7 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
 
       await new Promise(resolve => setTimeout(resolve, 200));
 
-      const ignoredTestIds = new Set(["map-zoom-controls", "basemap-picker", "draw-tools-container", "zoom-indicator", "coordinate-display", "map-legend", "export-overlay", "button-export-map"]);
+      const ignoredTestIds = new Set(["map-zoom-controls", "basemap-picker", "draw-tools-container", "zoom-indicator", "coordinate-display", "export-overlay", "button-export-map"]);
       let fullCanvas;
       try {
         fullCanvas = await html2canvas(container, {
@@ -1347,7 +1346,7 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
 
       {(activeLayers.length > 0 || customOverlays.length > 0) && (
         <div
-          className="absolute bottom-[110px] left-4 z-[500]"
+          className="absolute bottom-4 left-4 z-[500]"
           data-testid="map-legend"
           style={{
             background: "var(--map-ctrl-bg)",
