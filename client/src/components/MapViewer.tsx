@@ -1128,190 +1128,49 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
         } else {
           map.setView(position, map.getZoom(), { animate: false });
         }
-        await new Promise(resolve => setTimeout(resolve, 800));
+        await new Promise<void>(resolve => {
+          let settled = false;
+          const done = () => { if (!settled) { settled = true; resolve(); } };
+          map.once("moveend", () => setTimeout(done, 600));
+          setTimeout(done, 2000);
+        });
       }
+
+      const hideSelectors = [
+        '[data-testid="map-zoom-controls"]',
+        '[data-testid="basemap-picker"]',
+        '[data-testid="draw-tools-container"]',
+        '[data-testid="zoom-indicator"]',
+        '[data-testid="coordinate-display"]',
+        '[data-testid="export-overlay"]',
+        '.leaflet-control-zoom',
+        '.leaflet-control-attribution',
+      ];
+      const uiEls = container.querySelectorAll(hideSelectors.join(', '));
+      uiEls.forEach(el => (el as HTMLElement).style.display = 'none');
 
       await new Promise(resolve => setTimeout(resolve, 300));
 
-      const mapSize = map!.getSize();
-      const scale = 2;
-      const exportCanvas = document.createElement("canvas");
-      exportCanvas.width = mapSize.x * scale;
-      exportCanvas.height = mapSize.y * scale;
-      const ctx = exportCanvas.getContext("2d")!;
-      ctx.scale(scale, scale);
-
       const bgColor = getComputedStyle(document.documentElement).getPropertyValue("--background").trim();
-      ctx.fillStyle = bgColor ? `hsl(${bgColor})` : "#F7F9FB";
-      ctx.fillRect(0, 0, mapSize.x, mapSize.y);
+      const exportBg = bgColor ? `hsl(${bgColor})` : "#F7F9FB";
+      const ignoredIds = new Set(["map-zoom-controls", "basemap-picker", "draw-tools-container", "zoom-indicator", "coordinate-display", "export-overlay"]);
 
-      const tilePanes = container.querySelectorAll(".leaflet-tile-pane .leaflet-tile-container");
-      tilePanes.forEach(tileContainer => {
-        const transform = (tileContainer as HTMLElement).style.transform;
-        const match = transform.match(/translate3d\(([^,]+),\s*([^,]+)/);
-        const containerOffsetX = match ? parseFloat(match[1]) : 0;
-        const containerOffsetY = match ? parseFloat(match[2]) : 0;
-
-        tileContainer.querySelectorAll("img").forEach(img => {
-          try {
-            const tileTransform = img.style.transform;
-            const tileMatch = tileTransform.match(/translate3d\(([^,]+),\s*([^,]+)/);
-            const tileX = tileMatch ? parseFloat(tileMatch[1]) : 0;
-            const tileY = tileMatch ? parseFloat(tileMatch[2]) : 0;
-            const w = img.width || 256;
-            const h = img.height || 256;
-            ctx.drawImage(img, containerOffsetX + tileX, containerOffsetY + tileY, w, h);
-          } catch {}
+      let fullCanvas;
+      try {
+        fullCanvas = await html2canvas(container, {
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: exportBg,
+          scale: 2,
+          logging: false,
+          ignoreElements: (el) => {
+            const tid = el.getAttribute("data-testid");
+            return tid ? ignoredIds.has(tid) : false;
+          },
         });
-      });
-
-      const canvasLayers = container.querySelectorAll(".leaflet-overlay-pane canvas, .leaflet-canvas-pane canvas, .leaflet-pane canvas");
-      canvasLayers.forEach(cvs => {
-        try {
-          const canvasEl = cvs as HTMLCanvasElement;
-          const transform = canvasEl.style.transform;
-          const match = transform.match(/translate3d\(([^,]+),\s*([^,]+)/);
-          const ox = match ? parseFloat(match[1]) : 0;
-          const oy = match ? parseFloat(match[2]) : 0;
-          ctx.drawImage(canvasEl, ox, oy, canvasEl.width / (window.devicePixelRatio || 1), canvasEl.height / (window.devicePixelRatio || 1));
-        } catch {}
-      });
-
-      const svgOverlays = container.querySelectorAll('.leaflet-overlay-pane svg');
-      for (const svg of svgOverlays) {
-        try {
-          const svgEl = svg as SVGSVGElement;
-          const transform = svgEl.style.transform;
-          const match = transform.match(/translate3d\(([^,]+),\s*([^,]+)/);
-          const ox = match ? parseFloat(match[1]) : 0;
-          const oy = match ? parseFloat(match[2]) : 0;
-
-          const svgClone = svgEl.cloneNode(true) as SVGSVGElement;
-          svgClone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-          const svgString = new XMLSerializer().serializeToString(svgClone);
-          const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
-          const url = URL.createObjectURL(blob);
-          const img = new Image();
-          await new Promise<void>((resolve) => {
-            img.onload = () => {
-              ctx.drawImage(img, ox, oy);
-              URL.revokeObjectURL(url);
-              resolve();
-            };
-            img.onerror = () => {
-              URL.revokeObjectURL(url);
-              resolve();
-            };
-            img.src = url;
-          });
-        } catch {}
+      } finally {
+        uiEls.forEach(el => (el as HTMLElement).style.display = '');
       }
-
-      const markerPane = container.querySelector('.leaflet-marker-pane');
-      if (markerPane) {
-        const markers = markerPane.querySelectorAll('.leaflet-marker-icon');
-        markers.forEach(marker => {
-          try {
-            const el = marker as HTMLElement;
-            const transform = el.style.transform;
-            const match = transform.match(/translate3d\(([^,]+),\s*([^,]+)/);
-            if (match) {
-              const mx = parseFloat(match[1]);
-              const my = parseFloat(match[2]);
-              ctx.beginPath();
-              ctx.arc(mx + 12, my + 12, 8, 0, 2 * Math.PI);
-              ctx.fillStyle = "#2A9D8F";
-              ctx.fill();
-              ctx.strokeStyle = "#fff";
-              ctx.lineWidth = 2;
-              ctx.stroke();
-            }
-          } catch {}
-        });
-      }
-
-      const tooltipPane = container.querySelector('.leaflet-tooltip-pane');
-      if (tooltipPane) {
-        const tooltips = tooltipPane.querySelectorAll('.leaflet-tooltip-permanent');
-        tooltips.forEach(tooltip => {
-          try {
-            const el = tooltip as HTMLElement;
-            const text = el.textContent || "";
-            const transform = el.style.transform;
-            const match = transform.match(/translate3d\(([^,]+),\s*([^,]+)/);
-            if (match && text) {
-              const tx = parseFloat(match[1]);
-              const ty = parseFloat(match[2]);
-              ctx.font = "600 11px Inter, sans-serif";
-              ctx.fillStyle = "rgba(0,0,0,0.7)";
-              ctx.fillText(text, tx, ty + 4);
-            }
-          } catch {}
-        });
-      }
-
-      const legendEl = container.querySelector('[data-testid="map-legend"]') as HTMLElement | null;
-      if (legendEl) {
-        const legendRect = legendEl.getBoundingClientRect();
-        const containerRect = container.getBoundingClientRect();
-        const lx = legendRect.left - containerRect.left;
-        const ly = legendRect.top - containerRect.top;
-
-        ctx.save();
-        ctx.fillStyle = "rgba(255,255,255,0.92)";
-        ctx.strokeStyle = "#E5E7EB";
-        ctx.lineWidth = 1;
-        const pad = 4;
-        const rr = 8;
-        const lw = legendRect.width + pad * 2;
-        const lh = legendRect.height + pad * 2;
-        const rx = lx - pad;
-        const ry = ly - pad;
-        ctx.beginPath();
-        ctx.moveTo(rx + rr, ry);
-        ctx.lineTo(rx + lw - rr, ry);
-        ctx.quadraticCurveTo(rx + lw, ry, rx + lw, ry + rr);
-        ctx.lineTo(rx + lw, ry + lh - rr);
-        ctx.quadraticCurveTo(rx + lw, ry + lh, rx + lw - rr, ry + lh);
-        ctx.lineTo(rx + rr, ry + lh);
-        ctx.quadraticCurveTo(rx, ry + lh, rx, ry + lh - rr);
-        ctx.lineTo(rx, ry + rr);
-        ctx.quadraticCurveTo(rx, ry, rx + rr, ry);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.font = "600 10px Inter, sans-serif";
-        ctx.fillStyle = "#6B7280";
-        ctx.fillText("ACTIVE LAYERS", lx + 2, ly + 12);
-
-        let yOff = ly + 28;
-        activeLayers.forEach(id => {
-          const regionSuffix = drawnRegion ? `-region` : "";
-          const ck = `${id}-${position[0].toFixed(3)}-${position[1].toFixed(3)}${regionSuffix}`;
-          const data = layerData[ck];
-          const color = LAYER_COLORS[id] || "#666";
-          ctx.beginPath();
-          ctx.arc(lx + 7, yOff - 4, 5, 0, 2 * Math.PI);
-          ctx.fillStyle = color;
-          ctx.fill();
-          ctx.font = "500 12px Inter, sans-serif";
-          ctx.fillStyle = "#1F2933";
-          const label = id.charAt(0).toUpperCase() + id.slice(1);
-          ctx.fillText(label, lx + 18, yOff);
-          if (data?.features) {
-            ctx.font = "400 10px Inter, sans-serif";
-            ctx.fillStyle = "#6B7280";
-            const countText = `(${data.features.length})`;
-            const labelWidth = ctx.measureText(label).width;
-            ctx.fillText(countText, lx + 22 + labelWidth, yOff);
-          }
-          yOff += 20;
-        });
-        ctx.restore();
-      }
-
-      const fullCanvas = exportCanvas;
 
       if (previousCenter && previousZoom !== null && map) {
         map.setView(previousCenter, previousZoom, { animate: false });
