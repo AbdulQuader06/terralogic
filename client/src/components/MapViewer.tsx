@@ -417,7 +417,7 @@ function MapControls({ position, basemap, onBasemapChange }: { position: [number
                   borderRadius: "8px",
                   border: `2.5px solid ${active ? "#2A9D8F" : "var(--map-ctrl-border)"}`,
                   overflow: "hidden",
-                  boxShadow: active ? "0 0 12px rgba(0,200,83,0.4)" : "0 2px 8px rgb(0 0 0 / 0.5)",
+                  boxShadow: active ? "0 0 12px rgba(42,157,143,0.4)" : "0 2px 8px rgb(0 0 0 / 0.15)",
                   transition: "all 0.2s ease",
                   position: "relative",
                 }}
@@ -572,7 +572,7 @@ function DrawingTools({ drawnRegion, onDrawRegion, onDrawingStateChange }: { dra
   const btnStyle = (active: boolean): React.CSSProperties => ({
     width: "32px",
     height: "32px",
-    background: active ? "hsl(145 100% 39% / 0.3)" : "var(--map-ctrl-bg)",
+    background: active ? "rgba(42,157,143,0.15)" : "var(--map-ctrl-bg)",
     border: `1px solid ${active ? "#2A9D8F" : "var(--map-ctrl-border)"}`,
     borderRadius: "8px",
     color: active ? "#2A9D8F" : "var(--map-ctrl-text)",

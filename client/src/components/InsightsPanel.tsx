@@ -1,8 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
 import type { SiteAnalysis } from "@shared/schema";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip as RechartsTooltip, Area, AreaChart,
@@ -149,6 +148,100 @@ function ColorDot({ color }: { color: string }) {
   );
 }
 
+const ANALYSIS_STEPS = [
+  { label: "Fetching elevation data", icon: "mountain" },
+  { label: "Querying soil classification", icon: "soil" },
+  { label: "Scanning flood zones", icon: "water" },
+  { label: "Analyzing sun exposure", icon: "sun" },
+  { label: "Mapping nearby amenities", icon: "pin" },
+  { label: "Computing land use mix", icon: "grid" },
+  { label: "Generating AI narrative", icon: "brain" },
+];
+
+function AnalysisLoadingScreen({ locationName }: { locationName: string }) {
+  const [activeStep, setActiveStep] = useState(0);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const stepInterval = setInterval(() => {
+      setActiveStep((prev) => (prev + 1) % ANALYSIS_STEPS.length);
+    }, 2800);
+    const progressInterval = setInterval(() => {
+      setProgress((prev) => Math.min(prev + 0.4, 95));
+    }, 100);
+    return () => {
+      clearInterval(stepInterval);
+      clearInterval(progressInterval);
+    };
+  }, []);
+
+  return (
+    <div className="flex flex-col h-full w-full" data-testid="panel-analysis-loading">
+      <div className="flex flex-col items-center justify-center flex-1 px-6">
+        <div className="relative w-20 h-20 mb-5">
+          <svg className="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
+            <circle cx="40" cy="40" r="34" fill="none" stroke="#E5E7EB" strokeWidth="4" />
+            <circle
+              cx="40" cy="40" r="34" fill="none" stroke="#2C5282" strokeWidth="4"
+              strokeDasharray={`${(progress / 100) * 213.6} 213.6`}
+              strokeLinecap="round"
+              style={{ transition: "stroke-dasharray 0.3s ease" }}
+            />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-sm font-bold" style={{ color: "#2C5282" }}>{Math.round(progress)}%</span>
+          </div>
+        </div>
+
+        <p className="text-sm font-semibold text-foreground mb-1">Analyzing Site</p>
+        <p className="text-[11px] text-muted-foreground mb-5 text-center truncate max-w-[220px]">{locationName}</p>
+
+        <div className="w-full max-w-[240px] space-y-1.5">
+          {ANALYSIS_STEPS.map((step, i) => {
+            const isActive = i === activeStep;
+            const isDone = i < activeStep || (activeStep === ANALYSIS_STEPS.length - 1 && progress > 85);
+            return (
+              <div
+                key={i}
+                className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-all duration-300"
+                style={{
+                  background: isActive ? "rgba(44,82,130,0.06)" : "transparent",
+                  opacity: isDone ? 0.45 : isActive ? 1 : 0.6,
+                }}
+              >
+                <div className="w-4 h-4 flex items-center justify-center shrink-0">
+                  {isDone ? (
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2A9D8F" strokeWidth="3" strokeLinecap="round"><path d="M20 6L9 17l-5-5"/></svg>
+                  ) : isActive ? (
+                    <div className="w-3 h-3 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "#2C5282", borderTopColor: "transparent" }} />
+                  ) : (
+                    <div className="w-2 h-2 rounded-full bg-muted-foreground/30" />
+                  )}
+                </div>
+                <span className={`text-[11px] ${isActive ? "font-medium text-foreground" : "text-muted-foreground"}`}>
+                  {step.label}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="px-4 pb-4">
+        <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: "#E5E7EB" }}>
+          <div
+            className="h-full rounded-full transition-all duration-300 ease-out"
+            style={{ width: `${progress}%`, background: "linear-gradient(90deg, #2C5282, #2A9D8F)" }}
+          />
+        </div>
+        <p className="text-[10px] text-muted-foreground mt-2 text-center">
+          Fetching real GIS data from multiple sources...
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function InsightsPanel({ location, onAnalysisReady, drawnRegion }: InsightsPanelProps) {
   const { isDark } = useTheme();
   const chartAxisColor = "#6B7280";
@@ -181,16 +274,23 @@ export default function InsightsPanel({ location, onAnalysisReady, drawnRegion }
     if (analysis && onAnalysisReady) onAnalysisReady();
   }, [analysis, onAnalysisReady]);
 
-  if (!location || isLoading) {
+  if (!location) {
     return (
-      <div className="flex flex-col h-full w-full p-4 space-y-4">
-        <Skeleton className="h-6 w-48 bg-muted" />
-        <Skeleton className="h-4 w-32 bg-muted" />
-        <Skeleton className="h-32 w-full rounded-xl bg-muted" />
-        <Skeleton className="h-20 w-full bg-muted" />
-        {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full bg-muted" />)}
+      <div className="flex flex-col items-center justify-center h-full w-full px-6 text-center" data-testid="panel-no-location">
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: "rgba(44,82,130,0.08)" }}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2C5282" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+        </div>
+        <p className="text-sm font-semibold text-foreground mb-1">Select a Location</p>
+        <p className="text-xs text-muted-foreground leading-relaxed max-w-[200px]">Click on the map or search for a location to begin site analysis</p>
       </div>
     );
+  }
+
+  if (isLoading) {
+    return <AnalysisLoadingScreen locationName={location.name} />;
   }
 
   if (!analysis) return null;
