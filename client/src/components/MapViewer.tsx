@@ -376,12 +376,13 @@ function MapControls({ position, basemap, onBasemapChange }: { position: [number
       </div>
 
       <div
-        className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[1000]"
+        className="absolute bottom-6 right-3 z-[1000]"
         data-testid="basemap-picker"
         style={{
           display: "flex",
-          gap: "6px",
-          alignItems: "flex-end",
+          flexDirection: "column",
+          gap: "4px",
+          alignItems: "center",
         }}
       >
         {(["dark", "light", "satellite", "road", "terrain"] as BasemapType[]).map(type => {
@@ -401,9 +402,9 @@ function MapControls({ position, basemap, onBasemapChange }: { position: [number
               data-testid={`basemap-${type}`}
               style={{
                 display: "flex",
-                flexDirection: "column",
+                flexDirection: "row",
                 alignItems: "center",
-                gap: "3px",
+                gap: "6px",
                 cursor: "pointer",
                 background: "none",
                 border: "none",
@@ -412,14 +413,15 @@ function MapControls({ position, basemap, onBasemapChange }: { position: [number
             >
               <div
                 style={{
-                  width: active ? "64px" : "56px",
-                  height: active ? "64px" : "56px",
-                  borderRadius: "8px",
-                  border: `2.5px solid ${active ? "#2A9D8F" : "var(--map-ctrl-border)"}`,
+                  width: active ? "48px" : "42px",
+                  height: active ? "48px" : "42px",
+                  borderRadius: "6px",
+                  border: `2px solid ${active ? "#2A9D8F" : "var(--map-ctrl-border)"}`,
                   overflow: "hidden",
-                  boxShadow: active ? "0 0 12px rgba(42,157,143,0.4)" : "0 2px 8px rgb(0 0 0 / 0.15)",
+                  boxShadow: active ? "0 0 10px rgba(42,157,143,0.4)" : "0 2px 6px rgb(0 0 0 / 0.15)",
                   transition: "all 0.2s ease",
                   position: "relative",
+                  flexShrink: 0,
                 }}
               >
                 <img
@@ -436,28 +438,29 @@ function MapControls({ position, basemap, onBasemapChange }: { position: [number
                 {active && (
                   <div style={{
                     position: "absolute",
-                    top: "3px",
-                    right: "3px",
-                    width: "14px",
-                    height: "14px",
+                    top: "2px",
+                    right: "2px",
+                    width: "12px",
+                    height: "12px",
                     borderRadius: "50%",
                     background: "#2A9D8F",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                   }}>
-                    <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
+                    <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
                   </div>
                 )}
               </div>
               <span
                 style={{
-                  fontSize: "10px",
+                  fontSize: "9px",
                   fontFamily: "Inter, sans-serif",
                   fontWeight: active ? 700 : 500,
                   color: active ? "#2A9D8F" : "var(--map-ctrl-text)",
                   textShadow: "0 1px 3px rgb(0 0 0 / 0.6)",
                   transition: "color 0.2s ease",
+                  whiteSpace: "nowrap",
                 }}
               >
                 {labels[type]}
@@ -1116,11 +1119,15 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
       let previousCenter: L.LatLng | null = null;
       let previousZoom: number | null = null;
 
-      if (regionBounds && map) {
+      if (map) {
         previousCenter = map.getCenter();
         previousZoom = map.getZoom();
-        const padded = regionBounds.pad(0.2);
-        map.fitBounds(padded, { animate: false, padding: [30, 30] });
+        if (regionBounds) {
+          const padded = regionBounds.pad(0.2);
+          map.fitBounds(padded, { animate: false, padding: [30, 30] });
+        } else {
+          map.setView(position, map.getZoom(), { animate: false });
+        }
         await new Promise(resolve => setTimeout(resolve, 800));
       }
 
