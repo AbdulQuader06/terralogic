@@ -293,45 +293,60 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
           (p[1] - center.lon) * mLon * scale,
           -(p[0] - center.lat) * mLat * scale
         ));
-        const shape = new THREE.Shape(pts);
+
+        const minX = Math.min(...pts.map(p => p.x));
+        const maxX = Math.max(...pts.map(p => p.x));
+        const minY = Math.min(...pts.map(p => p.y));
+        const maxY = Math.max(...pts.map(p => p.y));
+        const footprintW = maxX - minX;
+        const footprintD = maxY - minY;
+        if (footprintW < 0.5 || footprintD < 0.5) continue;
+
         const floors = bld.floors || (1 + Math.floor(Math.random() * 3));
         const realHeight = bld.height || floors * 3;
-        const h = realHeight * scale * 0.15;
-        const geom = new THREE.ExtrudeGeometry(shape, { depth: h, bevelEnabled: false });
-        geom.rotateX(-Math.PI / 2);
+        const h = realHeight * scale;
+
         const color = getBuildingColor(bld.type);
-        const mat = new THREE.MeshStandardMaterial({
-          color,
-          roughness: 0.7,
-          metalness: 0.1,
-          transparent: false,
-        });
-        const mesh = new THREE.Mesh(geom, mat);
-        mesh.position.y = 0;
+        const cx = (minX + maxX) / 2;
+        const cz = (minY + maxY) / 2;
+
+        let mesh: THREE.Mesh;
+        try {
+          const shape = new THREE.Shape(pts);
+          const geom = new THREE.ExtrudeGeometry(shape, { depth: h, bevelEnabled: false });
+          geom.rotateX(-Math.PI / 2);
+          const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.7, metalness: 0.1 });
+          mesh = new THREE.Mesh(geom, mat);
+          mesh.position.y = 0;
+        } catch {
+          const geom = new THREE.BoxGeometry(footprintW, h, footprintD);
+          const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.7, metalness: 0.1 });
+          mesh = new THREE.Mesh(geom, mat);
+          mesh.position.set(cx, h / 2, cz);
+        }
+
         mesh.castShadow = true;
         mesh.receiveShadow = true;
         scene.add(mesh);
         contextMeshesRef.current.push(mesh);
         buildingDataRef.current.set(mesh, bld);
 
-        const edges = new THREE.EdgesGeometry(geom);
-        const edgeMat = new THREE.LineBasicMaterial({ color: 0x445566, transparent: true, opacity: 0.25 });
+        const edges = new THREE.EdgesGeometry(mesh.geometry);
+        const edgeMat = new THREE.LineBasicMaterial({ color: 0x445566, transparent: true, opacity: 0.3 });
         const edgeMesh = new THREE.LineSegments(edges, edgeMat) as unknown as THREE.Mesh;
-        edgeMesh.position.y = 0;
+        edgeMesh.position.copy(mesh.position);
         scene.add(edgeMesh);
         contextMeshesRef.current.push(edgeMesh);
 
         if (realHeight >= 9 || bld.name) {
-          const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
-          const cz = pts.reduce((s, p) => s + p.y, 0) / pts.length;
           const label = bld.name ? `${bld.name}\n${realHeight}m` : `${realHeight}m`;
           const sprite = makeLabel(label, realHeight >= 15 ? "#2C5282" : "#64748B");
-          sprite.position.set(cx, h + 3, cz);
-          sprite.scale.set(20, 10, 1);
+          sprite.position.set(cx, h + 2, cz);
+          sprite.scale.set(18, 9, 1);
           scene.add(sprite);
           labelSpritesRef.current.push(sprite);
         }
-      } catch { /* skip */ }
+      } catch { /* skip degenerate geometry */ }
     }
 
     camState.current = { ...camState.current, distance: Math.max(hw, hh) * 3, tx: 0, ty: 0, tz: 0 };
@@ -373,9 +388,9 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
       (bounds.north - bounds.south) * mLat
     ) * 1.5);
 
-    const sw = placeWidth * sceneScale * 0.15;
-    const sd = placeDepth * sceneScale * 0.15;
-    const sh = height * sceneScale * 0.15;
+    const sw = placeWidth * sceneScale;
+    const sd = placeDepth * sceneScale;
+    const sh = height * sceneScale;
 
     const geom = new THREE.BoxGeometry(sw, sh, sd);
     const mat = new THREE.MeshStandardMaterial({
@@ -443,9 +458,9 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
     m.mesh.geometry?.dispose(); m.wireframe.geometry?.dispose();
 
     const height = newFloors * 3;
-    const sw = m.width * sceneScale * 0.15;
-    const sd = m.depth * sceneScale * 0.15;
-    const sh = height * sceneScale * 0.15;
+    const sw = m.width * sceneScale;
+    const sd = m.depth * sceneScale;
+    const sh = height * sceneScale;
 
     const typeInfo = MASSING_TYPES.find(t => t.value === m.type) || MASSING_TYPES[0];
     const geom = new THREE.BoxGeometry(sw, sh, sd);
@@ -606,9 +621,9 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
     const mLat = 111320;
     const mLon = 111320 * Math.cos(center.lat * Math.PI / 180);
     const sc = VIEWPORT_SIZE / (Math.max((bounds.east - bounds.west) * mLon, (bounds.north - bounds.south) * mLat) * 1.5);
-    const sw = placeWidth * sc * 0.15;
-    const sd = placeDepth * sc * 0.15;
-    const sh = placeFloors * 3 * sc * 0.15;
+    const sw = placeWidth * sc;
+    const sd = placeDepth * sc;
+    const sh = placeFloors * 3 * sc;
 
     const typeInfo = MASSING_TYPES.find(t => t.value === massingType) || MASSING_TYPES[0];
     const g = new THREE.BoxGeometry(sw, sh, sd);
