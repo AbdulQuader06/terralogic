@@ -204,13 +204,13 @@ export default function SiteSelector({ onSiteSelected, initialCenter }: SiteSele
   }, [onSiteSelected]);
 
   return (
-    <div className="flex flex-col h-full" data-testid="site-selector">
+    <div className="flex flex-col" data-testid="site-selector">
       <div className="px-3 py-2 border-b border-border">
         <h3 className="text-xs font-bold text-primary uppercase tracking-wider">Site Selection</h3>
         <p className="text-[10px] text-muted-foreground mt-0.5">Ctrl+Click & Drag to draw site boundary</p>
       </div>
 
-      <div className="flex-1 min-h-[200px] relative">
+      <div className="h-[220px] relative flex-shrink-0">
         <div ref={mapRef} className="absolute inset-0" />
         {isLoading && (
           <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-[1000]">
@@ -227,7 +227,7 @@ export default function SiteSelector({ onSiteSelected, initialCenter }: SiteSele
       </div>
 
       {amenities && (
-        <div className="px-3 pb-2 space-y-1">
+        <div className="px-3 pb-2 space-y-1 border-t border-border pt-2">
           <div className="text-[10px] font-bold text-primary uppercase tracking-wider">Amenity Mix</div>
           <div className="grid grid-cols-3 gap-1">
             {[

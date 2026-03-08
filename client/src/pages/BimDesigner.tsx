@@ -221,9 +221,7 @@ export default function BimDesigner() {
 
       <div className="flex-1 flex min-h-0">
         <aside className="w-[280px] border-r border-border flex flex-col bg-card flex-shrink-0 overflow-y-auto">
-          <div className="flex-1 min-h-[280px]">
-            <SiteSelector onSiteSelected={onSiteSelected} initialCenter={{ lat: 17.4767, lon: 78.4969 }} />
-          </div>
+          <SiteSelector onSiteSelected={onSiteSelected} initialCenter={{ lat: 17.4767, lon: 78.4969 }} />
 
           {siteData && (
             <div className="border-t border-border p-3 space-y-2">
