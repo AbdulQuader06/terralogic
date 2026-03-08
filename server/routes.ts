@@ -676,9 +676,13 @@ async function generateSiteAnalysis(lat: number, lon: number, name: string): Pro
   let aiNarrative = "";
   try {
     if (GEMINI_AVAILABLE) {
-      const dataSummary = `Location: ${name} (${lat.toFixed(4)}°, ${lon.toFixed(4)}°). Elevation: ${centerElev.toFixed(1)}m ASL. Soil: ${soilClassName} (${soilDrainageLabel}, bearing ${avgBearing} kPa). Flood risk: ${floodRiskLabel} (${floodOsmCount} flood features, ${waterBodyCount} water bodies). Sun exposure: ${sunExposure}% (sunrise ${sunPathData.sunrise}, sunset ${sunPathData.sunset}, ${sunPathData.dayLength}h daylight, max altitude ${sunPathData.maxAltitude}°). Wind: ${windExposure}%. Infrastructure: ${schoolCount} schools, ${hospitalCount} hospitals, ${transitCount} transit stops, ${infraCount} facilities, ${parkCount} parks. Zoning: ${zoningLabel}. Urban density: ${urbanDensity}%. Score: ${overallScore}/100 (${rating}).`;
+      const dataSummary = `Location: ${name} (${lat.toFixed(4)}°N, ${lon.toFixed(4)}°E). Elevation: ${centerElev.toFixed(1)}m ASL. Elevation profile range: ${Math.min(...elevArr).toFixed(1)}m to ${Math.max(...elevArr).toFixed(1)}m across 2.2km transect. Soil: ${soilClassName} (${soilDrainageLabel}, bearing capacity ${avgBearing} kPa, permeability ${avgPermeability}). Flood risk: ${floodRiskLabel} (${floodOsmCount} flood-prone OSM features, ${waterBodyCount} water bodies, ${hasWetlands ? "wetlands present" : "no wetlands"}). Sun: ${sunExposure}% exposure (sunrise ${sunPathData.sunrise}, sunset ${sunPathData.sunset}, ${sunPathData.dayLength}h daylight, max solar altitude ${sunPathData.maxAltitude}°). Wind: ${windExposure}% exposure. Infrastructure within 3km: ${schoolCount} schools, ${hospitalCount} hospitals, ${transitCount} transit stops, ${infraCount} govt facilities, ${parkCount} parks. Dominant zoning: ${zoningLabel} (${landuseCount} zones total). Urban density index: ${urbanDensity}%. Overall suitability: ${overallScore}/100 (${rating}).`;
       aiNarrative = await callGemini(
-        "You are a GIS site analysis expert. Write a concise 2-3 paragraph narrative assessment of the site based on the real data provided. Mention specific data points. Be professional and actionable. Do not use markdown headers.",
+        `You are a senior GIS site analyst writing a professional assessment for "${name}". Write exactly 3 paragraphs:
+1. SITE CHARACTERISTICS: Describe the specific terrain, elevation profile, soil conditions, and how they affect buildability. Reference exact numbers.
+2. ENVIRONMENTAL RISKS & OPPORTUNITIES: Analyze flood risk, sun/wind exposure, and environmental factors specific to this location. Compare to typical thresholds.
+3. INFRASTRUCTURE & RECOMMENDATIONS: Assess accessibility based on nearby infrastructure counts. Give 2-3 specific, actionable recommendations unique to this site's conditions.
+Be precise — use the actual data values. Do not use markdown headers or bullet points. Write flowing prose.`,
         dataSummary
       );
     }
@@ -1506,19 +1510,23 @@ ${mapStateContext}
 - Fetch and display open data directly from trusted portals (GeoJSON, CSV)
 - Generate representative GeoJSON data for visualization when real data isn't directly available
 
-## BEHAVIOR RULES
-1. When users ask about a place, navigate the map there
-2. When users ask to find things nearby, use search_places with the selected location coordinates
-3. When a drawn region exists, ALWAYS use the drawn region's center/bounds for searches instead of the selected location. This is critical — the user drew a specific area and expects results WITHIN it.
-4. When users ask about data from the Data Catalog, ALWAYS:
-   a. First use search_web to find real open data sources for that topic
-   b. Try to use fetch_open_data to load real datasets onto the map
-   c. If direct fetch fails, generate representative GeoJSON using add_geojson with realistic coordinates constrained to the visible area or drawn region
-   d. Always provide download links to the actual data sources
-5. When users ask about site suitability, run analyze_site
-6. Be a comprehensive GIS knowledge hub — answer questions about spatial concepts, data formats, coordinate systems, projections, and analysis methods
-7. When generating GeoJSON data, ALWAYS constrain points/polygons to the drawn region or visible viewport. Never generate data outside what the user can see.
-8. Reference the active layers and custom overlays in your analysis — acknowledge what data is already visible on the map
+## BEHAVIOR RULES — BE PROACTIVE AND VISUAL
+1. **ALWAYS show your work on the map.** When you discuss spatial features, boundaries, zones, or areas — add them as markers or GeoJSON overlays. Never just describe something without marking it.
+2. When users ask about a place, navigate there AND add a labeled marker at the key point.
+3. When users ask to find things nearby, use search_places with the selected location coordinates. The results automatically appear on the map.
+4. When a drawn region exists, ALWAYS use the drawn region's center/bounds for searches. The user drew a specific area and expects results WITHIN it.
+5. When users ask about data from the Data Catalog:
+   a. First use search_web to find real open data sources
+   b. Try fetch_open_data to load real datasets onto the map
+   c. If direct fetch fails, generate representative GeoJSON with add_geojson using realistic coordinates constrained to the visible area
+   d. Always provide download links to actual data sources
+6. **Think spatially and analytically.** Don't give generic text answers. Be specific:
+   - BAD: "This area has moderate flood risk."
+   - GOOD: "I'll mark the flood-prone zones. The low-lying area south of the river at 17.38°N shows high risk due to elevation <5m. The northern ridge at 17.42°N is safer at 45m elevation." Then add GeoJSON showing these zones.
+7. **Use multiple tools per response.** When analyzing a site, combine: search_places for infrastructure, analyze_site for metrics, AND add_geojson to highlight key areas/zones you identify.
+8. When generating GeoJSON, ALWAYS constrain to the drawn region or visible viewport. Include descriptive properties (name, type, risk_level, notes).
+9. Reference active layers and custom overlays — acknowledge what's already visible and build on it.
+10. When asked about environmental factors, urban planning, or risks — create visual zones/boundaries on the map showing your analysis, not just text.
 
 ## COMPREHENSIVE OPEN GIS DATA SOURCE KNOWLEDGE
 
@@ -1918,9 +1926,9 @@ Be concise but thorough. Use markdown for formatting. When you perform map actio
   app.get("/api/layers/landuse", async (req, res) => {
     const { lat, lon, radius, polygon } = req.query;
     if (!lat || !lon) return res.status(400).json({ error: "lat and lon required" });
-    const r = Math.min(Number(radius) || 2000, 3000);
+    const r = Math.min(Number(radius) || 5000, 8000);
     const bbox = buildOverpassBbox(Number(lat), Number(lon), r, polygon as string | undefined);
-    const overpassQuery = `[out:json][timeout:25][maxsize:10485760];(way["landuse"]${bbox};relation["landuse"]${bbox};);out body geom 200;`;
+    const overpassQuery = `[out:json][timeout:30][maxsize:26214400];(way["landuse"]${bbox};relation["landuse"]${bbox};);out body geom 500;`;
     let lastError = "";
     for (const url of OVERPASS_ENDPOINTS) {
       try {
@@ -1928,7 +1936,7 @@ Be concise but thorough. Use markdown for formatting. When you perform map actio
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
           body: `data=${encodeURIComponent(overpassQuery)}`,
-          signal: AbortSignal.timeout(20000),
+          signal: AbortSignal.timeout(30000),
         });
         if (!resp.ok) { lastError = `${url}: ${resp.status}`; continue; }
         const data = await resp.json();

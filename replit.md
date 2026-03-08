@@ -28,6 +28,8 @@ AI-powered GIS spatial analysis platform with dark Figma-matched UI. Evaluates c
   - **Data Catalog**: 20-category GIS data catalog (200+ items) with accordion UI, clickable items send queries to CartoAI
   - **Layer Visibility Toggle**: Custom overlays added by CartoAI have Eye/EyeOff visibility toggles and X remove buttons
   - **Map Context Awareness**: CartoAI receives full map state on each message — selected location, viewport bounds, drawn region (polygon/circle/rectangle), active data layers, and custom overlays. Context badges (location, drawn region, layers count) shown in ChatPanel header. Server builds CURRENT MAP STATE section in system prompt so AI can reference what user sees and focus searches/analysis within drawn areas.
+  - **Dynamic Suggestions**: Suggestion chips in ChatPanel are generated dynamically by `getSuggestions()` based on current location name, drawn region type, and active layers — no more static suggestions.
+  - **Proactive Map Marking**: CartoAI behavior rules instruct it to ALWAYS mark findings on map (markers, GeoJSON zones, search results), use multiple tools per response, and give specific analytical answers referencing coordinates.
 - **GIS Data Sources**:
   - OpenStreetMap Overpass API (schools, hospitals, transit, parks, landuse, water, infrastructure)
   - FEMA NFHL (flood zones via ArcGIS feature layer)

@@ -191,14 +191,30 @@ function ActionChip({ action, onClick }: { action: MapAction; onClick: () => voi
   );
 }
 
-const SUGGESTIONS = [
-  "Show me hospitals near here",
-  "Navigate to Tokyo, Japan",
-  "Analyze this site for construction",
-  "Find parks within 2km",
-  "What's the flood risk here?",
-  "Generate an AI estimate of urban heat island zones based on population density and traffic data, then plot it on the map",
-];
+function getSuggestions(location: { lat: number; lon: number; name: string } | null, drawnRegion: any, activeLayers?: string[]): string[] {
+  const name = location?.name?.split(",")[0] || "this area";
+  const suggestions: string[] = [];
+
+  if (drawnRegion) {
+    suggestions.push(`Analyze the drawn ${drawnRegion.type} area — what land uses, risks, and infrastructure are inside it?`);
+    suggestions.push(`Find all schools, hospitals, and parks within my drawn region and mark them`);
+  } else {
+    suggestions.push(`What are the key environmental risks near ${name}? Mark the risk zones on the map`);
+    suggestions.push(`Find and map all hospitals, schools, and transit stops near ${name}`);
+  }
+
+  if (activeLayers && activeLayers.length > 0) {
+    suggestions.push(`Analyze what my active layers (${activeLayers.slice(0, 3).join(", ")}) tell us about this site`);
+  } else {
+    suggestions.push(`Run a full site suitability analysis for ${name} and highlight key zones`);
+  }
+
+  suggestions.push(`Show me the urban vs rural boundary around ${name} with a GeoJSON overlay`);
+  suggestions.push(`What open datasets are available for ${name}? Find and load real data onto the map`);
+  suggestions.push(`Identify flood risk zones, mark safe elevated areas, and show infrastructure gaps near ${name}`);
+
+  return suggestions;
+}
 
 export default function ChatPanel({ location, onToggleLayer, activeLayers, onMapAction, drawnRegion, customOverlays, getMapBounds }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([
@@ -448,27 +464,30 @@ export default function ChatPanel({ location, onToggleLayer, activeLayers, onMap
             </div>
           )}
 
-          {messages.length <= 1 && !isLoading && (
-            <div className="space-y-1.5 mt-1">
-              <p className="text-[10px] text-muted-foreground font-medium px-1">Try asking:</p>
-              {SUGGESTIONS.map((s, i) => (
-                <button
-                  key={i}
-                  onClick={() => sendMessage(s)}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-[11px] transition-colors ${
-                    i === SUGGESTIONS.length - 1
-                      ? "border flex items-center gap-1.5 font-medium"
-                      : "bg-muted/30 border border-border/50 text-foreground hover:bg-muted/60 hover:border-border"
-                  }`}
-                  style={i === SUGGESTIONS.length - 1 ? { background: "rgba(42,157,143,0.08)", borderColor: "rgba(42,157,143,0.3)", color: "#2A9D8F" } : undefined}
-                  data-testid={`suggestion-${i}`}
-                >
-                  {i === SUGGESTIONS.length - 1 && <BrainCircuit className="w-3 h-3 shrink-0" />}
-                  {i === SUGGESTIONS.length - 1 ? "Generative AI GIS — Estimate & Plot Spatial Data" : s}
-                </button>
-              ))}
-            </div>
-          )}
+          {messages.length <= 1 && !isLoading && (() => {
+            const dynamicSuggestions = getSuggestions(location, drawnRegion, activeLayers);
+            return (
+              <div className="space-y-1.5 mt-1">
+                <p className="text-[10px] text-muted-foreground font-medium px-1">Try asking:</p>
+                {dynamicSuggestions.map((s, i) => (
+                  <button
+                    key={`${s.slice(0,20)}-${i}`}
+                    onClick={() => sendMessage(s)}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-[11px] transition-colors ${
+                      i === dynamicSuggestions.length - 1
+                        ? "border flex items-center gap-1.5 font-medium"
+                        : "bg-muted/30 border border-border/50 text-foreground hover:bg-muted/60 hover:border-border"
+                    }`}
+                    style={i === dynamicSuggestions.length - 1 ? { background: "rgba(42,157,143,0.08)", borderColor: "rgba(42,157,143,0.3)", color: "#2A9D8F" } : undefined}
+                    data-testid={`suggestion-${i}`}
+                  >
+                    {i === dynamicSuggestions.length - 1 && <BrainCircuit className="w-3 h-3 shrink-0" />}
+                    {s}
+                  </button>
+                ))}
+              </div>
+            );
+          })()}
         </div>
       </ScrollArea>
 

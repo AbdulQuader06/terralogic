@@ -1024,41 +1024,64 @@ function escapeXml(s: string): string {
 }
 
 function geojsonToDXF(geojson: any): string {
-  let entities = "";
-  for (const feature of (geojson.features || [])) {
+  let handleCounter = 100;
+  const nextHandle = () => (handleCounter++).toString(16).toUpperCase();
+
+  const layerNames = new Set<string>();
+  const features = geojson.features || [];
+  for (const f of features) {
+    layerNames.add(f.properties?.layer || "0");
+  }
+
+  let tables = "  0\nSECTION\n  2\nTABLES\n";
+  tables += "  0\nTABLE\n  2\nLTYPE\n  5\n5\n 70\n1\n";
+  tables += "  0\nLTYPE\n  5\n14\n  2\nCONTINUOUS\n 70\n0\n  3\nSolid line\n 72\n65\n 73\n0\n 40\n0.0\n";
+  tables += "  0\nENDTAB\n";
+  tables += "  0\nTABLE\n  2\nLAYER\n  5\n2\n 70\n" + layerNames.size + "\n";
+  const colors: Record<string, number> = { "0": 7, schools: 3, hospitals: 1, transit: 5, parks: 3, landuse: 4, elevation: 6, flood: 1, soil: 2, water: 5, infrastructure: 7 };
+  for (const ln of layerNames) {
+    tables += `  0\nLAYER\n  5\n${nextHandle()}\n  2\n${ln}\n 70\n0\n 62\n${colors[ln] || 7}\n  6\nCONTINUOUS\n`;
+  }
+  tables += "  0\nENDTAB\n  0\nENDSEC\n";
+
+  let entities = "  0\nSECTION\n  2\nENTITIES\n";
+
+  const writeLWPolyline = (coords: number[][], layer: string, closed: boolean) => {
+    const h = nextHandle();
+    entities += `  0\nLWPOLYLINE\n  5\n${h}\n  8\n${layer}\n  6\nCONTINUOUS\n 62\n${colors[layer] || 7}\n 90\n${coords.length}\n 70\n${closed ? 1 : 0}\n 43\n0.0\n`;
+    for (const [x, y] of coords) {
+      entities += ` 10\n${x}\n 20\n${y}\n`;
+    }
+  };
+
+  for (const feature of features) {
     const geom = feature.geometry;
     if (!geom) continue;
     const layer = feature.properties?.layer || "0";
 
     if (geom.type === "Point") {
       const [x, y] = geom.coordinates;
-      entities += `  0\nPOINT\n  8\n${layer}\n 10\n${x}\n 20\n${y}\n 30\n0.0\n`;
+      const h = nextHandle();
+      entities += `  0\nPOINT\n  5\n${h}\n  8\n${layer}\n  6\nCONTINUOUS\n 62\n${colors[layer] || 7}\n 10\n${x}\n 20\n${y}\n 30\n0.0\n`;
     } else if (geom.type === "LineString") {
-      entities += `  0\nPOLYLINE\n  8\n${layer}\n 66\n1\n`;
-      for (const [x, y] of geom.coordinates) {
-        entities += `  0\nVERTEX\n  8\n${layer}\n 10\n${x}\n 20\n${y}\n 30\n0.0\n`;
-      }
-      entities += `  0\nSEQEND\n  8\n${layer}\n`;
+      writeLWPolyline(geom.coordinates, layer, false);
     } else if (geom.type === "Polygon") {
-      const ring = geom.coordinates[0] || [];
-      entities += `  0\nPOLYLINE\n  8\n${layer}\n 66\n1\n 70\n1\n`;
-      for (const [x, y] of ring) {
-        entities += `  0\nVERTEX\n  8\n${layer}\n 10\n${x}\n 20\n${y}\n 30\n0.0\n`;
-      }
-      entities += `  0\nSEQEND\n  8\n${layer}\n`;
+      writeLWPolyline(geom.coordinates[0] || [], layer, true);
     } else if (geom.type === "MultiPolygon") {
       for (const poly of geom.coordinates) {
-        const ring = poly[0] || [];
-        entities += `  0\nPOLYLINE\n  8\n${layer}\n 66\n1\n 70\n1\n`;
-        for (const [x, y] of ring) {
-          entities += `  0\nVERTEX\n  8\n${layer}\n 10\n${x}\n 20\n${y}\n 30\n0.0\n`;
-        }
-        entities += `  0\nSEQEND\n  8\n${layer}\n`;
+        writeLWPolyline(poly[0] || [], layer, true);
       }
     }
   }
 
-  return `  0\nSECTION\n  2\nHEADER\n  0\nENDSEC\n  0\nSECTION\n  2\nENTITIES\n${entities}  0\nENDSEC\n  0\nEOF\n`;
+  entities += "  0\nENDSEC\n";
+
+  let header = "  0\nSECTION\n  2\nHEADER\n";
+  header += "  9\n$ACADVER\n  1\nAC1015\n";
+  header += "  9\n$INSUNITS\n 70\n6\n";
+  header += "  0\nENDSEC\n";
+
+  return header + tables + entities + "  0\nEOF\n";
 }
 
 export interface MapViewerHandle {
