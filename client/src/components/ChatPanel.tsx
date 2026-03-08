@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Bot, User, Loader2, MapPin, Navigation, Trash2, Search, BarChart3, Database, X, ChevronRight, BrainCircuit } from "lucide-react";
+import { Send, Bot, User, Loader2, MapPin, Navigation, Trash2, Search, BarChart3, Database, X, ChevronRight, BrainCircuit, Layers, PenTool } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export interface MapAction {
@@ -25,6 +25,9 @@ interface ChatPanelProps {
   onToggleLayer?: (layerId: string) => void;
   activeLayers?: string[];
   onMapAction?: (action: MapAction) => void;
+  drawnRegion?: any;
+  customOverlays?: Array<{ id: string; label: string; color: string; visible?: boolean }>;
+  getMapBounds?: () => { north: number; south: number; east: number; west: number; zoom: number } | null;
 }
 
 interface Message {
@@ -197,7 +200,7 @@ const SUGGESTIONS = [
   "Generate an AI estimate of urban heat island zones based on population density and traffic data, then plot it on the map",
 ];
 
-export default function ChatPanel({ location, onToggleLayer, activeLayers, onMapAction }: ChatPanelProps) {
+export default function ChatPanel({ location, onToggleLayer, activeLayers, onMapAction, drawnRegion, customOverlays, getMapBounds }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -238,6 +241,21 @@ export default function ChatPanel({ location, onToggleLayer, activeLayers, onMap
         { role: "user", content: text },
       ];
 
+      const mapContext: any = {};
+      if (drawnRegion) {
+        mapContext.drawnRegion = drawnRegion;
+      }
+      if (activeLayers && activeLayers.length > 0) {
+        mapContext.activeLayers = activeLayers;
+      }
+      if (customOverlays && customOverlays.length > 0) {
+        mapContext.customOverlays = customOverlays.filter(o => o.visible !== false).map(o => ({ label: o.label, color: o.color }));
+      }
+      const currentBounds = getMapBounds?.();
+      if (currentBounds) {
+        mapContext.viewport = currentBounds;
+      }
+
       const response = await fetch("/api/cartoai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -245,6 +263,7 @@ export default function ChatPanel({ location, onToggleLayer, activeLayers, onMap
           message: text,
           history,
           location: location || undefined,
+          mapContext: Object.keys(mapContext).length > 0 ? mapContext : undefined,
         }),
       });
 
@@ -310,12 +329,28 @@ export default function ChatPanel({ location, onToggleLayer, activeLayers, onMap
             Catalog
           </button>
         </div>
-        {location && (
-          <div className="flex items-center gap-1 mt-1.5 px-1">
-            <MapPin className="w-2.5 h-2.5 text-primary shrink-0" />
-            <span className="text-[9px] text-muted-foreground truncate">{location.name}</span>
-          </div>
-        )}
+        <div className="flex flex-wrap items-center gap-1.5 mt-1.5 px-1">
+          {location && (
+            <div className="flex items-center gap-0.5 bg-primary/10 px-1.5 py-0.5 rounded-full" data-testid="context-location">
+              <MapPin className="w-2.5 h-2.5 text-primary shrink-0" />
+              <span className="text-[9px] text-primary font-medium truncate max-w-[120px]">{location.name}</span>
+            </div>
+          )}
+          {drawnRegion && (
+            <div className="flex items-center gap-0.5 bg-orange-500/10 px-1.5 py-0.5 rounded-full" data-testid="context-drawn-region">
+              <PenTool className="w-2.5 h-2.5 text-orange-600 shrink-0" />
+              <span className="text-[9px] text-orange-600 font-medium">
+                {drawnRegion.type === "circle" ? `Circle ${Math.round(drawnRegion.radius)}m` : drawnRegion.type === "rectangle" ? "Rectangle" : "Polygon"}
+              </span>
+            </div>
+          )}
+          {activeLayers && activeLayers.length > 0 && (
+            <div className="flex items-center gap-0.5 bg-teal-500/10 px-1.5 py-0.5 rounded-full" data-testid="context-layers">
+              <Layers className="w-2.5 h-2.5 text-teal-600 shrink-0" />
+              <span className="text-[9px] text-teal-600 font-medium">{activeLayers.length} layers</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {showCatalog && (

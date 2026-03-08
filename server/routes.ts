@@ -1130,7 +1130,7 @@ export async function registerRoutes(
     },
     {
       name: "add_geojson",
-      description: "Add GeoJSON data to the map as an overlay. Use when the user asks to draw boundaries, areas, routes, or shapes on the map.",
+      description: "Add GeoJSON data to the map as an overlay. Use when the user asks to draw boundaries, areas, routes, or shapes. When generating data, constrain features to the drawn region or visible viewport bounds.",
       parameters: {
         type: Type.OBJECT,
         properties: {
@@ -1151,7 +1151,7 @@ export async function registerRoutes(
     },
     {
       name: "search_places",
-      description: "Search for places/locations by name or category near a given point. Use when the user asks to find restaurants, parks, hospitals, schools, etc. near a location.",
+      description: "Search for places/locations by name or category near a given point. Use when the user asks to find restaurants, parks, hospitals, schools, etc. If a drawn region exists, use its center coordinates. If no drawn region, use the selected location.",
       parameters: {
         type: Type.OBJECT,
         properties: {
@@ -1453,7 +1453,7 @@ Include:
   }
 
   app.post("/api/cartoai/chat", async (req, res) => {
-    const { message, history, location } = req.body;
+    const { message, history, location, mapContext } = req.body;
     if (!message || typeof message !== "string") {
       return res.status(400).json({ error: "message is required" });
     }
@@ -1462,7 +1462,41 @@ Include:
     }
 
     try {
+      let mapStateContext = "";
+      if (location) {
+        mapStateContext += `\n**Selected Location**: ${location.name} (${location.lat.toFixed(4)}°N, ${location.lon.toFixed(4)}°E). Use this as the center for relative queries like "nearby", "around here", "in this area".`;
+      } else {
+        mapStateContext += "\n**Selected Location**: None selected.";
+      }
+
+      if (mapContext?.viewport) {
+        const v = mapContext.viewport;
+        mapStateContext += `\n**Map Viewport**: Viewing area from (${v.south.toFixed(4)}°N, ${v.west.toFixed(4)}°E) to (${v.north.toFixed(4)}°N, ${v.east.toFixed(4)}°E) at zoom level ${v.zoom}. Use these bounds to constrain searches and data to what the user can see.`;
+      }
+
+      if (mapContext?.drawnRegion) {
+        const dr = mapContext.drawnRegion;
+        if (dr.type === "polygon") {
+          mapStateContext += `\n**Drawn Region**: User has drawn a polygon with ${dr.coords.length} vertices. Coordinates: ${JSON.stringify(dr.coords.slice(0, 6))}${dr.coords.length > 6 ? "..." : ""}. Focus searches and analysis WITHIN this drawn area.`;
+        } else if (dr.type === "circle") {
+          mapStateContext += `\n**Drawn Region**: User has drawn a circle centered at (${dr.center[0].toFixed(4)}°N, ${dr.center[1].toFixed(4)}°E) with radius ${Math.round(dr.radius)}m. Focus searches and analysis WITHIN this circular area.`;
+        } else if (dr.type === "rectangle") {
+          mapStateContext += `\n**Drawn Region**: User has drawn a rectangle from (${dr.bounds[0][0].toFixed(4)}°N, ${dr.bounds[0][1].toFixed(4)}°E) to (${dr.bounds[1][0].toFixed(4)}°N, ${dr.bounds[1][1].toFixed(4)}°E). Focus searches and analysis WITHIN this rectangular area.`;
+        }
+      }
+
+      if (mapContext?.activeLayers && mapContext.activeLayers.length > 0) {
+        mapStateContext += `\n**Active Data Layers**: ${mapContext.activeLayers.join(", ")}. The user can already see this data on the map.`;
+      }
+
+      if (mapContext?.customOverlays && mapContext.customOverlays.length > 0) {
+        mapStateContext += `\n**Custom Overlays on Map**: ${mapContext.customOverlays.map((o: any) => o.label).join(", ")}. These layers are already loaded on the map.`;
+      }
+
       const systemInstruction = `You are CartoAI, the world's most knowledgeable geospatial AI assistant, built into TerraLogic AI. You are an expert in GIS, spatial analysis, remote sensing, urban planning, environmental science, and open geospatial data. You can interact with the map directly through function calls.
+
+## CURRENT MAP STATE
+${mapStateContext}
 
 ## CORE CAPABILITIES
 - Navigate to any location, add markers, draw GeoJSON boundaries/routes/areas
@@ -1474,16 +1508,17 @@ Include:
 
 ## BEHAVIOR RULES
 1. When users ask about a place, navigate the map there
-2. When users ask to find things nearby, use search_places
-3. When users ask about data from the Data Catalog, ALWAYS:
+2. When users ask to find things nearby, use search_places with the selected location coordinates
+3. When a drawn region exists, ALWAYS use the drawn region's center/bounds for searches instead of the selected location. This is critical — the user drew a specific area and expects results WITHIN it.
+4. When users ask about data from the Data Catalog, ALWAYS:
    a. First use search_web to find real open data sources for that topic
    b. Try to use fetch_open_data to load real datasets onto the map
-   c. If direct fetch fails, generate representative GeoJSON using add_geojson with realistic coordinates
+   c. If direct fetch fails, generate representative GeoJSON using add_geojson with realistic coordinates constrained to the visible area or drawn region
    d. Always provide download links to the actual data sources
-4. When users ask about site suitability, run analyze_site
-5. Be a comprehensive GIS knowledge hub — answer questions about spatial concepts, data formats, coordinate systems, projections, and analysis methods
-
-${location ? `The user is currently viewing: ${location.name} (${location.lat.toFixed(4)}°, ${location.lon.toFixed(4)}°). Use this as context for relative queries like "nearby" or "around here".` : "No location is currently selected."}
+5. When users ask about site suitability, run analyze_site
+6. Be a comprehensive GIS knowledge hub — answer questions about spatial concepts, data formats, coordinate systems, projections, and analysis methods
+7. When generating GeoJSON data, ALWAYS constrain points/polygons to the drawn region or visible viewport. Never generate data outside what the user can see.
+8. Reference the active layers and custom overlays in your analysis — acknowledge what data is already visible on the map
 
 ## COMPREHENSIVE OPEN GIS DATA SOURCE KNOWLEDGE
 

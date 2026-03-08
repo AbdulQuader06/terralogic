@@ -1066,6 +1066,7 @@ export interface MapViewerHandle {
   exportMapAs: (format: string) => Promise<void>;
   isExporting: () => boolean;
   getLayerGeoJSON: () => any;
+  getMapBounds: () => { north: number; south: number; east: number; west: number; zoom: number } | null;
 }
 
 const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer({ onLocationSelect, arcgisApiKey, activeLayers, onLayerLoading, selectedLocation, customOverlays = [], drawnRegion, onDrawRegion }, ref) {
@@ -1229,6 +1230,18 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
     },
     async exportMapAsPNG() {
       await exportImageFn("png");
+    },
+    getMapBounds() {
+      const map = mapInstanceRef.current;
+      if (!map) return null;
+      const bounds = map.getBounds();
+      return {
+        north: bounds.getNorth(),
+        south: bounds.getSouth(),
+        east: bounds.getEast(),
+        west: bounds.getWest(),
+        zoom: map.getZoom(),
+      };
     }
   }));
 

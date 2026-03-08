@@ -27,6 +27,7 @@ AI-powered GIS spatial analysis platform with dark Figma-matched UI. Evaluates c
   - **Generative AI GIS**: Can generate estimated/simulated spatial data (flood zones, heat islands, commercial corridors) when real data isn't available, plotted as GeoJSON with clear "AI-Generated Spatial Estimate" labels
   - **Data Catalog**: 20-category GIS data catalog (200+ items) with accordion UI, clickable items send queries to CartoAI
   - **Layer Visibility Toggle**: Custom overlays added by CartoAI have Eye/EyeOff visibility toggles and X remove buttons
+  - **Map Context Awareness**: CartoAI receives full map state on each message — selected location, viewport bounds, drawn region (polygon/circle/rectangle), active data layers, and custom overlays. Context badges (location, drawn region, layers count) shown in ChatPanel header. Server builds CURRENT MAP STATE section in system prompt so AI can reference what user sees and focus searches/analysis within drawn areas.
 - **GIS Data Sources**:
   - OpenStreetMap Overpass API (schools, hospitals, transit, parks, landuse, water, infrastructure)
   - FEMA NFHL (flood zones via ArcGIS feature layer)
