@@ -122,6 +122,23 @@ const LAYER_COLORS: Record<string, string> = {
   soil: "#A16207",
   elevation: "#2A9D8F",
   landuse: "#7C3AED",
+  hillshade: "#6B7280",
+  landcover: "#16A34A",
+  demographics: "#E11D48",
+  ussoil: "#92400E",
+};
+
+const ESRI_TILE_LAYERS: Record<string, { url: string; opacity: number; attribution: string }> = {
+  hillshade: {
+    url: "https://services.arcgisonline.com/arcgis/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}",
+    opacity: 0.5,
+    attribution: "Esri World Hillshade",
+  },
+  landcover: {
+    url: "https://env1.arcgis.com/arcgis/rest/services/Sentinel2_10m_LandCover/ImageServer/tile/{z}/{y}/{x}",
+    opacity: 0.6,
+    attribution: "Esri Sentinel-2 10m Land Cover",
+  },
 };
 
 const LANDUSE_COLORS: Record<string, string> = {
@@ -920,7 +937,8 @@ function PointLayerRenderer({ layerData, layerId }: { layerData: any; layerId: s
 }
 
 const POINT_LAYERS = new Set(["schools", "hospitals", "transit", "infrastructure"]);
-const POLYGON_LAYERS = new Set(["elevation", "soil", "flood", "landuse", "parks", "water"]);
+const POLYGON_LAYERS = new Set(["elevation", "soil", "flood", "landuse", "parks", "water", "demographics", "ussoil"]);
+const TILE_OVERLAY_LAYERS = new Set(["hillshade", "landcover"]);
 
 function CustomOverlayRenderer({ overlay }: { overlay: CustomOverlay }) {
   const features = overlay.data?.features || [];
@@ -1305,7 +1323,7 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
 
     const polyParam = drawnRegionToPolygonParam(drawnRegion || null);
 
-    activeLayers.forEach(async (layerId) => {
+    activeLayers.filter(id => !TILE_OVERLAY_LAYERS.has(id)).forEach(async (layerId) => {
       const regionSuffix = polyParam ? `-region` : "";
       const cacheKey = `${layerId}-${lat.toFixed(3)}-${lon.toFixed(3)}${regionSuffix}`;
       if (layerDataRef.current[cacheKey] && layerDataRef.current[cacheKey] !== "loading") return;
@@ -1363,6 +1381,21 @@ const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(function MapViewer
             crossOrigin="anonymous"
           />
         )}
+
+        {activeLayers.filter(id => TILE_OVERLAY_LAYERS.has(id)).map(layerId => {
+          const cfg = ESRI_TILE_LAYERS[layerId];
+          if (!cfg) return null;
+          return (
+            <TileLayer
+              key={`tile-overlay-${layerId}`}
+              url={cfg.url}
+              opacity={cfg.opacity}
+              attribution={cfg.attribution}
+              maxZoom={18}
+              crossOrigin="anonymous"
+            />
+          );
+        })}
 
         {activeLayers.filter(id => POLYGON_LAYERS.has(id)).map(layerId => {
           const regionSuffix = drawnRegion ? `-region` : "";

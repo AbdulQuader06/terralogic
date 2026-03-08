@@ -26,10 +26,13 @@ TerraLogic AI employs a modern web application architecture:
 
 ## External Dependencies
 
--   **Mapping Services**: Esri ArcGIS (basemaps, geocoding, FEMA flood data), OpenStreetMap Overpass API (various spatial features).
+-   **Mapping Services**: Esri ArcGIS (basemaps, geocoding, FEMA NFHL flood data, World Hillshade, Sentinel-2 Land Cover), OpenStreetMap Overpass API (various spatial features).
+-   **Esri Living Atlas**: World Hillshade (terrain relief), Sentinel-2 10m Land Cover (global land classification), FEMA NFHL flood zones. These render as tile overlays directly.
+-   **Census/Demographics**: US Census TIGERweb ACS 2021 (tract-level population, housing units, density classification).
+-   **USDA Soils**: SSURGO Soil Survey via SDA REST API (drainage class, hydrologic group, slope, taxonomic subgroup).
 -   **Weather & Elevation**: Open-Meteo Elevation API (real DEM data), Open-Meteo Weather API (sunshine duration, wind speed).
--   **Soil Data**: SoilGrids ISRIC API (WRB soil classification).
+-   **Soil Data (Global)**: SoilGrids ISRIC API (WRB soil classification, bearing capacity estimation).
 -   **AI Integration**: Google Gemini API, OpenAI API.
 -   **Indian Data**: OpenCity India CKAN API (data.opencity.in).
 -   **Routing**: wouter (frontend), Express (backend).
--   **Geocoding**: Nominatim.
+-   **Geocoding**: Nominatim, Esri ArcGIS Geocoder.

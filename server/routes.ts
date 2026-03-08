@@ -192,7 +192,11 @@ function getLayerForTopic(topic: string): string | null {
   const map: Record<string, string> = {
     transit: "transit", flood: "flood", soil: "soil", solar: "elevation",
     elevation: "elevation", landuse: "landuse", water: "water", parks: "parks",
-    schools: "schools", hospitals: "hospitals", infrastructure: "infrastructure"
+    schools: "schools", hospitals: "hospitals", infrastructure: "infrastructure",
+    hillshade: "hillshade", terrain: "hillshade", relief: "hillshade",
+    landcover: "landcover", "land cover": "landcover", vegetation: "landcover",
+    demographics: "demographics", population: "demographics", census: "demographics", density: "demographics",
+    ssurgo: "ussoil", ussoil: "ussoil", "soil survey": "ussoil", "soil detail": "ussoil",
   };
   return map[topic] || null;
 }
@@ -454,7 +458,7 @@ async function fetchOverpassGeoCombined(lat: number, lon: number, radius: number
 async function generateSiteAnalysis(lat: number, lon: number, name: string): Promise<SiteAnalysis> {
   const radius = 3000;
 
-  const [pointsResult, geoResult, soilData, elevData, weatherData] = await Promise.allSettled([
+  const [pointsResult, geoResult, soilData, elevData, weatherData, femaResult, landcoverResult] = await Promise.allSettled([
     fetchOverpassCombined(lat, lon, radius),
     fetchOverpassGeoCombined(lat, lon, radius),
     (async () => {
@@ -509,10 +513,43 @@ async function generateSiteAnalysis(lat: number, lon: number, name: string): Pro
       } catch {}
       return { daily: null, source: "none" };
     })(),
+    fetchArcGISFeatureLayer(
+      "https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/28",
+      lat, lon, radius
+    ),
+    (async () => {
+      try {
+        const lcUrl = `https://env1.arcgis.com/arcgis/rest/services/Sentinel2_10m_LandCover/ImageServer/identify`;
+        const params = new URLSearchParams({
+          geometry: JSON.stringify({ x: lon, y: lat, spatialReference: { wkid: 4326 } }),
+          geometryType: "esriGeometryPoint",
+          returnGeometry: "false",
+          returnCatalogItems: "false",
+          f: "json",
+        });
+        const resp = await fetch(`${lcUrl}?${params.toString()}`, { signal: AbortSignal.timeout(8000) });
+        if (resp.ok) {
+          const data = await resp.json();
+          const classNames: Record<number, string> = {
+            1: "No Data", 2: "Water", 4: "Flooded Vegetation", 5: "Crops",
+            7: "Built Area", 8: "Bare Ground", 9: "Snow/Ice", 10: "Clouds", 11: "Rangeland",
+          };
+          const pixelVal = data?.value ? parseInt(data.value) : data?.properties?.Value || 0;
+          return { landcoverClass: classNames[pixelVal] || `Class ${pixelVal}`, pixelValue: pixelVal, source: "esri_sentinel2" };
+        }
+      } catch {}
+      return { landcoverClass: "Unknown", pixelValue: 0, source: "none" };
+    })(),
   ]);
 
   const pointsData = pointsResult.status === "fulfilled" ? pointsResult.value : { elements: [] };
   const geoData = geoResult.status === "fulfilled" ? geoResult.value : { elements: [] };
+  const femaFloodData = femaResult.status === "fulfilled" ? femaResult.value : { features: [] };
+  const landcoverData = landcoverResult.status === "fulfilled" ? landcoverResult.value : { landcoverClass: "Unknown", pixelValue: 0, source: "none" };
+
+  const femaZones = (femaFloodData?.features || []).map((f: any) => f.properties?.FLD_ZONE).filter(Boolean);
+  const femaZoneLabel = femaZones.length > 0 ? [...new Set(femaZones)].join(", ") : "No FEMA data";
+  const esriLandcover = (landcoverData as any)?.landcoverClass || "Unknown";
 
   const allElements = pointsData.elements || [];
   const schoolTags = new Set(["school", "university", "college", "kindergarten", "library"]);
@@ -677,7 +714,7 @@ async function generateSiteAnalysis(lat: number, lon: number, name: string): Pro
   let aiNarrative = "";
   try {
     if (GEMINI_AVAILABLE) {
-      const dataSummary = `Location: ${name} (${lat.toFixed(4)}°N, ${lon.toFixed(4)}°E). Elevation: ${centerElev.toFixed(1)}m ASL. Elevation profile range: ${Math.min(...elevArr).toFixed(1)}m to ${Math.max(...elevArr).toFixed(1)}m across 2.2km transect. Soil: ${soilClassName} (${soilDrainageLabel}, bearing capacity ${avgBearing} kPa, permeability ${avgPermeability}). Flood risk: ${floodRiskLabel} (${floodOsmCount} flood-prone OSM features, ${waterBodyCount} water bodies, ${hasWetlands ? "wetlands present" : "no wetlands"}). Sun: ${sunExposure}% exposure (sunrise ${sunPathData.sunrise}, sunset ${sunPathData.sunset}, ${sunPathData.dayLength}h daylight, max solar altitude ${sunPathData.maxAltitude}°). Wind: ${windExposure}% exposure. Infrastructure within 3km: ${schoolCount} schools, ${hospitalCount} hospitals, ${transitCount} transit stops, ${infraCount} govt facilities, ${parkCount} parks. Dominant zoning: ${zoningLabel} (${landuseCount} zones total). Urban density index: ${urbanDensity}%. Overall suitability: ${overallScore}/100 (${rating}).`;
+      const dataSummary = `Location: ${name} (${lat.toFixed(4)}°N, ${lon.toFixed(4)}°E). Elevation: ${centerElev.toFixed(1)}m ASL. Elevation profile range: ${Math.min(...elevArr).toFixed(1)}m to ${Math.max(...elevArr).toFixed(1)}m across 2.2km transect. Soil: ${soilClassName} (${soilDrainageLabel}, bearing capacity ${avgBearing} kPa, permeability ${avgPermeability}). Flood risk: ${floodRiskLabel} (${floodOsmCount} flood-prone OSM features, ${waterBodyCount} water bodies, ${hasWetlands ? "wetlands present" : "no wetlands"}). FEMA flood zone designation: ${femaZoneLabel}. Esri Sentinel-2 land cover: ${esriLandcover}. Sun: ${sunExposure}% exposure (sunrise ${sunPathData.sunrise}, sunset ${sunPathData.sunset}, ${sunPathData.dayLength}h daylight, max solar altitude ${sunPathData.maxAltitude}°). Wind: ${windExposure}% exposure. Infrastructure within 3km: ${schoolCount} schools, ${hospitalCount} hospitals, ${transitCount} transit stops, ${infraCount} govt facilities, ${parkCount} parks. Dominant zoning: ${zoningLabel} (${landuseCount} zones total). Urban density index: ${urbanDensity}%. Overall suitability: ${overallScore}/100 (${rating}).`;
       aiNarrative = await callGemini(
         `You are a senior professional combining Licensed Urban Planner, Real Estate Investment Analyst, and Registered Architect expertise. Write a professional site assessment for "${name}" in exactly 4 paragraphs:
 
@@ -1687,6 +1724,16 @@ When analyzing ANY site or area, structure your thinking around:
 13. **Be proactive with multi-step workflows.** For "analyze this site for development": (a) create_buffer for 1km and 3km catchments, (b) search_places for schools + hospitals + transit + commercial, (c) analyze_site for environmental metrics, (d) add_geojson showing recommended zones (buildable area, setback lines, open space), (e) deliver professional summary with development yield estimates.
 14. When asked about distance or proximity, use measure_distance and contextualize it: "2.3 km from the site to the nearest metro station — this is outside the 800m TOD premium zone but within comfortable cycling distance (8 min)."
 
+## ESRI LIVING ATLAS LAYERS AVAILABLE IN THE MAP
+The following Esri Living Atlas layers are integrated and can be toggled by the user in the layer panel:
+- **Hillshade**: Esri World Hillshade — terrain relief shading for slope/aspect visualization
+- **Land Cover**: Esri Sentinel-2 10m global land cover classification (water, trees, crops, built area, bare ground, etc.)
+- **Demographics**: US Census ACS 2021 tract-level data — population, housing units, density classification (Rural/Suburban/Urban/High Urban)
+- **USA Soils (SSURGO)**: USDA Soil Survey — detailed soil engineering properties (drainage class, hydrologic group, slope %, taxonomic subgroup)
+- **FEMA Flood Zones**: Enhanced flood risk combining FEMA NFHL zones (A, AE, X, X500), OSM flood features, and elevation-based risk model
+
+When users ask about terrain, land cover, demographics, soil engineering, or flood risk — remind them they can enable these layers in the layer panel for visual confirmation, AND use your tools to add additional spatial analysis on top.
+
 ## COMPREHENSIVE OPEN GIS DATA SOURCE KNOWLEDGE
 
 ### Global Data Portals
@@ -2278,6 +2325,143 @@ Be concise but thorough. Use markdown for formatting. When you perform map actio
     }
 
     res.json({ type: "FeatureCollection", features });
+  });
+
+  app.get("/api/layers/demographics", async (req, res) => {
+    const { lat, lon, radius, polygon } = req.query;
+    if (!lat || !lon) return res.status(400).json({ error: "lat and lon required" });
+    const clat = Number(lat), clon = Number(lon), r = Number(radius) || 5000;
+    try {
+      const degOffset = r / 111000;
+      const polyBbox = parseBboxFromPolygon(polygon as string | undefined);
+      const latMin = polyBbox ? polyBbox.latMin : clat - degOffset;
+      const latMax = polyBbox ? polyBbox.latMax : clat + degOffset;
+      const lonMin = polyBbox ? polyBbox.lonMin : clon - degOffset;
+      const lonMax = polyBbox ? polyBbox.lonMax : clon + degOffset;
+
+      const censusUrl = `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_ACS2021/MapServer/8/query`;
+      const params = new URLSearchParams({
+        where: "1=1",
+        geometry: JSON.stringify({ xmin: lonMin, ymin: latMin, xmax: lonMax, ymax: latMax, spatialReference: { wkid: 4326 } }),
+        geometryType: "esriGeometryEnvelope",
+        spatialRel: "esriSpatialRelIntersects",
+        outFields: "GEOID,BASENAME,POP100,HU100,AREALAND,AREAWATER,FUNCSTAT",
+        returnGeometry: "true",
+        f: "geojson",
+        resultRecordCount: "100",
+      });
+      const resp = await fetch(`${censusUrl}?${params.toString()}`, { signal: AbortSignal.timeout(15000) });
+      if (!resp.ok) throw new Error(`Census API error: ${resp.status}`);
+      const data = await resp.json();
+      const features = (data.features || []).map((f: any) => {
+        const pop = f.properties?.POP100 || 0;
+        const areaKm2 = (f.properties?.AREALAND || 1) / 1e6;
+        const density = areaKm2 > 0 ? Math.round(pop / areaKm2) : 0;
+        let densityClass = "Rural";
+        if (density > 5000) densityClass = "High Urban";
+        else if (density > 1000) densityClass = "Urban";
+        else if (density > 200) densityClass = "Suburban";
+        return {
+          ...f,
+          properties: {
+            ...f.properties,
+            layer: "demographics",
+            population: pop,
+            housing_units: f.properties?.HU100 || 0,
+            area_km2: Math.round(areaKm2 * 100) / 100,
+            density_per_km2: density,
+            density_class: densityClass,
+            source: "census_acs_2021",
+          },
+        };
+      });
+      res.json({ type: "FeatureCollection", features });
+    } catch (e: any) {
+      console.error("Demographics layer error:", e.message);
+      res.json({ type: "FeatureCollection", features: [] });
+    }
+  });
+
+  app.get("/api/layers/ussoil", async (req, res) => {
+    const { lat, lon, radius } = req.query;
+    if (!lat || !lon) return res.status(400).json({ error: "lat and lon required" });
+    const clat = Number(lat), clon = Number(lon), r = Number(radius) || 5000;
+    try {
+      const ssurgoUrl = "https://sdmdataaccess.sc.egov.usda.gov/Tabular/post.rest";
+      const degOffset = r / 111000;
+      const wkt = `POLYGON((${clon - degOffset} ${clat - degOffset}, ${clon + degOffset} ${clat - degOffset}, ${clon + degOffset} ${clat + degOffset}, ${clon - degOffset} ${clat + degOffset}, ${clon - degOffset} ${clat - degOffset}))`;
+
+      const sqlQuery = `SELECT M.mukey, M.muname, M.mukind, M.muacres, C.compname, C.comppct_r, C.slope_r, C.drainagecl, C.taxsubgrp, C.hydgrp
+        FROM mapunit M
+        INNER JOIN component C ON M.mukey = C.mukey
+        WHERE M.mukey IN (
+          SELECT DISTINCT mukey FROM SDA_Get_Mukey_from_intersection_with_WktWgs84('${wkt}')
+        )
+        AND C.comppct_r >= 15
+        ORDER BY C.comppct_r DESC`;
+
+      const resp = await fetch(ssurgoUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: sqlQuery, format: "JSON" }),
+        signal: AbortSignal.timeout(15000),
+      });
+
+      if (!resp.ok) throw new Error(`SSURGO API error: ${resp.status}`);
+      const data = await resp.json();
+
+      const rows = data?.Table || [];
+      const gridSize = 0.004;
+      const features: any[] = [];
+      const drainageColors: Record<string, string> = {
+        "Well drained": "#22C55E",
+        "Moderately well drained": "#86EFAC",
+        "Somewhat poorly drained": "#FCD34D",
+        "Poorly drained": "#F97316",
+        "Very poorly drained": "#EF4444",
+      };
+
+      rows.forEach((row: any, idx: number) => {
+        const angle = (idx / Math.max(rows.length, 1)) * 2 * Math.PI;
+        const dist = gridSize * (0.5 + (idx % 3));
+        const cellLat = clat + Math.cos(angle) * dist;
+        const cellLon = clon + Math.sin(angle) * dist;
+        const drainClass = row[7] || "Unknown";
+        features.push({
+          type: "Feature",
+          geometry: {
+            type: "Polygon",
+            coordinates: [[
+              [cellLon - gridSize / 2, cellLat - gridSize / 2],
+              [cellLon + gridSize / 2, cellLat - gridSize / 2],
+              [cellLon + gridSize / 2, cellLat + gridSize / 2],
+              [cellLon - gridSize / 2, cellLat + gridSize / 2],
+              [cellLon - gridSize / 2, cellLat - gridSize / 2],
+            ]],
+          },
+          properties: {
+            layer: "ussoil",
+            mukey: row[0],
+            map_unit_name: row[1],
+            map_unit_kind: row[2],
+            acres: row[3],
+            component_name: row[4],
+            component_pct: row[5],
+            slope_pct: row[6],
+            drainage_class: drainClass,
+            taxonomic_subgroup: row[8],
+            hydrologic_group: row[9],
+            fill_color: drainageColors[drainClass] || "#6B7280",
+            source: "usda_ssurgo",
+          },
+        });
+      });
+
+      res.json({ type: "FeatureCollection", features });
+    } catch (e: any) {
+      console.error("SSURGO layer error:", e.message);
+      res.json({ type: "FeatureCollection", features: [] });
+    }
   });
 
   // Geocode endpoint using Nominatim (OSM)
