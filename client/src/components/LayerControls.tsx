@@ -41,8 +41,8 @@ const LAYER_GROUPS: LayerGroup[] = [
     label: "Planning & Demographics",
     layers: [
       { id: "landuse", name: "Land Use", icon: "landuse", color: "#7C3AED", description: "Zoning & land classification" },
-      { id: "demographics", name: "Demographics", icon: "demographics", color: "#E11D48", description: "Census population density" },
-      { id: "ussoil", name: "USA Soils (SSURGO)", icon: "soil_detail", color: "#92400E", description: "Detailed USDA soil survey" },
+      { id: "demographics", name: "Demographics", icon: "demographics", color: "#E11D48", description: "Global urban areas & cities" },
+      { id: "ussoil", name: "Soil Detail", icon: "soil_detail", color: "#92400E", description: "ISRIC SoilGrids composition" },
     ],
   },
 ];

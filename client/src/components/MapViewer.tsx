@@ -903,6 +903,88 @@ function PolygonLayerRenderer({ layerData, layerId }: { layerData: any; layerId:
     );
   }
 
+  if (layerId === "demographics") {
+    const polyFeatures = layerData.features.filter((f: any) => f.geometry?.type !== "Point");
+    const pointFeatures = layerData.features.filter((f: any) => f.geometry?.type === "Point");
+    return (
+      <>
+        {polyFeatures.length > 0 && (
+          <GeoJSON
+            key={`demographics-poly-${polyFeatures.length}`}
+            data={{ type: "FeatureCollection", features: polyFeatures }}
+            style={(feature) => {
+              const dt = feature?.properties?.data_type;
+              if (dt === "urban_area") {
+                const rank = feature?.properties?.urban_rank || 5;
+                const opacity = rank <= 2 ? 0.35 : rank <= 3 ? 0.25 : 0.18;
+                return { fillColor: "#F43F5E", fillOpacity: opacity, weight: 1.5, color: "#E11D48", opacity: 0.7 };
+              }
+              return { fillColor: "#E11D48", fillOpacity: 0.12, weight: 2, color: "#BE123C", opacity: 0.6, dashArray: "4 4" };
+            }}
+            onEachFeature={(feature, layer) => {
+              const p = feature?.properties || {};
+              const dt = p.data_type;
+              let tip = "";
+              if (dt === "admin_division") {
+                tip = `<b>${p.region_name}</b><br/>Type: ${p.admin_type}<br/>Country: ${p.country}`;
+              } else if (dt === "urban_area") {
+                tip = `<b>${p.city_name}</b><br/>Class: ${p.urban_class}`;
+              } else {
+                tip = `<b>${p.region_name || p.city_name || "Area"}</b>`;
+              }
+              layer.bindTooltip(tip, { sticky: true });
+            }}
+          />
+        )}
+        {pointFeatures.map((feature: any, i: number) => {
+          const coords = feature.geometry?.coordinates;
+          if (!coords) return null;
+          const pop = feature.properties?.population || 0;
+          const sz = pop > 1000000 ? 10 : pop > 500000 ? 8 : pop > 100000 ? 6 : 5;
+          return (
+            <CircleMarker key={`demo-pt-${i}`} center={[coords[1], coords[0]]} radius={sz}
+              pathOptions={{ fillColor: "#E11D48", fillOpacity: 0.85, color: "#fff", weight: 1.5, opacity: 0.9 }}>
+              <Tooltip sticky>
+                <div style={{ fontFamily: "Inter, sans-serif", fontSize: "12px" }}>
+                  <strong>{feature.properties?.city_name || "City"}</strong>
+                  {pop > 0 && <div style={{ color: "#999", fontSize: "11px" }}>Pop: {pop.toLocaleString()}</div>}
+                  {feature.properties?.status && <div style={{ color: "#999", fontSize: "11px" }}>{feature.properties.status}</div>}
+                </div>
+              </Tooltip>
+            </CircleMarker>
+          );
+        })}
+      </>
+    );
+  }
+
+  if (layerId === "ussoil") {
+    return (
+      <GeoJSON
+        key={`ussoil-${layerData.features.length}`}
+        data={layerData}
+        style={(feature) => {
+          const fc = feature?.properties?.fill_color || "#92400E";
+          return { fillColor: fc, fillOpacity: 0.4, weight: 1, color: "#78350F", opacity: 0.5 };
+        }}
+        onEachFeature={(feature, layer) => {
+          const p = feature?.properties || {};
+          const lines = [
+            `<b>Soil: ${p.soil_texture || "Unknown"}</b>`,
+            p.clay_pct != null ? `Clay: ${p.clay_pct}% | Sand: ${p.sand_pct}% | Silt: ${p.silt_pct}%` : "",
+            p.ph != null ? `pH: ${p.ph}` : "",
+            p.organic_carbon_g_kg != null ? `Organic Carbon: ${p.organic_carbon_g_kg} g/kg` : "",
+            `Drainage: ${p.drainage_class || "N/A"}`,
+            `Hydrologic Group: ${p.hydrologic_group || "N/A"}`,
+            `Buildability: ${p.buildability || "N/A"}`,
+            `<i style="color:#999;font-size:10px">Source: ISRIC SoilGrids</i>`,
+          ].filter(Boolean).join("<br/>");
+          layer.bindTooltip(lines, { sticky: true });
+        }}
+      />
+    );
+  }
+
   return null;
 }
 

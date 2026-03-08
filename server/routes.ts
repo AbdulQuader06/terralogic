@@ -1724,15 +1724,52 @@ When analyzing ANY site or area, structure your thinking around:
 13. **Be proactive with multi-step workflows.** For "analyze this site for development": (a) create_buffer for 1km and 3km catchments, (b) search_places for schools + hospitals + transit + commercial, (c) analyze_site for environmental metrics, (d) add_geojson showing recommended zones (buildable area, setback lines, open space), (e) deliver professional summary with development yield estimates.
 14. When asked about distance or proximity, use measure_distance and contextualize it: "2.3 km from the site to the nearest metro station — this is outside the 800m TOD premium zone but within comfortable cycling distance (8 min)."
 
-## ESRI LIVING ATLAS LAYERS AVAILABLE IN THE MAP
-The following Esri Living Atlas layers are integrated and can be toggled by the user in the layer panel:
+## ESRI LIVING ATLAS & GLOBAL LAYERS
+The following layers are integrated and can be toggled by the user in the layer panel:
 - **Hillshade**: Esri World Hillshade — terrain relief shading for slope/aspect visualization
 - **Land Cover**: Esri Sentinel-2 10m global land cover classification (water, trees, crops, built area, bare ground, etc.)
-- **Demographics**: US Census ACS 2021 tract-level data — population, housing units, density classification (Rural/Suburban/Urban/High Urban)
-- **USA Soils (SSURGO)**: USDA Soil Survey — detailed soil engineering properties (drainage class, hydrologic group, slope %, taxonomic subgroup)
-- **FEMA Flood Zones**: Enhanced flood risk combining FEMA NFHL zones (A, AE, X, X500), OSM flood features, and elevation-based risk model
+- **Demographics**: Global layer combining Esri World Administrative Divisions (state/province boundaries), World Urban Areas (metropolitan extents with rank), and World Cities (population data from UN estimates). Works worldwide including India — shows state boundaries (e.g., Telangana), urban area extents (e.g., Hyderabad metro), and city points with population.
+- **Soil Detail**: ISRIC SoilGrids global soil data — clay/sand/silt percentages, pH, organic carbon, nitrogen content, texture classification, drainage class, hydrologic group, and buildability assessment. Works globally for any location.
+- **Flood Risk**: Enhanced flood risk combining elevation-based risk model, OSM flood features, and FEMA NFHL zones
 
 When users ask about terrain, land cover, demographics, soil engineering, or flood risk — remind them they can enable these layers in the layer panel for visual confirmation, AND use your tools to add additional spatial analysis on top.
+
+## INDIA-SPECIFIC PLANNING EXPERTISE
+You have deep knowledge of Indian urban planning, real estate, and building regulations:
+
+### Indian Planning Standards & Regulations
+- **URDPFI Guidelines**: Urban and Regional Development Plans Formulation and Implementation Guidelines by MoHUA. Land use distribution norms: Residential 40-45%, Commercial 5-8%, Industrial 8-12%, Public/Semi-Public 10-12%, Transportation 12-14%, Recreation 12-14% of total developable area.
+- **National Building Code (NBC) India 2016**: Part 3 (Development Control), Part 4 (Fire & Life Safety), Part 6 (Structural Design), Part 8 (Building Services). Governs setbacks, FAR/FSI, building height, parking, fire escape widths.
+- **IS Codes**: IS 456 (Plain & Reinforced Concrete), IS 800 (Steel), IS 875 (Loads), IS 1893 (Seismic Design), IS 2720 (Soil Testing), IS 1498 (Soil Classification).
+- **IRC Standards**: Indian Roads Congress — IRC 67 (Road Design), IRC 86 (Geometric Design of Intersections), IRC SP 41 (Drainage Design).
+
+### Indian FSI/FAR Norms by City
+- **Mumbai**: FSI 1.0-1.33 (Island City), 1.0 (Suburbs), up to 5.0 in TDR/fungible FSI zones, DCPR 2034 allows premium FSI
+- **Delhi**: FAR 1.5-3.0 (residential), 1.5-2.5 (commercial), up to 4.0 in TOD zones per MPD 2021
+- **Hyderabad**: FSI 1.5-2.5 (residential), 2.5-3.0 (commercial), HMDA/GHMC GO Ms. No. 168, premium FSI up to 4.0 in metro corridors
+- **Bengaluru**: FAR 1.75-3.25 per BDA zonal regulations, up to 4.0 in TOD influence zones
+- **Chennai**: FSI 1.5-2.0 (residential), 2.5 (commercial), CMDA Master Plan rules, premium FSI for group developments
+- **Pune**: FSI 1.1 (residential), 1.5 (commercial), up to 2.5 with premium FSI in PMC/PCMC limits
+- **Ahmedabad**: FSI 1.2-1.8, up to 5.4 with TDR in AUDA/AMC limits, TP scheme based development
+
+### Indian Development Authorities & Their Roles
+- **HMDA** (Hyderabad Metropolitan Development Authority): Master plan for 7,228 sq.km metropolitan region
+- **GHMC** (Greater Hyderabad Municipal Corporation): Building permissions, layout approvals within municipal limits
+- **BDA** (Bengaluru Development Authority), **DDA** (Delhi Development Authority), **MMRDA** (Mumbai Metropolitan Region Development Authority)
+- **RERA** (Real Estate Regulatory Authority): Project registration, buyer protection, completion timelines
+- **DTCP** (Directorate of Town & Country Planning): Layout approvals, change of land use, building rules
+
+### Indian Green Building Standards
+- **GRIHA** (Green Rating for Integrated Habitat Assessment): Indian green building rating by TERI. 5-star system covering site planning, construction, energy, water, waste.
+- **IGBC** (Indian Green Building Council): Silver/Gold/Platinum ratings. Covers new buildings, existing buildings, townships, SEZs, factories, data centers.
+- **ECBC** (Energy Conservation Building Code): Mandatory for commercial buildings >100kW connected load. Envelope thermal performance, HVAC efficiency, lighting power density.
+
+### India-Specific Site Analysis Considerations
+- **Seismic Zones**: India has 5 seismic zones (I-V). Zone III (Hyderabad), Zone IV (Delhi, Dehradun), Zone V (Kashmir, NE India). IS 1893 governs seismic design.
+- **Monsoon Drainage**: Design for 100mm/hour rainfall intensity in Hyderabad/Mumbai. Stormwater management per IRC guidelines. Include rainwater harvesting (mandatory in most states for plots >300 sq.m).
+- **Water Table**: Varies widely — 3-5m in coastal areas, 10-30m in Deccan Plateau. Affects foundation design and basement feasibility.
+- **Soil Types in India**: Black cotton soil (high shrink-swell, needs pile foundations) in Deccan region; alluvial soil (good bearing, shallow foundations) in Indo-Gangetic plain; laterite (moderate bearing, good drainage) in Western Ghats.
+- **Heat Island Effect**: Critical in Indian cities. NBC recommends minimum 25% green cover in group housing. Use SRI (Solar Reflectance Index) >29 for roofs.
 
 ## COMPREHENSIVE OPEN GIS DATA SOURCE KNOWLEDGE
 
@@ -2339,42 +2376,96 @@ Be concise but thorough. Use markdown for formatting. When you perform map actio
       const lonMin = polyBbox ? polyBbox.lonMin : clon - degOffset;
       const lonMax = polyBbox ? polyBbox.lonMax : clon + degOffset;
 
-      const censusUrl = `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_ACS2021/MapServer/8/query`;
-      const params = new URLSearchParams({
-        where: "1=1",
-        geometry: JSON.stringify({ xmin: lonMin, ymin: latMin, xmax: lonMax, ymax: latMax, spatialReference: { wkid: 4326 } }),
-        geometryType: "esriGeometryEnvelope",
-        spatialRel: "esriSpatialRelIntersects",
-        outFields: "GEOID,BASENAME,POP100,HU100,AREALAND,AREAWATER,FUNCSTAT",
-        returnGeometry: "true",
-        f: "geojson",
-        resultRecordCount: "100",
-      });
-      const resp = await fetch(`${censusUrl}?${params.toString()}`, { signal: AbortSignal.timeout(15000) });
-      if (!resp.ok) throw new Error(`Census API error: ${resp.status}`);
-      const data = await resp.json();
-      const features = (data.features || []).map((f: any) => {
-        const pop = f.properties?.POP100 || 0;
-        const areaKm2 = (f.properties?.AREALAND || 1) / 1e6;
-        const density = areaKm2 > 0 ? Math.round(pop / areaKm2) : 0;
-        let densityClass = "Rural";
-        if (density > 5000) densityClass = "High Urban";
-        else if (density > 1000) densityClass = "Urban";
-        else if (density > 200) densityClass = "Suburban";
-        return {
-          ...f,
-          properties: {
+      const geomEnv = JSON.stringify({ xmin: lonMin, ymin: latMin, xmax: lonMax, ymax: latMax, spatialReference: { wkid: 4326 } });
+
+      const [adminResult, urbanResult, citiesResult] = await Promise.allSettled([
+        (async () => {
+          const params = new URLSearchParams({
+            where: "1=1", geometry: geomEnv, geometryType: "esriGeometryEnvelope",
+            spatialRel: "esriSpatialRelIntersects", outFields: "*",
+            returnGeometry: "true", f: "geojson", resultRecordCount: "50",
+          });
+          const resp = await fetch(`https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/World_Administrative_Divisions/FeatureServer/0/query?${params}`, { signal: AbortSignal.timeout(12000) });
+          if (!resp.ok) throw new Error(`Admin error: ${resp.status}`);
+          return resp.json();
+        })(),
+        (async () => {
+          const params = new URLSearchParams({
+            where: "1=1", geometry: geomEnv, geometryType: "esriGeometryEnvelope",
+            spatialRel: "esriSpatialRelIntersects", outFields: "*",
+            returnGeometry: "true", f: "geojson", resultRecordCount: "20",
+          });
+          const resp = await fetch(`https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/World_Urban_Areas/FeatureServer/0/query?${params}`, { signal: AbortSignal.timeout(12000) });
+          if (!resp.ok) throw new Error(`Urban error: ${resp.status}`);
+          return resp.json();
+        })(),
+        (async () => {
+          const params = new URLSearchParams({
+            where: "1=1", geometry: geomEnv, geometryType: "esriGeometryEnvelope",
+            spatialRel: "esriSpatialRelIntersects", outFields: "*",
+            returnGeometry: "true", f: "geojson", resultRecordCount: "50",
+          });
+          const resp = await fetch(`https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/World_Cities/FeatureServer/0/query?${params}`, { signal: AbortSignal.timeout(12000) });
+          if (!resp.ok) throw new Error(`Cities error: ${resp.status}`);
+          return resp.json();
+        })(),
+      ]);
+
+      const features: any[] = [];
+
+      if (adminResult.status === "fulfilled") {
+        for (const f of (adminResult.value.features || [])) {
+          f.properties = {
             ...f.properties,
             layer: "demographics",
-            population: pop,
-            housing_units: f.properties?.HU100 || 0,
-            area_km2: Math.round(areaKm2 * 100) / 100,
-            density_per_km2: density,
-            density_class: densityClass,
-            source: "census_acs_2021",
-          },
-        };
-      });
+            data_type: "admin_division",
+            region_name: f.properties?.NAME || "Unknown",
+            country: f.properties?.COUNTRY || "Unknown",
+            admin_type: f.properties?.ADMINTYPE || "Unknown",
+            source: "esri_world_admin",
+          };
+          features.push(f);
+        }
+      }
+
+      if (urbanResult.status === "fulfilled") {
+        for (const f of (urbanResult.value.features || [])) {
+          const rank = f.properties?.RANK || 5;
+          let urbanClass = "Small Urban";
+          if (rank === 1) urbanClass = "Major Metropolitan";
+          else if (rank === 2) urbanClass = "Large City";
+          else if (rank === 3) urbanClass = "Medium City";
+          else if (rank === 4) urbanClass = "Small City";
+          f.properties = {
+            ...f.properties,
+            layer: "demographics",
+            data_type: "urban_area",
+            city_name: f.properties?.Name || "Unknown",
+            urban_class: urbanClass,
+            urban_rank: rank,
+            source: "esri_world_urban",
+          };
+          features.push(f);
+        }
+      }
+
+      if (citiesResult.status === "fulfilled") {
+        for (const f of (citiesResult.value.features || [])) {
+          f.properties = {
+            ...f.properties,
+            layer: "demographics",
+            data_type: "city",
+            city_name: f.properties?.CITY_NAME || "Unknown",
+            population: f.properties?.POP || 0,
+            pop_class: f.properties?.POP_CLASS || "Unknown",
+            status: f.properties?.STATUS || "Other",
+            country: f.properties?.CNTRY_NAME || "Unknown",
+            source: "esri_world_cities",
+          };
+          features.push(f);
+        }
+      }
+
       res.json({ type: "FeatureCollection", features });
     } catch (e: any) {
       console.error("Demographics layer error:", e.message);
@@ -2387,32 +2478,90 @@ Be concise but thorough. Use markdown for formatting. When you perform map actio
     if (!lat || !lon) return res.status(400).json({ error: "lat and lon required" });
     const clat = Number(lat), clon = Number(lon), r = Number(radius) || 5000;
     try {
-      const ssurgoUrl = "https://sdmdataaccess.sc.egov.usda.gov/Tabular/post.rest";
       const degOffset = r / 111000;
-      const wkt = `POLYGON((${clon - degOffset} ${clat - degOffset}, ${clon + degOffset} ${clat - degOffset}, ${clon + degOffset} ${clat + degOffset}, ${clon - degOffset} ${clat + degOffset}, ${clon - degOffset} ${clat - degOffset}))`;
-
-      const sqlQuery = `SELECT M.mukey, M.muname, M.mukind, M.muacres, C.compname, C.comppct_r, C.slope_r, C.drainagecl, C.taxsubgrp, C.hydgrp
-        FROM mapunit M
-        INNER JOIN component C ON M.mukey = C.mukey
-        WHERE M.mukey IN (
-          SELECT DISTINCT mukey FROM SDA_Get_Mukey_from_intersection_with_WktWgs84('${wkt}')
-        )
-        AND C.comppct_r >= 15
-        ORDER BY C.comppct_r DESC`;
-
-      const resp = await fetch(ssurgoUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: sqlQuery, format: "JSON" }),
-        signal: AbortSignal.timeout(15000),
-      });
-
-      if (!resp.ok) throw new Error(`SSURGO API error: ${resp.status}`);
-      const data = await resp.json();
-
-      const rows = data?.Table || [];
       const gridSize = 0.004;
       const features: any[] = [];
+
+      const soilProperties = ["clay", "sand", "silt", "phh2o", "soc", "nitrogen"];
+
+      const sampleOffsets = [
+        [0, 0],
+        [0.05, 0], [-0.05, 0], [0, 0.05], [0, -0.05],
+        [0.08, 0.08], [-0.08, -0.08],
+      ];
+
+      let soilData: Record<string, any> = {};
+      let foundData = false;
+
+      for (const [dlat, dlon] of sampleOffsets) {
+        const sLat = clat + dlat;
+        const sLon = clon + dlon;
+        const url = `https://rest.isric.org/soilgrids/v2.0/properties/query?lon=${sLon}&lat=${sLat}&property=${soilProperties.join("&property=")}&depth=0-5cm&value=mean`;
+        try {
+          const resp = await fetch(url, { signal: AbortSignal.timeout(10000) });
+          if (!resp.ok) continue;
+          const data = await resp.json();
+          const layers = data?.properties?.layers;
+          if (layers) {
+            let hasValue = false;
+            for (const layer of layers) {
+              const val = layer?.depths?.[0]?.values?.mean;
+              if (val !== null && val !== undefined) {
+                soilData[layer.name] = {
+                  value: val,
+                  unit: layer?.unit_measure?.mapped_units || "",
+                };
+                hasValue = true;
+              }
+            }
+            if (hasValue) { foundData = true; break; }
+          }
+        } catch { continue; }
+      }
+
+      const clayPct = soilData.clay?.value ? soilData.clay.value / 10 : null;
+      const sandPct = soilData.sand?.value ? soilData.sand.value / 10 : null;
+      const siltPct = soilData.silt?.value ? soilData.silt.value / 10 : null;
+      const ph = soilData.phh2o?.value ? soilData.phh2o.value / 10 : null;
+      const soc = soilData.soc?.value ? soilData.soc.value / 10 : null;
+      const nitrogen = soilData.nitrogen?.value ? soilData.nitrogen.value / 100 : null;
+
+      let soilTexture = "Unknown";
+      if (clayPct !== null && sandPct !== null && siltPct !== null) {
+        if (clayPct >= 40) soilTexture = "Clay";
+        else if (sandPct >= 85) soilTexture = "Sand";
+        else if (siltPct >= 80) soilTexture = "Silt";
+        else if (clayPct >= 27 && sandPct >= 20 && sandPct <= 45) soilTexture = "Clay Loam";
+        else if (sandPct >= 52 && clayPct < 20) soilTexture = "Sandy Loam";
+        else if (siltPct >= 50 && clayPct >= 12 && clayPct < 27) soilTexture = "Silty Clay Loam";
+        else soilTexture = "Loam";
+      }
+
+      let drainageClass = "Unknown";
+      if (clayPct !== null && sandPct !== null) {
+        if (sandPct > 70) drainageClass = "Well drained";
+        else if (sandPct > 50) drainageClass = "Moderately well drained";
+        else if (clayPct > 40) drainageClass = "Poorly drained";
+        else if (clayPct > 30) drainageClass = "Somewhat poorly drained";
+        else drainageClass = "Moderately well drained";
+      }
+
+      let hydrologicGroup = "D";
+      if (sandPct !== null && clayPct !== null) {
+        if (sandPct > 70 && clayPct < 10) hydrologicGroup = "A";
+        else if (sandPct > 50) hydrologicGroup = "B";
+        else if (clayPct > 40) hydrologicGroup = "D";
+        else hydrologicGroup = "C";
+      }
+
+      let buildability = "Moderate";
+      if (sandPct !== null && clayPct !== null) {
+        if (sandPct > 50 && sandPct < 80 && clayPct < 25) buildability = "Good";
+        else if (clayPct > 40 || sandPct > 85) buildability = "Poor";
+        else if (clayPct > 30) buildability = "Fair";
+        else buildability = "Good";
+      }
+
       const drainageColors: Record<string, string> = {
         "Well drained": "#22C55E",
         "Moderately well drained": "#86EFAC",
@@ -2421,12 +2570,14 @@ Be concise but thorough. Use markdown for formatting. When you perform map actio
         "Very poorly drained": "#EF4444",
       };
 
-      rows.forEach((row: any, idx: number) => {
-        const angle = (idx / Math.max(rows.length, 1)) * 2 * Math.PI;
-        const dist = gridSize * (0.5 + (idx % 3));
-        const cellLat = clat + Math.cos(angle) * dist;
-        const cellLon = clon + Math.sin(angle) * dist;
-        const drainClass = row[7] || "Unknown";
+      const samplePoints = [
+        [0, 0], [1, 0], [-1, 0], [0, 1], [0, -1],
+        [1, 1], [-1, -1], [1, -1], [-1, 1],
+      ];
+
+      for (const [dx, dy] of samplePoints) {
+        const cellLat = clat + dy * gridSize;
+        const cellLon = clon + dx * gridSize;
         features.push({
           type: "Feature",
           geometry: {
@@ -2441,25 +2592,25 @@ Be concise but thorough. Use markdown for formatting. When you perform map actio
           },
           properties: {
             layer: "ussoil",
-            mukey: row[0],
-            map_unit_name: row[1],
-            map_unit_kind: row[2],
-            acres: row[3],
-            component_name: row[4],
-            component_pct: row[5],
-            slope_pct: row[6],
-            drainage_class: drainClass,
-            taxonomic_subgroup: row[8],
-            hydrologic_group: row[9],
-            fill_color: drainageColors[drainClass] || "#6B7280",
-            source: "usda_ssurgo",
+            soil_texture: soilTexture,
+            clay_pct: clayPct !== null ? Math.round(clayPct * 10) / 10 : null,
+            sand_pct: sandPct !== null ? Math.round(sandPct * 10) / 10 : null,
+            silt_pct: siltPct !== null ? Math.round(siltPct * 10) / 10 : null,
+            ph: ph !== null ? Math.round(ph * 10) / 10 : null,
+            organic_carbon_g_kg: soc !== null ? Math.round(soc * 10) / 10 : null,
+            nitrogen_g_kg: nitrogen !== null ? Math.round(nitrogen * 100) / 100 : null,
+            drainage_class: drainageClass,
+            hydrologic_group: hydrologicGroup,
+            buildability: buildability,
+            fill_color: drainageColors[drainageClass] || "#6B7280",
+            source: "isric_soilgrids",
           },
         });
-      });
+      }
 
       res.json({ type: "FeatureCollection", features });
     } catch (e: any) {
-      console.error("SSURGO layer error:", e.message);
+      console.error("Soil layer error:", e.message);
       res.json({ type: "FeatureCollection", features: [] });
     }
   });
