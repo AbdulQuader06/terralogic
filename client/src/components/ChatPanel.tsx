@@ -203,22 +203,26 @@ function getSuggestions(location: { lat: number; lon: number; name: string } | n
   const suggestions: string[] = [];
 
   if (drawnRegion) {
-    suggestions.push(`Analyze the drawn ${drawnRegion.type} area — what land uses, risks, and infrastructure are inside it?`);
-    suggestions.push(`Find all schools, hospitals, and parks within my drawn region and mark them`);
+    if (drawnRegion.type === "circle") {
+      suggestions.push(`What's the development potential of this ${drawnRegion.type} zone? Estimate FAR, buildable area, and unit yield`);
+    } else {
+      suggestions.push(`Assess this ${drawnRegion.type} plot for development — area, buildable %, land use mix, and infrastructure gaps`);
+    }
+    suggestions.push(`Search for all schools, hospitals, and transit within my drawn area and rate walkability`);
   } else {
-    suggestions.push(`What are the key environmental risks near ${name}? Mark the risk zones on the map`);
-    suggestions.push(`Find and map all hospitals, schools, and transit stops near ${name}`);
+    suggestions.push(`Is ${name} suitable for a residential township? Analyze soil, slope, flood risk, and infrastructure`);
+    suggestions.push(`Create 1km and 3km catchment zones around ${name} and audit schools, hospitals, and transit`);
   }
 
   if (activeLayers && activeLayers.length > 0) {
-    suggestions.push(`Analyze what my active layers (${activeLayers.slice(0, 3).join(", ")}) tell us about this site`);
+    suggestions.push(`Based on the active layers, what zoning and development constraints apply to this site?`);
   } else {
-    suggestions.push(`Run a full site suitability analysis for ${name} and highlight key zones`);
+    suggestions.push(`Run a full site feasibility analysis — elevation, soil, flood, sun path, and infrastructure score`);
   }
 
-  suggestions.push(`Show me the urban vs rural boundary around ${name} with a GeoJSON overlay`);
-  suggestions.push(`What open datasets are available for ${name}? Find and load real data onto the map`);
-  suggestions.push(`Identify flood risk zones, mark safe elevated areas, and show infrastructure gaps near ${name}`);
+  suggestions.push(`What is the highest-and-best-use for a 2-acre parcel near ${name}? Consider zoning, demand, and ROI`);
+  suggestions.push(`Mark flood risk zones, identify safe elevated buildable areas, and recommend foundation types near ${name}`);
+  suggestions.push(`Evaluate ${name} for a mixed-use development — walkability, transit access, market positioning, and design strategy`);
 
   return suggestions;
 }
@@ -228,7 +232,7 @@ export default function ChatPanel({ location, onToggleLayer, activeLayers, onMap
     {
       id: "welcome",
       role: "assistant",
-      content: "Hi! I'm **CartoAI**, your intelligent map assistant. I can navigate to places, find nearby amenities, analyze sites, and add markers to the map.\n\nTry asking me something, browse the **Data Catalog**, or use a suggestion below.",
+      content: "Welcome to **CartoAI** — your AI-powered **Urban Planner**, **Real Estate Analyst**, and **Architect** in one. I provide professional-grade site assessments with real spatial data.\n\n**I can help with:**\n• Site feasibility & suitability analysis\n• Infrastructure catchment audits (schools, hospitals, transit)\n• Buffer zones, FAR/FSI estimation, development yield\n• Flood risk, soil analysis, and foundation recommendations\n• Highest-and-best-use evaluation & market positioning\n\nAsk me anything, draw a site on the map, or browse the **Data Catalog** below.",
     }
   ]);
   const [input, setInput] = useState("");
