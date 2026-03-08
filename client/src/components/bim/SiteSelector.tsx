@@ -1,0 +1,281 @@
+import { useEffect, useRef, useState, useCallback } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+
+interface SiteData {
+  bounds: { north: number; south: number; east: number; west: number };
+  center: { lat: number; lon: number };
+  elevation: number;
+  amenities: AmenityMix;
+  buildingFootprints: BuildingFootprint[];
+  area: number;
+}
+
+interface AmenityMix {
+  hospitals: number;
+  schools: number;
+  transit: number;
+  parks: number;
+  restaurants: number;
+  shops: number;
+  total: number;
+}
+
+interface BuildingFootprint {
+  id: string;
+  type: string;
+  name: string;
+  height: number;
+  floors: number;
+  polygon: [number, number][];
+}
+
+interface SiteSelectorProps {
+  onSiteSelected: (data: SiteData) => void;
+  initialCenter?: { lat: number; lon: number };
+}
+
+export type { SiteData, AmenityMix, BuildingFootprint };
+
+export default function SiteSelector({ onSiteSelected, initialCenter }: SiteSelectorProps) {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const leafletMap = useRef<L.Map | null>(null);
+  const rectRef = useRef<L.Rectangle | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [status, setStatus] = useState<string>("Draw a rectangle on the map to select your site");
+  const [siteArea, setSiteArea] = useState<number>(0);
+  const [amenities, setAmenities] = useState<AmenityMix | null>(null);
+
+  const center = initialCenter || { lat: 17.4767, lon: 78.4969 };
+
+  useEffect(() => {
+    if (!mapRef.current || leafletMap.current) return;
+
+    const map = L.map(mapRef.current, {
+      center: [center.lat, center.lon],
+      zoom: 16,
+      zoomControl: false,
+    });
+
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}", {
+      attribution: "Esri",
+      maxZoom: 19,
+    }).addTo(map);
+
+    L.control.zoom({ position: "bottomright" }).addTo(map);
+
+    let drawStart: L.LatLng | null = null;
+    let tempRect: L.Rectangle | null = null;
+
+    map.on("mousedown", (e: L.LeafletMouseEvent) => {
+      if (e.originalEvent.shiftKey || !e.originalEvent.ctrlKey) return;
+      drawStart = e.latlng;
+      map.dragging.disable();
+    });
+
+    map.on("mousemove", (e: L.LeafletMouseEvent) => {
+      if (!drawStart) return;
+      const bounds = L.latLngBounds(drawStart, e.latlng);
+      if (tempRect) map.removeLayer(tempRect);
+      tempRect = L.rectangle(bounds, {
+        color: "#00ff88",
+        weight: 2,
+        fillOpacity: 0.15,
+        dashArray: "5,5",
+      }).addTo(map);
+    });
+
+    map.on("mouseup", (e: L.LeafletMouseEvent) => {
+      if (!drawStart) return;
+      const bounds = L.latLngBounds(drawStart, e.latlng);
+      if (tempRect) map.removeLayer(tempRect);
+      drawStart = null;
+      map.dragging.enable();
+
+      const ne = bounds.getNorthEast();
+      const sw = bounds.getSouthWest();
+      const latDiff = Math.abs(ne.lat - sw.lat);
+      const lonDiff = Math.abs(ne.lng - sw.lng);
+      if (latDiff < 0.0005 || lonDiff < 0.0005) return;
+
+      if (rectRef.current) map.removeLayer(rectRef.current);
+      rectRef.current = L.rectangle(bounds, {
+        color: "#00ff88",
+        weight: 2,
+        fillOpacity: 0.2,
+        fillColor: "#00ff88",
+      }).addTo(map);
+
+      fetchSiteData({
+        north: ne.lat,
+        south: sw.lat,
+        east: ne.lng,
+        west: sw.lng,
+      });
+    });
+
+    leafletMap.current = map;
+
+    return () => {
+      map.remove();
+      leafletMap.current = null;
+    };
+  }, []);
+
+  const fetchSiteData = useCallback(async (bounds: { north: number; south: number; east: number; west: number }) => {
+    setIsLoading(true);
+    setStatus("Fetching elevation data...");
+
+    const centerLat = (bounds.north + bounds.south) / 2;
+    const centerLon = (bounds.east + bounds.west) / 2;
+
+    const mPerDegLat = 111320;
+    const mPerDegLon = 111320 * Math.cos(centerLat * Math.PI / 180);
+    const widthM = (bounds.east - bounds.west) * mPerDegLon;
+    const heightM = (bounds.north - bounds.south) * mPerDegLat;
+    const areaSqm = widthM * heightM;
+    setSiteArea(areaSqm);
+
+    let elevation = 0;
+    try {
+      const resp = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${centerLat}&longitude=${centerLon}`);
+      const data = await resp.json();
+      elevation = data.elevation?.[0] || 0;
+    } catch { /* fallback */ }
+
+    setStatus("Fetching amenity data...");
+    let amenityData: AmenityMix = { hospitals: 0, schools: 0, transit: 0, parks: 0, restaurants: 0, shops: 0, total: 0 };
+    try {
+      const bbox = `${bounds.south},${bounds.west},${bounds.north},${bounds.east}`;
+      const radius = Math.max(widthM, heightM) * 1.5;
+      const query = `[out:json][timeout:15];(
+        node["amenity"="hospital"](around:${radius},${centerLat},${centerLon});
+        node["amenity"="school"](around:${radius},${centerLat},${centerLon});
+        node["amenity"="university"](around:${radius},${centerLat},${centerLon});
+        node["public_transport"](around:${radius},${centerLat},${centerLon});
+        node["leisure"="park"](around:${radius},${centerLat},${centerLon});
+        node["amenity"="restaurant"](around:${radius},${centerLat},${centerLon});
+        node["shop"](around:${radius},${centerLat},${centerLon});
+      );out count;`;
+      const resp = await fetch("https://overpass-api.de/api/interpreter", {
+        method: "POST",
+        body: `data=${encodeURIComponent(query)}`,
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      });
+      const data = await resp.json();
+      const tags = data.elements?.[0]?.tags || {};
+      amenityData = {
+        hospitals: parseInt(tags.nodes || "0"),
+        schools: 0, transit: 0, parks: 0, restaurants: 0, shops: 0, total: 0,
+      };
+      const countQuery = `[out:json][timeout:15];(
+        node["amenity"="hospital"](around:${radius},${centerLat},${centerLon});
+      );out count;`;
+      const queries = [
+        { key: "hospitals", q: `node["amenity"~"hospital|clinic"](around:${radius},${centerLat},${centerLon})` },
+        { key: "schools", q: `node["amenity"~"school|university|college"](around:${radius},${centerLat},${centerLon})` },
+        { key: "transit", q: `node["public_transport"](around:${radius},${centerLat},${centerLon})` },
+        { key: "parks", q: `node["leisure"~"park|garden"](around:${radius},${centerLat},${centerLon})` },
+        { key: "restaurants", q: `node["amenity"~"restaurant|cafe|fast_food"](around:${radius},${centerLat},${centerLon})` },
+        { key: "shops", q: `node["shop"](around:${radius},${centerLat},${centerLon})` },
+      ];
+      const fullQuery = `[out:json][timeout:20];${queries.map(q => `(${q.q};);out count;`).join("")}`;
+      const resp2 = await fetch("https://overpass-api.de/api/interpreter", {
+        method: "POST",
+        body: `data=${encodeURIComponent(fullQuery)}`,
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      });
+      const data2 = await resp2.json();
+      const elements = data2.elements || [];
+      let idx = 0;
+      for (const q of queries) {
+        const el = elements[idx];
+        if (el?.tags?.total) {
+          (amenityData as any)[q.key] = parseInt(el.tags.total);
+        }
+        idx++;
+      }
+      amenityData.total = amenityData.hospitals + amenityData.schools + amenityData.transit + amenityData.parks + amenityData.restaurants + amenityData.shops;
+    } catch { /* fallback */ }
+    setAmenities(amenityData);
+
+    setStatus("Fetching building footprints...");
+    let footprints: BuildingFootprint[] = [];
+    try {
+      const resp = await fetch(`/api/3d/buildings?lat=${centerLat}&lon=${centerLon}&radius=${Math.round(Math.max(widthM, heightM))}`);
+      const data = await resp.json();
+      footprints = (data.buildings || []).map((b: any, i: number) => ({
+        id: `bld-${i}`,
+        type: b.type || "yes",
+        name: b.name || "",
+        height: b.height || 0,
+        floors: b.levels || 0,
+        polygon: b.polygon || [],
+      }));
+    } catch { /* fallback */ }
+
+    setIsLoading(false);
+    setStatus(`Site selected: ${Math.round(areaSqm).toLocaleString()} sqm | ${footprints.length} buildings | ${amenityData.total} amenities`);
+
+    onSiteSelected({
+      bounds,
+      center: { lat: centerLat, lon: centerLon },
+      elevation,
+      amenities: amenityData,
+      buildingFootprints: footprints,
+      area: areaSqm,
+    });
+  }, [onSiteSelected]);
+
+  return (
+    <div className="flex flex-col h-full" data-testid="site-selector">
+      <div className="px-3 py-2 border-b border-cyan-900/30">
+        <h3 className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Site Selection</h3>
+        <p className="text-[10px] text-gray-500 mt-0.5">Ctrl+Click & Drag to draw site boundary</p>
+      </div>
+
+      <div className="flex-1 min-h-[200px] relative">
+        <div ref={mapRef} className="absolute inset-0" />
+        {isLoading && (
+          <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-[1000]">
+            <div className="text-center space-y-2">
+              <div className="w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto" />
+              <div className="text-[10px] text-cyan-400">{status}</div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="px-3 py-2 border-t border-cyan-900/30 text-[10px] text-gray-400">
+        {status}
+      </div>
+
+      {amenities && (
+        <div className="px-3 pb-2 space-y-1">
+          <div className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider">Amenity Mix</div>
+          <div className="grid grid-cols-3 gap-1">
+            {[
+              { label: "Healthcare", value: amenities.hospitals, color: "text-red-400" },
+              { label: "Education", value: amenities.schools, color: "text-yellow-400" },
+              { label: "Transit", value: amenities.transit, color: "text-blue-400" },
+              { label: "Parks", value: amenities.parks, color: "text-green-400" },
+              { label: "F&B", value: amenities.restaurants, color: "text-orange-400" },
+              { label: "Retail", value: amenities.shops, color: "text-purple-400" },
+            ].map(item => (
+              <div key={item.label} className="bg-gray-800/50 rounded px-2 py-1">
+                <div className={`text-[10px] font-medium ${item.color}`}>{item.value}</div>
+                <div className="text-[9px] text-gray-500">{item.label}</div>
+              </div>
+            ))}
+          </div>
+          {siteArea > 0 && (
+            <div className="flex items-center justify-between text-[10px] text-gray-500 pt-1 border-t border-gray-800">
+              <span>Site Area</span>
+              <span className="text-cyan-400 font-medium">{(siteArea / 10000).toFixed(2)} Ha ({Math.round(siteArea).toLocaleString()} sqm)</span>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
