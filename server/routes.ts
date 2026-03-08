@@ -2127,6 +2127,39 @@ Be concise but thorough. Use markdown for formatting. When you perform map actio
     }
   });
 
+  app.get("/api/reverse-geocode", async (req, res) => {
+    const { lat, lon } = req.query;
+    if (!lat || !lon) return res.status(400).json({ error: "lat and lon required" });
+    const numLat = parseFloat(String(lat)), numLon = parseFloat(String(lon));
+    if (!isFinite(numLat) || !isFinite(numLon) || numLat < -90 || numLat > 90 || numLon < -180 || numLon > 180) {
+      return res.status(400).json({ error: "Invalid lat/lon values" });
+    }
+    try {
+      const resp = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${numLat}&lon=${numLon}&format=json&zoom=14&addressdetails=1`,
+        { headers: { "User-Agent": "TerraLogicAI/1.0 (GIS Analysis Platform)" }, signal: AbortSignal.timeout(8000) }
+      );
+      if (!resp.ok) throw new Error(`Nominatim reverse: ${resp.status}`);
+      const data = await resp.json();
+      const name = data.address
+        ? [data.address.city || data.address.town || data.address.village || data.address.suburb || "", data.address.state || "", data.address.country || ""].filter(Boolean).join(", ")
+        : data.display_name || `${numLat.toFixed(4)}, ${numLon.toFixed(4)}`;
+      res.json({ name, display_name: data.display_name || name });
+    } catch (e: any) {
+      if (ARCGIS_API_KEY) {
+        try {
+          const resp = await fetch(`https://geocode-api.arcgis.com/arcgis/rest/services/World/GeocodeServer/reverseGeocode?f=json&location=${numLon},${numLat}&langCode=en&token=${ARCGIS_API_KEY}`, { signal: AbortSignal.timeout(8000) });
+          const data = await resp.json();
+          const addr = data.address || {};
+          const name = [addr.City || addr.Subregion || "", addr.Region || "", addr.CountryCode || ""].filter(Boolean).join(", ");
+          res.json({ name: name || `${numLat.toFixed(4)}, ${numLon.toFixed(4)}`, display_name: addr.LongLabel || name });
+        } catch { res.json({ name: `${numLat.toFixed(4)}, ${numLon.toFixed(4)}` }); }
+      } else {
+        res.json({ name: `${numLat.toFixed(4)}, ${numLon.toFixed(4)}` });
+      }
+    }
+  });
+
   // Soil data — SoilGrids (ISRIC) real classification + colored polygons
   app.get("/api/layers/soil", async (req, res) => {
     const { lat, lon, radius, polygon } = req.query;

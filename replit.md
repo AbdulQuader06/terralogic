@@ -6,7 +6,7 @@ AI-powered GIS spatial analysis platform with dark Figma-matched UI. Evaluates c
 
 - **Frontend**: React + Vite + Tailwind CSS v4 + shadcn/ui + recharts
 - **Backend**: Express.js with API routes for GIS data proxying, AI chat, and analysis
-- **Map**: Leaflet + react-leaflet with Esri ArcGIS basemaps (Dark/Light/Satellite/Road/Terrain switcher, theme-aware auto-switch), server-side geocoding (Nominatim/ArcGIS)
+- **Map**: Leaflet + react-leaflet with Esri ArcGIS basemaps (Dark/Light/Satellite/Road/Terrain switcher, theme-aware auto-switch), server-side geocoding (Nominatim/ArcGIS), browser geolocation on load with reverse-geocode
 - **AI Models**: Multi-model system via Replit AI Integrations with automatic fallback:
   - Google Gemini 2.5 Flash (primary, via Replit AI Integration) — general GIS analysis
   - MapGPT persona (Gemini-backed) — geospatial specialist
