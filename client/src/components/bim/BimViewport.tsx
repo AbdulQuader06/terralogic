@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import * as THREE from "three";
-import type { SiteData } from "./SiteSelector";
+import type { SiteData, BuildingFootprint } from "./SiteSelector";
 
 interface MassingBox {
   id: string;
@@ -35,21 +35,42 @@ interface BimViewportProps {
   onMetricsUpdate: (metrics: BimMetrics) => void;
   onMassingChange: (massings: Omit<MassingBox, "mesh" | "wireframe">[]) => void;
   sunHour: number;
+  onBuildingHover?: (bld: BuildingFootprint | null) => void;
 }
 
 export type { MassingBox, BimMetrics };
 
 const VIEWPORT_SIZE = 600;
 const MASSING_TYPES = [
-  { value: "residential", label: "Residential", color: 0x00bcd4 },
-  { value: "commercial", label: "Commercial", color: 0xff9800 },
-  { value: "office", label: "Office", color: 0x2196f3 },
-  { value: "mixed_use", label: "Mixed Use", color: 0x9c27b0 },
-  { value: "hotel", label: "Hotel", color: 0xe91e63 },
-  { value: "industrial", label: "Industrial", color: 0x795548 },
+  { value: "residential", label: "Residential", color: 0x2C5282 },
+  { value: "commercial", label: "Commercial", color: 0xE76F00 },
+  { value: "office", label: "Office", color: 0x2A9D8F },
+  { value: "mixed_use", label: "Mixed Use", color: 0x7C3AED },
+  { value: "hotel", label: "Hotel", color: 0xDB2777 },
+  { value: "industrial", label: "Industrial", color: 0x92400E },
 ];
 
-export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange, sunHour }: BimViewportProps) {
+const BUILDING_TYPE_COLORS: Record<string, number> = {
+  residential: 0x8BAFD4,
+  apartments: 0x8BAFD4,
+  house: 0xA4C4DB,
+  commercial: 0xE8A87C,
+  retail: 0xE8A87C,
+  office: 0x7ECEC1,
+  industrial: 0xC4A882,
+  warehouse: 0xC4A882,
+  school: 0xF0D27C,
+  university: 0xF0D27C,
+  hospital: 0xF28B82,
+  church: 0xDDB8E0,
+  yes: 0xB0BEC5,
+};
+
+function getBuildingColor(type: string): number {
+  return BUILDING_TYPE_COLORS[type] || BUILDING_TYPE_COLORS.yes;
+}
+
+export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange, sunHour, onBuildingHover }: BimViewportProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -63,8 +84,10 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
   const terrainRef = useRef<THREE.Mesh | null>(null);
   const siteOutlineRef = useRef<THREE.LineLoop | null>(null);
   const contextMeshesRef = useRef<THREE.Mesh[]>([]);
+  const labelSpritesRef = useRef<THREE.Sprite[]>([]);
+  const buildingDataRef = useRef<Map<THREE.Object3D, BuildingFootprint>>(new Map());
 
-  const [tool, setTool] = useState<"navigate" | "place" | "select" | "height">("navigate");
+  const [tool, setTool] = useState<"navigate" | "place" | "select">("navigate");
   const [massingType, setMassingType] = useState("residential");
   const [placeWidth, setPlaceWidth] = useState(25);
   const [placeDepth, setPlaceDepth] = useState(20);
@@ -72,6 +95,8 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [webglOk, setWebglOk] = useState(true);
   const [massings, setMassings] = useState<MassingBox[]>([]);
+  const [hoveredBuilding, setHoveredBuilding] = useState<BuildingFootprint | null>(null);
+  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
 
   const raycaster = useRef(new THREE.Raycaster());
   const mouse2D = useRef(new THREE.Vector2());
@@ -132,8 +157,8 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
     if (!gl) { setWebglOk(false); return; }
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0d1117);
-    scene.fog = new THREE.FogExp2(0x0d1117, 0.001);
+    scene.background = new THREE.Color(0xEFF3F6);
+    scene.fog = new THREE.FogExp2(0xEFF3F6, 0.0008);
     sceneRef.current = scene;
 
     const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 1, 5000);
@@ -146,14 +171,14 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.0;
+    renderer.toneMappingExposure = 1.2;
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    scene.add(new THREE.AmbientLight(0x223344, 0.6));
-    scene.add(new THREE.HemisphereLight(0x1a2a3a, 0x0a1520, 0.3));
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    scene.add(new THREE.HemisphereLight(0x87CEEB, 0xE8E0D0, 0.4));
 
-    const sun = new THREE.DirectionalLight(0xffe0b0, 1.4);
+    const sun = new THREE.DirectionalLight(0xfff4e0, 1.6);
     sun.position.set(300, 400, 150);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
@@ -164,22 +189,22 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
     scene.add(sun);
     sunRef.current = sun;
 
-    const fill = new THREE.DirectionalLight(0x334466, 0.4);
+    const fill = new THREE.DirectionalLight(0x8EBBDF, 0.3);
     fill.position.set(-200, 200, -100);
     scene.add(fill);
 
     const ground = new THREE.PlaneGeometry(VIEWPORT_SIZE * 2, VIEWPORT_SIZE * 2);
     ground.rotateX(-Math.PI / 2);
-    const groundMat = new THREE.MeshStandardMaterial({ color: 0x151b23, roughness: 1, metalness: 0 });
+    const groundMat = new THREE.MeshStandardMaterial({ color: 0xD8DFE3, roughness: 1, metalness: 0 });
     const groundMesh = new THREE.Mesh(ground, groundMat);
     groundMesh.receiveShadow = true;
     groundMesh.position.y = -0.1;
     scene.add(groundMesh);
     terrainRef.current = groundMesh;
 
-    const grid = new THREE.GridHelper(VIEWPORT_SIZE, 30, 0x1a2a3a, 0x111a22);
+    const grid = new THREE.GridHelper(VIEWPORT_SIZE, 30, 0xC0C8CE, 0xD4DCE2);
     grid.position.y = 0;
-    (grid.material as THREE.Material).opacity = 0.4;
+    (grid.material as THREE.Material).opacity = 0.5;
     (grid.material as THREE.Material).transparent = true;
     scene.add(grid);
 
@@ -228,6 +253,9 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
     if (siteOutlineRef.current) scene.remove(siteOutlineRef.current);
     contextMeshesRef.current.forEach(m => { scene.remove(m); m.geometry?.dispose(); (m.material as THREE.Material)?.dispose(); });
     contextMeshesRef.current = [];
+    labelSpritesRef.current.forEach(s => { scene.remove(s); s.geometry?.dispose(); (s.material as THREE.SpriteMaterial)?.dispose(); });
+    labelSpritesRef.current = [];
+    buildingDataRef.current.clear();
 
     const { bounds, center } = siteData;
     const mLat = 111320;
@@ -245,14 +273,14 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
       new THREE.Vector3(hw, 0.2, hh),
       new THREE.Vector3(-hw, 0.2, hh),
     ]);
-    const outline = new THREE.LineLoop(outlineGeom, new THREE.LineBasicMaterial({ color: 0x00ff88, linewidth: 2 }));
+    const outline = new THREE.LineLoop(outlineGeom, new THREE.LineBasicMaterial({ color: 0x2C5282, linewidth: 2 }));
     scene.add(outline);
     siteOutlineRef.current = outline;
 
     const siteFill = new THREE.PlaneGeometry(hw * 2, hh * 2);
     siteFill.rotateX(-Math.PI / 2);
     const fillMesh = new THREE.Mesh(siteFill, new THREE.MeshStandardMaterial({
-      color: 0x00ff88, transparent: true, opacity: 0.05, side: THREE.DoubleSide,
+      color: 0x2C5282, transparent: true, opacity: 0.06, side: THREE.DoubleSide,
     }));
     fillMesh.position.y = 0.1;
     scene.add(fillMesh);
@@ -267,11 +295,16 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
         ));
         const shape = new THREE.Shape(pts);
         const floors = bld.floors || (1 + Math.floor(Math.random() * 3));
-        const h = floors * 3 * scale * 0.15;
+        const realHeight = bld.height || floors * 3;
+        const h = realHeight * scale * 0.15;
         const geom = new THREE.ExtrudeGeometry(shape, { depth: h, bevelEnabled: false });
         geom.rotateX(-Math.PI / 2);
+        const color = getBuildingColor(bld.type);
         const mat = new THREE.MeshStandardMaterial({
-          color: 0x2a3a4a, transparent: true, opacity: 0.4, roughness: 0.8,
+          color,
+          roughness: 0.7,
+          metalness: 0.1,
+          transparent: false,
         });
         const mesh = new THREE.Mesh(geom, mat);
         mesh.position.y = 0;
@@ -279,12 +312,52 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
         mesh.receiveShadow = true;
         scene.add(mesh);
         contextMeshesRef.current.push(mesh);
+        buildingDataRef.current.set(mesh, bld);
+
+        const edges = new THREE.EdgesGeometry(geom);
+        const edgeMat = new THREE.LineBasicMaterial({ color: 0x445566, transparent: true, opacity: 0.25 });
+        const edgeMesh = new THREE.LineSegments(edges, edgeMat) as unknown as THREE.Mesh;
+        edgeMesh.position.y = 0;
+        scene.add(edgeMesh);
+        contextMeshesRef.current.push(edgeMesh);
+
+        if (realHeight >= 9 || bld.name) {
+          const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
+          const cz = pts.reduce((s, p) => s + p.y, 0) / pts.length;
+          const label = bld.name ? `${bld.name}\n${realHeight}m` : `${realHeight}m`;
+          const sprite = makeLabel(label, realHeight >= 15 ? "#2C5282" : "#64748B");
+          sprite.position.set(cx, h + 3, cz);
+          sprite.scale.set(20, 10, 1);
+          scene.add(sprite);
+          labelSpritesRef.current.push(sprite);
+        }
       } catch { /* skip */ }
     }
 
     camState.current = { ...camState.current, distance: Math.max(hw, hh) * 3, tx: 0, ty: 0, tz: 0 };
     updateCamera();
+    computeMetrics();
   }, [siteData, updateCamera]);
+
+  function makeLabel(text: string, color: string): THREE.Sprite {
+    const canvas = document.createElement("canvas");
+    canvas.width = 256;
+    canvas.height = 128;
+    const ctx = canvas.getContext("2d")!;
+    ctx.clearRect(0, 0, 256, 128);
+    ctx.font = "bold 24px sans-serif";
+    ctx.fillStyle = color;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    const lines = text.split("\n");
+    lines.forEach((line, i) => {
+      ctx.fillText(line, 128, 50 + i * 28);
+    });
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.needsUpdate = true;
+    const mat = new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false });
+    return new THREE.Sprite(mat);
+  }
 
   const addMassing = useCallback((x: number, z: number) => {
     const scene = sceneRef.current;
@@ -307,10 +380,8 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
     const geom = new THREE.BoxGeometry(sw, sh, sd);
     const mat = new THREE.MeshStandardMaterial({
       color: typeInfo.color,
-      roughness: 0.4,
-      metalness: 0.2,
-      emissive: new THREE.Color(typeInfo.color),
-      emissiveIntensity: 0.08,
+      roughness: 0.35,
+      metalness: 0.15,
     });
     const mesh = new THREE.Mesh(geom, mat);
     mesh.position.set(x, sh / 2, z);
@@ -319,7 +390,7 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
     scene.add(mesh);
 
     const edges = new THREE.EdgesGeometry(geom);
-    const wire = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 }));
+    const wire = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x1F2933, transparent: true, opacity: 0.25 }));
     wire.position.copy(mesh.position);
     scene.add(wire);
 
@@ -379,8 +450,7 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
     const typeInfo = MASSING_TYPES.find(t => t.value === m.type) || MASSING_TYPES[0];
     const geom = new THREE.BoxGeometry(sw, sh, sd);
     const mat = new THREE.MeshStandardMaterial({
-      color: typeInfo.color, roughness: 0.4, metalness: 0.2,
-      emissive: new THREE.Color(typeInfo.color), emissiveIntensity: 0.08,
+      color: typeInfo.color, roughness: 0.35, metalness: 0.15,
     });
     const mesh = new THREE.Mesh(geom, mat);
     mesh.position.set(m.x, sh / 2, m.z);
@@ -389,7 +459,7 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
     scene.add(mesh);
 
     const edges = new THREE.EdgesGeometry(geom);
-    const wire = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 }));
+    const wire = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x1F2933, transparent: true, opacity: 0.25 }));
     wire.position.copy(mesh.position);
     scene.add(wire);
 
@@ -443,6 +513,26 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
           updateGhost(hits[0].point.x, hits[0].point.z);
         }
       }
+
+      if (tool === "navigate" && cameraRef.current && !mouseRef.current.isDown) {
+        raycaster.current.setFromCamera(mouse2D.current, cameraRef.current);
+        const contextOnly = contextMeshesRef.current.filter(m => buildingDataRef.current.has(m));
+        const hits = raycaster.current.intersectObjects(contextOnly);
+        if (hits.length > 0) {
+          const bld = buildingDataRef.current.get(hits[0].object);
+          if (bld) {
+            setHoveredBuilding(bld);
+            setTooltipPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+            onBuildingHover?.(bld);
+          }
+        } else {
+          if (hoveredBuilding) {
+            setHoveredBuilding(null);
+            setTooltipPos(null);
+            onBuildingHover?.(null);
+          }
+        }
+      }
     };
 
     const onUp = (e: MouseEvent) => {
@@ -481,7 +571,11 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
     };
 
     const onCtx = (e: MouseEvent) => e.preventDefault();
-    const onLeave = () => { mouseRef.current.isDown = false; };
+    const onLeave = () => {
+      mouseRef.current.isDown = false;
+      setHoveredBuilding(null);
+      setTooltipPos(null);
+    };
 
     container.addEventListener("mousedown", onDown);
     container.addEventListener("mousemove", onMove);
@@ -498,7 +592,7 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
       container.removeEventListener("wheel", onWheel);
       container.removeEventListener("contextmenu", onCtx);
     };
-  }, [tool, addMassing, updateCamera]);
+  }, [tool, addMassing, updateCamera, hoveredBuilding, onBuildingHover]);
 
   const updateGhost = (x: number, z: number) => {
     const scene = sceneRef.current;
@@ -518,7 +612,7 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
 
     const typeInfo = MASSING_TYPES.find(t => t.value === massingType) || MASSING_TYPES[0];
     const g = new THREE.BoxGeometry(sw, sh, sd);
-    const m = new THREE.MeshStandardMaterial({ color: typeInfo.color, transparent: true, opacity: 0.35 });
+    const m = new THREE.MeshStandardMaterial({ color: typeInfo.color, transparent: true, opacity: 0.4 });
     const mesh = new THREE.Mesh(g, m);
     mesh.position.set(x, sh / 2, z);
     scene.add(mesh);
@@ -546,24 +640,24 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
 
   if (!webglOk) {
     return (
-      <div className="flex items-center justify-center h-full bg-gray-900 text-gray-400 text-sm">
+      <div className="flex items-center justify-center h-full bg-muted text-muted-foreground text-sm">
         WebGL not available. Use a modern browser.
       </div>
     );
   }
 
   return (
-    <div className="relative h-full bg-[#0d1117]" data-testid="bim-viewport">
+    <div className="relative h-full bg-[#EFF3F6]" data-testid="bim-viewport">
       <div ref={containerRef} className="absolute inset-0" style={{ cursor: tool === "place" ? "crosshair" : tool === "select" ? "pointer" : "grab" }} />
 
-      <div className="absolute top-2 left-2 z-10 flex items-center gap-1 bg-black/80 border border-cyan-900/40 rounded-lg p-1 backdrop-blur-sm" data-testid="bim-toolbar">
+      <div className="absolute top-2 left-2 z-10 flex items-center gap-1 bg-white/90 border border-border rounded-lg p-1 backdrop-blur-sm shadow-sm" data-testid="bim-toolbar">
         {([
           { key: "navigate" as const, icon: "⊕", label: "Navigate" },
           { key: "place" as const, icon: "+", label: "Place Massing" },
           { key: "select" as const, icon: "◎", label: "Select" },
         ]).map(t => (
           <button key={t.key} onClick={() => setTool(t.key)}
-            className={`px-2.5 py-1.5 rounded text-[11px] font-medium transition-all ${tool === t.key ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/40" : "text-gray-500 hover:text-gray-300 border border-transparent"}`}
+            className={`px-2.5 py-1.5 rounded text-[11px] font-medium transition-all ${tool === t.key ? "bg-primary/10 text-primary border border-primary/30" : "text-muted-foreground hover:text-foreground border border-transparent"}`}
             data-testid={`bim-tool-${t.key}`}>
             <span className="mr-1">{t.icon}</span>{t.label}
           </button>
@@ -571,78 +665,89 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
       </div>
 
       {tool === "place" && (
-        <div className="absolute top-12 left-2 z-10 bg-black/90 border border-cyan-900/40 rounded-lg p-3 backdrop-blur-sm w-[200px] space-y-2" data-testid="bim-place-panel">
-          <div className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider">Massing Parameters</div>
+        <div className="absolute top-12 left-2 z-10 bg-white/95 border border-border rounded-lg p-3 backdrop-blur-sm shadow-md w-[200px] space-y-2" data-testid="bim-place-panel">
+          <div className="text-[10px] font-bold text-primary uppercase tracking-wider">Massing Parameters</div>
           <div>
-            <label className="text-[10px] text-gray-500">Type</label>
+            <label className="text-[10px] text-muted-foreground">Type</label>
             <select value={massingType} onChange={e => setMassingType(e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-gray-200" data-testid="bim-massing-type">
+              className="w-full bg-muted border border-border rounded px-2 py-1 text-xs text-foreground" data-testid="bim-massing-type">
               {MASSING_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
           </div>
           <div className="grid grid-cols-3 gap-1.5">
             <div>
-              <label className="text-[10px] text-gray-500">W(m)</label>
+              <label className="text-[10px] text-muted-foreground">W(m)</label>
               <input type="number" min={5} max={200} value={placeWidth} onChange={e => setPlaceWidth(+e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded px-1.5 py-1 text-xs text-gray-200" />
+                className="w-full bg-muted border border-border rounded px-1.5 py-1 text-xs text-foreground" />
             </div>
             <div>
-              <label className="text-[10px] text-gray-500">D(m)</label>
+              <label className="text-[10px] text-muted-foreground">D(m)</label>
               <input type="number" min={5} max={200} value={placeDepth} onChange={e => setPlaceDepth(+e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded px-1.5 py-1 text-xs text-gray-200" />
+                className="w-full bg-muted border border-border rounded px-1.5 py-1 text-xs text-foreground" />
             </div>
             <div>
-              <label className="text-[10px] text-gray-500">Floors</label>
+              <label className="text-[10px] text-muted-foreground">Floors</label>
               <input type="number" min={1} max={80} value={placeFloors} onChange={e => setPlaceFloors(+e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded px-1.5 py-1 text-xs text-gray-200" />
+                className="w-full bg-muted border border-border rounded px-1.5 py-1 text-xs text-foreground" />
             </div>
           </div>
-          <div className="text-[10px] text-gray-500">
+          <div className="text-[10px] text-muted-foreground">
             Height: {placeFloors * 3}m | Area: {placeWidth * placeDepth} sqm | Built-up: {placeWidth * placeDepth * placeFloors} sqm
           </div>
-          <div className="text-[10px] text-cyan-400/70">Click on site to place</div>
+          <div className="text-[10px] text-primary/70">Click on site to place</div>
         </div>
       )}
 
       {selectedId && selectedMassing && (
-        <div className="absolute top-12 left-2 z-10 bg-black/90 border border-cyan-900/40 rounded-lg p-3 backdrop-blur-sm w-[200px] space-y-2" data-testid="bim-edit-panel">
+        <div className="absolute top-12 left-2 z-10 bg-white/95 border border-border rounded-lg p-3 backdrop-blur-sm shadow-md w-[200px] space-y-2" data-testid="bim-edit-panel">
           <div className="flex items-center justify-between">
-            <div className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider">Edit Massing</div>
-            <button onClick={() => { setSelectedId(null); selectedRef.current = null; }} className="text-gray-500 hover:text-white text-sm">&times;</button>
+            <div className="text-[10px] font-bold text-primary uppercase tracking-wider">Edit Massing</div>
+            <button onClick={() => { setSelectedId(null); selectedRef.current = null; }} className="text-muted-foreground hover:text-foreground text-sm">&times;</button>
           </div>
-          <div className="text-[10px] text-gray-400">
-            Type: {selectedMassing.type} | {selectedMassing.width}m × {selectedMassing.depth}m
+          <div className="text-[10px] text-muted-foreground">
+            Type: {selectedMassing.type} | {selectedMassing.width}m x {selectedMassing.depth}m
           </div>
           <div>
-            <label className="text-[10px] text-gray-500">Height (Floors)</label>
+            <label className="text-[10px] text-muted-foreground">Height (Floors)</label>
             <input type="range" min={1} max={80} value={selectedMassing.floors}
               onChange={e => updateMassingHeight(selectedMassing.id, +e.target.value)}
-              className="w-full accent-cyan-500" data-testid="bim-height-slider" />
-            <div className="flex justify-between text-[10px] text-gray-500">
+              className="w-full accent-primary" data-testid="bim-height-slider" />
+            <div className="flex justify-between text-[10px] text-muted-foreground">
               <span>{selectedMassing.floors}F</span>
               <span>{selectedMassing.height}m</span>
               <span>{selectedMassing.totalFloorArea.toLocaleString()} sqm</span>
             </div>
           </div>
           <button onClick={() => removeMassing(selectedMassing.id)}
-            className="w-full py-1.5 rounded text-[11px] font-medium bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/30 transition-colors" data-testid="bim-delete-massing">
+            className="w-full py-1.5 rounded text-[11px] font-medium bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition-colors" data-testid="bim-delete-massing">
             Remove Massing
           </button>
         </div>
       )}
 
+      {hoveredBuilding && tooltipPos && (
+        <div className="absolute z-20 bg-white/95 border border-border rounded-lg p-2 shadow-lg pointer-events-none" style={{ left: tooltipPos.x + 12, top: tooltipPos.y - 10 }}>
+          <div className="text-[11px] font-semibold text-foreground">{hoveredBuilding.name || "Building"}</div>
+          <div className="text-[10px] text-muted-foreground">Type: {hoveredBuilding.type}</div>
+          <div className="text-[10px] text-muted-foreground">
+            Height: {hoveredBuilding.height || (hoveredBuilding.floors || 1) * 3}m
+            {hoveredBuilding.floors > 0 && ` (${hoveredBuilding.floors}F)`}
+          </div>
+        </div>
+      )}
+
       {!siteData && (
         <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-          <div className="text-center space-y-2 text-gray-600">
-            <div className="text-2xl">⬚</div>
-            <div className="text-sm">Select a site to begin</div>
+          <div className="text-center space-y-2 text-muted-foreground">
+            <div className="text-2xl">&#11036;</div>
+            <div className="text-sm font-medium">Select a site to begin</div>
             <div className="text-xs">Use the Site Selection panel on the left</div>
           </div>
         </div>
       )}
 
-      <div className="absolute bottom-2 left-2 z-10 text-[10px] text-gray-600 bg-black/60 rounded px-2 py-1 backdrop-blur-sm">
-        Left: Orbit | Right: Pan | Scroll: Zoom | Click: {tool === "place" ? "Place" : tool === "select" ? "Select" : "—"}
+      <div className="absolute bottom-2 left-2 z-10 text-[10px] text-muted-foreground bg-white/80 rounded px-2 py-1 backdrop-blur-sm border border-border shadow-sm">
+        Left: Orbit | Right: Pan | Scroll: Zoom | Click: {tool === "place" ? "Place" : tool === "select" ? "Select" : "Hover buildings"}
       </div>
     </div>
   );

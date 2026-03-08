@@ -57,7 +57,7 @@ export default function SiteSelector({ onSiteSelected, initialCenter }: SiteSele
       zoomControl: false,
     });
 
-    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}", {
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}", {
       attribution: "Esri",
       maxZoom: 19,
     }).addTo(map);
@@ -78,7 +78,7 @@ export default function SiteSelector({ onSiteSelected, initialCenter }: SiteSele
       const bounds = L.latLngBounds(drawStart, e.latlng);
       if (tempRect) map.removeLayer(tempRect);
       tempRect = L.rectangle(bounds, {
-        color: "#00ff88",
+        color: "#2C5282",
         weight: 2,
         fillOpacity: 0.15,
         dashArray: "5,5",
@@ -100,10 +100,10 @@ export default function SiteSelector({ onSiteSelected, initialCenter }: SiteSele
 
       if (rectRef.current) map.removeLayer(rectRef.current);
       rectRef.current = L.rectangle(bounds, {
-        color: "#00ff88",
+        color: "#2C5282",
         weight: 2,
-        fillOpacity: 0.2,
-        fillColor: "#00ff88",
+        fillOpacity: 0.12,
+        fillColor: "#2C5282",
       }).addTo(map);
 
       fetchSiteData({
@@ -146,31 +146,7 @@ export default function SiteSelector({ onSiteSelected, initialCenter }: SiteSele
     setStatus("Fetching amenity data...");
     let amenityData: AmenityMix = { hospitals: 0, schools: 0, transit: 0, parks: 0, restaurants: 0, shops: 0, total: 0 };
     try {
-      const bbox = `${bounds.south},${bounds.west},${bounds.north},${bounds.east}`;
       const radius = Math.max(widthM, heightM) * 1.5;
-      const query = `[out:json][timeout:15];(
-        node["amenity"="hospital"](around:${radius},${centerLat},${centerLon});
-        node["amenity"="school"](around:${radius},${centerLat},${centerLon});
-        node["amenity"="university"](around:${radius},${centerLat},${centerLon});
-        node["public_transport"](around:${radius},${centerLat},${centerLon});
-        node["leisure"="park"](around:${radius},${centerLat},${centerLon});
-        node["amenity"="restaurant"](around:${radius},${centerLat},${centerLon});
-        node["shop"](around:${radius},${centerLat},${centerLon});
-      );out count;`;
-      const resp = await fetch("https://overpass-api.de/api/interpreter", {
-        method: "POST",
-        body: `data=${encodeURIComponent(query)}`,
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      });
-      const data = await resp.json();
-      const tags = data.elements?.[0]?.tags || {};
-      amenityData = {
-        hospitals: parseInt(tags.nodes || "0"),
-        schools: 0, transit: 0, parks: 0, restaurants: 0, shops: 0, total: 0,
-      };
-      const countQuery = `[out:json][timeout:15];(
-        node["amenity"="hospital"](around:${radius},${centerLat},${centerLon});
-      );out count;`;
       const queries = [
         { key: "hospitals", q: `node["amenity"~"hospital|clinic"](around:${radius},${centerLat},${centerLon})` },
         { key: "schools", q: `node["amenity"~"school|university|college"](around:${radius},${centerLat},${centerLon})` },
@@ -229,49 +205,49 @@ export default function SiteSelector({ onSiteSelected, initialCenter }: SiteSele
 
   return (
     <div className="flex flex-col h-full" data-testid="site-selector">
-      <div className="px-3 py-2 border-b border-cyan-900/30">
-        <h3 className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Site Selection</h3>
-        <p className="text-[10px] text-gray-500 mt-0.5">Ctrl+Click & Drag to draw site boundary</p>
+      <div className="px-3 py-2 border-b border-border">
+        <h3 className="text-xs font-bold text-primary uppercase tracking-wider">Site Selection</h3>
+        <p className="text-[10px] text-muted-foreground mt-0.5">Ctrl+Click & Drag to draw site boundary</p>
       </div>
 
       <div className="flex-1 min-h-[200px] relative">
         <div ref={mapRef} className="absolute inset-0" />
         {isLoading && (
-          <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-[1000]">
+          <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-[1000]">
             <div className="text-center space-y-2">
-              <div className="w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto" />
-              <div className="text-[10px] text-cyan-400">{status}</div>
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+              <div className="text-[10px] text-primary">{status}</div>
             </div>
           </div>
         )}
       </div>
 
-      <div className="px-3 py-2 border-t border-cyan-900/30 text-[10px] text-gray-400">
+      <div className="px-3 py-2 border-t border-border text-[10px] text-muted-foreground">
         {status}
       </div>
 
       {amenities && (
         <div className="px-3 pb-2 space-y-1">
-          <div className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider">Amenity Mix</div>
+          <div className="text-[10px] font-bold text-primary uppercase tracking-wider">Amenity Mix</div>
           <div className="grid grid-cols-3 gap-1">
             {[
-              { label: "Healthcare", value: amenities.hospitals, color: "text-red-400" },
-              { label: "Education", value: amenities.schools, color: "text-yellow-400" },
-              { label: "Transit", value: amenities.transit, color: "text-blue-400" },
-              { label: "Parks", value: amenities.parks, color: "text-green-400" },
-              { label: "F&B", value: amenities.restaurants, color: "text-orange-400" },
-              { label: "Retail", value: amenities.shops, color: "text-purple-400" },
+              { label: "Healthcare", value: amenities.hospitals, color: "text-red-600" },
+              { label: "Education", value: amenities.schools, color: "text-amber-600" },
+              { label: "Transit", value: amenities.transit, color: "text-blue-600" },
+              { label: "Parks", value: amenities.parks, color: "text-green-600" },
+              { label: "F&B", value: amenities.restaurants, color: "text-orange-600" },
+              { label: "Retail", value: amenities.shops, color: "text-purple-600" },
             ].map(item => (
-              <div key={item.label} className="bg-gray-800/50 rounded px-2 py-1">
+              <div key={item.label} className="bg-muted/50 rounded px-2 py-1 border border-border">
                 <div className={`text-[10px] font-medium ${item.color}`}>{item.value}</div>
-                <div className="text-[9px] text-gray-500">{item.label}</div>
+                <div className="text-[9px] text-muted-foreground">{item.label}</div>
               </div>
             ))}
           </div>
           {siteArea > 0 && (
-            <div className="flex items-center justify-between text-[10px] text-gray-500 pt-1 border-t border-gray-800">
+            <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1 border-t border-border">
               <span>Site Area</span>
-              <span className="text-cyan-400 font-medium">{(siteArea / 10000).toFixed(2)} Ha ({Math.round(siteArea).toLocaleString()} sqm)</span>
+              <span className="text-primary font-medium">{(siteArea / 10000).toFixed(2)} Ha ({Math.round(siteArea).toLocaleString()} sqm)</span>
             </div>
           )}
         </div>

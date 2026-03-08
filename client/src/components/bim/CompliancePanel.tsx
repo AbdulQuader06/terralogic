@@ -84,18 +84,17 @@ export default function CompliancePanel({ siteData, metrics, massings, sunHour, 
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [checkCompliance]);
 
-  const borderColor = !result ? "border-gray-800" : result.compliant ? "border-green-500/50" : "border-red-500/50";
-  const bgGlow = !result ? "" : result.compliant ? "shadow-[0_0_20px_rgba(0,255,100,0.05)]" : "shadow-[0_0_20px_rgba(255,0,0,0.08)]";
+  const borderColor = !result ? "border-border" : result.compliant ? "border-green-400" : "border-red-400";
 
   return (
-    <div className={`bg-black/80 border ${borderColor} rounded-lg backdrop-blur-sm overflow-hidden transition-all ${bgGlow}`} data-testid="compliance-panel">
+    <div className={`bg-white border ${borderColor} rounded-lg shadow-sm overflow-hidden transition-all`} data-testid="compliance-panel">
       <div className={`px-3 py-2 border-b ${borderColor} flex items-center justify-between`}>
         <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${!result ? "bg-gray-600" : result.compliant ? "bg-green-500 animate-pulse" : "bg-red-500 animate-pulse"}`} />
-          <h3 className="text-xs font-bold text-cyan-400 uppercase tracking-wider">NBC Compliance</h3>
+          <div className={`w-2 h-2 rounded-full ${!result ? "bg-gray-300" : result.compliant ? "bg-green-500 animate-pulse" : "bg-red-500 animate-pulse"}`} />
+          <h3 className="text-xs font-bold text-primary uppercase tracking-wider">NBC Compliance</h3>
         </div>
         {result && (
-          <div className={`text-[10px] font-bold ${result.compliant ? "text-green-400" : "text-red-400"}`}>
+          <div className={`text-[10px] font-bold ${result.compliant ? "text-green-600" : "text-red-600"}`}>
             {result.score}/100
           </div>
         )}
@@ -103,66 +102,66 @@ export default function CompliancePanel({ siteData, metrics, massings, sunHour, 
 
       <div className="p-3 space-y-3 max-h-[400px] overflow-y-auto">
         {!siteData || !metrics || massings.length === 0 ? (
-          <div className="text-[11px] text-gray-600 text-center py-4">
+          <div className="text-[11px] text-muted-foreground text-center py-4">
             Place massing boxes to begin compliance checking
           </div>
         ) : loading ? (
           <div className="flex items-center justify-center py-6">
             <div className="text-center space-y-2">
-              <div className="w-5 h-5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto" />
-              <div className="text-[10px] text-cyan-400">Analyzing NBC compliance...</div>
+              <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+              <div className="text-[10px] text-primary">Analyzing NBC compliance...</div>
             </div>
           </div>
         ) : error ? (
-          <div className="text-[11px] text-red-400 bg-red-500/5 rounded p-2 border border-red-500/20">
+          <div className="text-[11px] text-red-600 bg-red-50 rounded p-2 border border-red-200">
             {error}
           </div>
         ) : result ? (
           <>
-            <div className={`rounded-lg p-2.5 ${result.compliant ? "bg-green-500/5 border border-green-500/20" : "bg-red-500/5 border border-red-500/20"}`}>
-              <div className={`text-xs font-semibold ${result.compliant ? "text-green-400" : "text-red-400"}`}>
-                {result.compliant ? "✓ COMPLIANT" : "✗ NON-COMPLIANT"}
+            <div className={`rounded-lg p-2.5 ${result.compliant ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}>
+              <div className={`text-xs font-semibold ${result.compliant ? "text-green-700" : "text-red-700"}`}>
+                {result.compliant ? "COMPLIANT" : "NON-COMPLIANT"}
               </div>
-              <div className="text-[10px] text-gray-400 mt-1">{result.zoningSummary}</div>
+              <div className="text-[10px] text-muted-foreground mt-1">{result.zoningSummary}</div>
             </div>
 
             {result.violations.length > 0 && (
               <div className="space-y-1.5">
-                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Violations</div>
+                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Violations</div>
                 {result.violations.map((v, i) => (
                   <div key={i} className={`rounded p-2 border text-[10px] ${
-                    v.severity === "critical" ? "bg-red-500/5 border-red-500/20 text-red-300" :
-                    v.severity === "warning" ? "bg-yellow-500/5 border-yellow-500/20 text-yellow-300" :
-                    "bg-blue-500/5 border-blue-500/20 text-blue-300"
+                    v.severity === "critical" ? "bg-red-50 border-red-200 text-red-700" :
+                    v.severity === "warning" ? "bg-amber-50 border-amber-200 text-amber-700" :
+                    "bg-blue-50 border-blue-200 text-blue-700"
                   }`}>
                     <div className="font-medium">{v.code}</div>
-                    <div className="text-gray-400 mt-0.5">{v.description}</div>
+                    <div className="text-muted-foreground mt-0.5">{v.description}</div>
                   </div>
                 ))}
               </div>
             )}
 
             <div className="space-y-1.5">
-              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Solar Analysis</div>
+              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Solar Analysis</div>
               <div className="flex items-center gap-2">
-                <div className="flex-1 bg-gray-800 rounded-full h-2">
+                <div className="flex-1 bg-muted rounded-full h-2">
                   <div className="h-2 rounded-full transition-all" style={{
                     width: `${result.solarExposure}%`,
-                    backgroundColor: result.solarExposure >= 75 ? "#22c55e" : result.solarExposure >= 50 ? "#eab308" : "#ef4444",
+                    backgroundColor: result.solarExposure >= 75 ? "#16a34a" : result.solarExposure >= 50 ? "#ca8a04" : "#dc2626",
                   }} />
                 </div>
-                <span className={`text-[10px] font-medium ${result.solarExposure >= 75 ? "text-green-400" : "text-yellow-400"}`}>
+                <span className={`text-[10px] font-medium ${result.solarExposure >= 75 ? "text-green-600" : "text-amber-600"}`}>
                   {result.solarExposure}%
                 </span>
               </div>
-              <div className="text-[10px] text-gray-500">Target: 75% | {result.solarExposure >= 75 ? "Achieved" : `${75 - result.solarExposure}% below target`}</div>
+              <div className="text-[10px] text-muted-foreground">Target: 75% | {result.solarExposure >= 75 ? "Achieved" : `${75 - result.solarExposure}% below target`}</div>
             </div>
 
             {result.recommendations.length > 0 && (
               <div className="space-y-1.5">
-                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Recommendations</div>
+                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Recommendations</div>
                 {result.recommendations.map((r, i) => (
-                  <div key={i} className="text-[10px] text-cyan-300/80 bg-cyan-500/5 rounded p-2 border border-cyan-500/10">
+                  <div key={i} className="text-[10px] text-primary bg-primary/5 rounded p-2 border border-primary/10">
                     {r}
                   </div>
                 ))}

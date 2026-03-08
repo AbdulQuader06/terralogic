@@ -8,19 +8,10 @@ interface MetricsDashboardProps {
   complianceScore: number;
 }
 
-const COST_PER_SQFT: Record<string, number> = {
-  residential: 2200,
-  commercial: 2800,
-  office: 3200,
-  mixed_use: 2600,
-  hotel: 3500,
-  industrial: 1800,
-};
-
 export default function MetricsDashboard({ metrics, siteData, complianceScore }: MetricsDashboardProps) {
   if (!metrics || !siteData) {
     return (
-      <div className="bg-black/80 border border-gray-800 rounded-lg p-4 text-center text-gray-600 text-[11px]" data-testid="metrics-dashboard">
+      <div className="bg-white border border-border rounded-lg p-4 text-center text-muted-foreground text-[11px] shadow-sm" data-testid="metrics-dashboard">
         Metrics will appear after placing massing boxes
       </div>
     );
@@ -52,25 +43,25 @@ export default function MetricsDashboard({ metrics, siteData, complianceScore }:
 
   return (
     <div className="space-y-3" data-testid="metrics-dashboard">
-      <div className="bg-black/80 border border-cyan-900/30 rounded-lg overflow-hidden">
-        <div className="px-3 py-2 border-b border-cyan-900/30">
-          <h3 className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Suitability Radar</h3>
+      <div className="bg-white border border-border rounded-lg overflow-hidden shadow-sm">
+        <div className="px-3 py-2 border-b border-border">
+          <h3 className="text-xs font-bold text-primary uppercase tracking-wider">Suitability Radar</h3>
         </div>
         <div className="p-2" data-testid="radar-chart">
           <ResponsiveContainer width="100%" height={200}>
             <RadarChart data={radarData} margin={{ top: 5, right: 25, bottom: 5, left: 25 }}>
-              <PolarGrid stroke="#1a2a3a" />
-              <PolarAngleAxis dataKey="axis" tick={{ fill: "#6b7280", fontSize: 10 }} />
+              <PolarGrid stroke="#E2E8F0" />
+              <PolarAngleAxis dataKey="axis" tick={{ fill: "#64748B", fontSize: 10 }} />
               <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
-              <Radar name="Score" dataKey="value" stroke="#00bcd4" fill="#00bcd4" fillOpacity={0.15} strokeWidth={2} />
+              <Radar name="Score" dataKey="value" stroke="#2C5282" fill="#2C5282" fillOpacity={0.12} strokeWidth={2} />
             </RadarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      <div className="bg-black/80 border border-cyan-900/30 rounded-lg overflow-hidden">
-        <div className="px-3 py-2 border-b border-cyan-900/30">
-          <h3 className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Key Metrics</h3>
+      <div className="bg-white border border-border rounded-lg overflow-hidden shadow-sm">
+        <div className="px-3 py-2 border-b border-border">
+          <h3 className="text-xs font-bold text-primary uppercase tracking-wider">Key Metrics</h3>
         </div>
         <div className="p-2 grid grid-cols-2 gap-1.5">
           <MetricCard label="FAR" value={metrics.far.toFixed(2)} limit={`/ ${farAllowed}`} warn={metrics.far > farAllowed} />
@@ -84,15 +75,15 @@ export default function MetricsDashboard({ metrics, siteData, complianceScore }:
         </div>
       </div>
 
-      <div className="bg-black/80 border border-cyan-900/30 rounded-lg overflow-hidden">
-        <div className="px-3 py-2 border-b border-cyan-900/30">
-          <h3 className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Investment Estimate</h3>
+      <div className="bg-white border border-border rounded-lg overflow-hidden shadow-sm">
+        <div className="px-3 py-2 border-b border-border">
+          <h3 className="text-xs font-bold text-primary uppercase tracking-wider">Investment Estimate</h3>
         </div>
         <div className="p-2 space-y-1.5">
-          <InvestRow label="Construction Cost" value={`₹${(estCost / 10000000).toFixed(1)} Cr`} color="text-orange-400" />
-          <InvestRow label="Est. Revenue" value={`₹${(estRevenue / 10000000).toFixed(1)} Cr`} color="text-green-400" />
-          <InvestRow label="Est. ROI" value={`${roi.toFixed(1)}%`} color={roi > 20 ? "text-green-400" : "text-yellow-400"} />
-          <InvestRow label="Cost/sqm (built-up)" value={`₹${Math.round(estCostPerSqft * 10.764).toLocaleString()}`} color="text-gray-300" />
+          <InvestRow label="Construction Cost" value={`Rs.${(estCost / 10000000).toFixed(1)} Cr`} color="text-orange-600" />
+          <InvestRow label="Est. Revenue" value={`Rs.${(estRevenue / 10000000).toFixed(1)} Cr`} color="text-green-600" />
+          <InvestRow label="Est. ROI" value={`${roi.toFixed(1)}%`} color={roi > 20 ? "text-green-600" : "text-amber-600"} />
+          <InvestRow label="Cost/sqm (built-up)" value={`Rs.${Math.round(estCostPerSqft * 10.764).toLocaleString()}`} color="text-foreground" />
         </div>
       </div>
     </div>
@@ -101,12 +92,12 @@ export default function MetricsDashboard({ metrics, siteData, complianceScore }:
 
 function MetricCard({ label, value, limit, unit, warn }: { label: string; value: string; limit?: string; unit?: string; warn?: boolean }) {
   return (
-    <div className={`rounded p-2 border ${warn ? "bg-red-500/5 border-red-500/20" : "bg-gray-800/40 border-gray-800"}`}>
-      <div className={`text-sm font-bold ${warn ? "text-red-400" : "text-cyan-400"}`}>
-        {value}{limit && <span className="text-[10px] text-gray-500 ml-0.5">{limit}</span>}
-        {unit && <span className="text-[10px] text-gray-500 ml-0.5">{unit}</span>}
+    <div className={`rounded p-2 border ${warn ? "bg-red-50 border-red-200" : "bg-muted/40 border-border"}`}>
+      <div className={`text-sm font-bold ${warn ? "text-red-600" : "text-primary"}`}>
+        {value}{limit && <span className="text-[10px] text-muted-foreground ml-0.5">{limit}</span>}
+        {unit && <span className="text-[10px] text-muted-foreground ml-0.5">{unit}</span>}
       </div>
-      <div className="text-[9px] text-gray-500">{label}</div>
+      <div className="text-[9px] text-muted-foreground">{label}</div>
     </div>
   );
 }
@@ -114,7 +105,7 @@ function MetricCard({ label, value, limit, unit, warn }: { label: string; value:
 function InvestRow({ label, value, color }: { label: string; value: string; color: string }) {
   return (
     <div className="flex items-center justify-between text-[11px]">
-      <span className="text-gray-500">{label}</span>
+      <span className="text-muted-foreground">{label}</span>
       <span className={`font-medium ${color}`}>{value}</span>
     </div>
   );
