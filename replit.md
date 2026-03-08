@@ -13,7 +13,7 @@ AI-powered GIS spatial analysis platform with dark Figma-matched UI. Evaluates c
   - CompassAI persona (Gemini-backed) — navigation & terrain specialist
   - OpenAI GPT-4o mini (via Replit AI Integration) — general purpose
   - TerraLogic Local GIS (always-available fallback) — rule-based responses from real GIS data
-- **CartoAI Chatbot**: Gemini 2.5 Flash function-calling chatbot with 8 tools:
+- **CartoAI Chatbot**: Gemini 2.5 Flash function-calling chatbot with 9 tools (only visual actions sent as mapActions to frontend):
   - `update_map_view` — navigate to locations
   - `add_marker` — add map markers
   - `add_geojson` — add GeoJSON overlays

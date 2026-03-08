@@ -1627,6 +1627,7 @@ Be concise but thorough. Use markdown for formatting. When you perform map actio
       });
 
       const mapActions: any[] = [];
+      const visualActions = new Set(["update_map_view", "add_marker", "add_geojson", "clear_map", "search_results", "analyze_site"]);
       let textResponse = "";
 
       const parts = result.candidates?.[0]?.content?.parts || [];
@@ -1639,7 +1640,9 @@ Be concise but thorough. Use markdown for formatting. When you perform map actio
         for (const part of functionCalls) {
           const fc = part.functionCall!;
           const toolResult = await executeCartoAITool(fc.name!, fc.args as any);
-          mapActions.push(toolResult);
+          if (toolResult && visualActions.has(toolResult.action) && !toolResult.error) {
+            mapActions.push(toolResult);
+          }
           toolResults.push({
             functionResponse: {
               name: fc.name,
