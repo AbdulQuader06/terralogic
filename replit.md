@@ -23,6 +23,7 @@ TerraLogic AI employs a modern web application architecture:
 -   **Theme System**: Features a dark/light mode toggle with localStorage persistence, applying theme classes to the `<html>` element and using CSS variables for styling.
 -   **Location Lock**: A feature to prevent accidental map clicks from changing the analysis location, with a toggle for user control.
 -   **Map Export**: Custom canvas-based export functionality for PNG, JPEG, GeoJSON, KML, and DXF, including programmatic legend drawing and compositing of map elements.
+-   **3D Map View**: Three.js-based 3D terrain and building visualization (CAD Mapper style). Fetches real elevation data from Open-Meteo, building footprints from OSM Overpass API, and road geometry. Features orbit/pan/zoom controls, building hover tooltips, color-coded building types, shadow casting, and terrain vertex coloring. Toggled via header "3D View" button. Component: `Map3DViewer.tsx`, endpoint: `/api/3d/buildings`.
 
 ## External Dependencies
 

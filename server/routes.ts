@@ -2615,6 +2615,53 @@ Be concise but thorough. Use markdown for formatting. When you perform map actio
     }
   });
 
+  app.get("/api/3d/buildings", async (req, res) => {
+    const { lat, lon, radius } = req.query;
+    if (!lat || !lon) return res.status(400).json({ error: "lat and lon required" });
+    const clat = Number(lat), clon = Number(lon), r = Number(radius) || 800;
+    try {
+      const degOffset = r / 111000;
+      const bbox = `${clat - degOffset},${clon - degOffset},${clat + degOffset},${clon + degOffset}`;
+      const query = `[out:json][timeout:15];(way["building"](${bbox});relation["building"](${bbox}););out body geom;`;
+      const resp = await fetch("https://overpass-api.de/api/interpreter", {
+        method: "POST",
+        body: `data=${encodeURIComponent(query)}`,
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        signal: AbortSignal.timeout(20000),
+      });
+      if (!resp.ok) throw new Error(`Overpass error: ${resp.status}`);
+      const data = await resp.json();
+
+      const buildings: any[] = [];
+      for (const el of (data.elements || [])) {
+        const tags = el.tags || {};
+        const bType = tags.building || "yes";
+        const name = tags.name || tags["addr:housename"] || "";
+        const levels = parseInt(tags["building:levels"]) || 0;
+        const height = parseFloat(tags.height) || 0;
+
+        if (el.type === "way" && el.geometry && el.geometry.length >= 3) {
+          const polygon = el.geometry.map((g: any) => [g.lat, g.lon]);
+          buildings.push({ type: bType, name, levels, height, geometry: "polygon", polygon });
+        } else if (el.type === "node") {
+          buildings.push({ type: bType, name, levels, height, geometry: "point", lat: el.lat, lon: el.lon, size: 12 });
+        } else if (el.type === "relation" && el.members) {
+          for (const m of el.members) {
+            if (m.type === "way" && m.geometry && m.geometry.length >= 3) {
+              const polygon = m.geometry.map((g: any) => [g.lat, g.lon]);
+              buildings.push({ type: bType, name, levels, height, geometry: "polygon", polygon });
+            }
+          }
+        }
+      }
+
+      res.json({ buildings, count: buildings.length });
+    } catch (e: any) {
+      console.error("3D buildings error:", e.message);
+      res.json({ buildings: [], count: 0 });
+    }
+  });
+
   // Geocode endpoint using Nominatim (OSM)
   app.get("/api/geocode", async (req, res) => {
     const { q } = req.query;
