@@ -23,6 +23,8 @@ AI-powered GIS spatial analysis platform with dark Figma-matched UI. Evaluates c
   - `search_web` — search for open GIS data sources, datasets, and download links
   - `fetch_open_data` — fetch GeoJSON/CSV from trusted open data portals and display on map
   - `query_knowledge_base` — query advanced GIS/ML knowledge base for data sources, ML methodologies, data formats, and sample structures
+  - `create_buffer` — create buffer zone (circle polygon) around a point with configurable radius
+  - `measure_distance` — calculate and visualize straight-line distance between two points
   - **GIS Knowledge Base**: Comprehensive system prompt with knowledge of 50+ global open data sources (Natural Earth, GADM, SEDAC, USGS, Copernicus, HDX, World Bank, FAO, DataMeet, etc.), India-specific sources (Data.gov.in, OpenCity.in, Bhuvan, WRIS), US sources (Census, FEMA, EPA, NOAA), Europe sources (EEA, Eurostat, Copernicus), Overpass query patterns for all OSM tags, spatial analysis concepts, and data format expertise
   - **Generative AI GIS**: Can generate estimated/simulated spatial data (flood zones, heat islands, commercial corridors) when real data isn't available, plotted as GeoJSON with clear "AI-Generated Spatial Estimate" labels
   - **Data Catalog**: 20-category GIS data catalog (200+ items) with accordion UI, clickable items send queries to CartoAI
@@ -30,6 +32,14 @@ AI-powered GIS spatial analysis platform with dark Figma-matched UI. Evaluates c
   - **Map Context Awareness**: CartoAI receives full map state on each message — selected location, viewport bounds, drawn region (polygon/circle/rectangle), active data layers, and custom overlays. Context badges (location, drawn region, layers count) shown in ChatPanel header. Server builds CURRENT MAP STATE section in system prompt so AI can reference what user sees and focus searches/analysis within drawn areas.
   - **Dynamic Suggestions**: Suggestion chips in ChatPanel are generated dynamically by `getSuggestions()` based on current location name, drawn region type, and active layers — no more static suggestions.
   - **Proactive Map Marking**: CartoAI behavior rules instruct it to ALWAYS mark findings on map (markers, GeoJSON zones, search results), use multiple tools per response, and give specific analytical answers referencing coordinates.
+  - **Tool Step Progress**: API returns `toolSteps` array showing each tool call with status and summary. ChatPanel renders these as step-by-step progress with green checkmarks (like Aino AI).
+  - **Confidence**: CartoAI never says "I'm not sure" — always gives confident, substantive answers using all available tools.
+  - **Expanded Amenity Map**: 80+ search categories including buildings, water features, bridges, airports, monuments, etc.
+- **File Import**:
+  - Import button in header opens modal with drag-and-drop
+  - Supports .geojson, .json, .kml, .csv formats up to 50MB
+  - Server-side parsing via multer + custom parsers (KML regex, CSV lat/lon detection)
+  - Imported data added as custom overlays on map
 - **GIS Data Sources**:
   - OpenStreetMap Overpass API (schools, hospitals, transit, parks, landuse, water, infrastructure)
   - FEMA NFHL (flood zones via ArcGIS feature layer)

@@ -5,6 +5,7 @@ import { chatRequestSchema, analyzeRequestSchema } from "@shared/schema";
 import type { SiteAnalysis } from "@shared/schema";
 import { GoogleGenAI, Type } from "@google/genai";
 import OpenAI from "openai";
+import multer from "multer";
 
 const geminiAI = new GoogleGenAI({
   apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
@@ -1215,6 +1216,35 @@ export async function registerRoutes(
         required: ["topic"],
       },
     },
+    {
+      name: "create_buffer",
+      description: "Create a buffer zone (circle) around a point on the map. Use when the user asks to create a buffer, radius, zone, area around a point/pin/location. The buffer is visualized as a polygon overlay.",
+      parameters: {
+        type: Type.OBJECT,
+        properties: {
+          lat: { type: Type.NUMBER, description: "Center latitude" },
+          lon: { type: Type.NUMBER, description: "Center longitude" },
+          radius_km: { type: Type.NUMBER, description: "Buffer radius in kilometers (e.g., 1, 0.5, 5)" },
+          label: { type: Type.STRING, description: "Label for the buffer zone" },
+          color: { type: Type.STRING, description: "Color for the buffer zone, default #3B82F6" },
+        },
+        required: ["lat", "lon", "radius_km"],
+      },
+    },
+    {
+      name: "measure_distance",
+      description: "Calculate the straight-line distance between two points. Use when the user asks about distance between locations.",
+      parameters: {
+        type: Type.OBJECT,
+        properties: {
+          lat1: { type: Type.NUMBER, description: "Latitude of first point" },
+          lon1: { type: Type.NUMBER, description: "Longitude of first point" },
+          lat2: { type: Type.NUMBER, description: "Latitude of second point" },
+          lon2: { type: Type.NUMBER, description: "Longitude of second point" },
+        },
+        required: ["lat1", "lon1", "lat2", "lon2"],
+      },
+    },
   ];
 
   async function executeCartoAITool(name: string, args: any): Promise<any> {
@@ -1243,30 +1273,81 @@ export async function registerRoutes(
         const amenityMap: Record<string, string> = {
           restaurant: "amenity=restaurant", restaurants: "amenity=restaurant",
           hospital: "amenity=hospital", hospitals: "amenity=hospital",
+          clinic: "amenity=clinic", clinics: "amenity=clinic",
           school: "amenity=school", schools: "amenity=school",
+          college: "amenity=college", university: "amenity=university",
           park: "leisure=park", parks: "leisure=park",
           pharmacy: "amenity=pharmacy", pharmacies: "amenity=pharmacy",
           bank: "amenity=bank", banks: "amenity=bank",
           hotel: "tourism=hotel", hotels: "tourism=hotel",
           cafe: "amenity=cafe", cafes: "amenity=cafe",
           supermarket: "shop=supermarket", supermarkets: "shop=supermarket",
-          gas: "amenity=fuel", fuel: "amenity=fuel",
-          bus: "highway=bus_stop", "bus stop": "highway=bus_stop",
-          station: "railway=station", "train station": "railway=station",
+          gas: "amenity=fuel", fuel: "amenity=fuel", "petrol station": "amenity=fuel", "gas station": "amenity=fuel",
+          bus: "highway=bus_stop", "bus stop": "highway=bus_stop", "bus station": "amenity=bus_station",
+          station: "railway=station", "train station": "railway=station", "railway station": "railway=station",
           mosque: "amenity=place_of_worship", church: "amenity=place_of_worship",
           temple: "amenity=place_of_worship", "place of worship": "amenity=place_of_worship",
-          atm: "amenity=atm",
+          atm: "amenity=atm", atms: "amenity=atm",
           parking: "amenity=parking",
           library: "amenity=library", libraries: "amenity=library",
           police: "amenity=police", "police station": "amenity=police",
           "fire station": "amenity=fire_station",
+          building: "building=yes", buildings: "building=yes",
+          residential: "building=residential", "residential buildings": "building=residential",
+          commercial: "building=commercial", "commercial buildings": "building=commercial",
+          industrial: "landuse=industrial", "industrial area": "landuse=industrial",
+          playground: "leisure=playground", playgrounds: "leisure=playground",
+          "sports centre": "leisure=sports_centre", gym: "leisure=sports_centre",
+          "swimming pool": "leisure=swimming_pool",
+          stadium: "leisure=stadium",
+          cinema: "amenity=cinema", theatre: "amenity=theatre", theater: "amenity=theatre",
+          museum: "tourism=museum", museums: "tourism=museum",
+          market: "amenity=marketplace", marketplace: "amenity=marketplace",
+          mall: "shop=mall", "shopping mall": "shop=mall",
+          cemetery: "landuse=cemetery",
+          river: "waterway=river", rivers: "waterway=river",
+          stream: "waterway=stream", streams: "waterway=stream",
+          lake: "natural=water", lakes: "natural=water",
+          wetland: "natural=wetland", wetlands: "natural=wetland",
+          forest: "natural=wood", woods: "natural=wood",
+          peak: "natural=peak", mountain: "natural=peak",
+          beach: "natural=beach", beaches: "natural=beach",
+          bridge: "man_made=bridge", bridges: "man_made=bridge",
+          tower: "man_made=tower", towers: "man_made=tower",
+          "power plant": "power=plant", "power station": "power=plant",
+          substation: "power=substation",
+          dam: "waterway=dam", dams: "waterway=dam",
+          airport: "aeroway=aerodrome", airports: "aeroway=aerodrome",
+          helipad: "aeroway=helipad",
+          monument: "historic=monument", monuments: "historic=monument",
+          fort: "historic=fort", forts: "historic=fort",
+          ruins: "historic=ruins",
+          "archaeological site": "historic=archaeological_site",
+          embassy: "amenity=embassy",
+          "post office": "amenity=post_office",
+          toilet: "amenity=toilets", "public toilet": "amenity=toilets",
+          "water tank": "man_made=water_tower", "water tower": "man_made=water_tower",
+          well: "man_made=water_well",
+          "waste disposal": "amenity=waste_disposal",
+          recycling: "amenity=recycling",
+          garden: "leisure=garden", gardens: "leisure=garden",
+          zoo: "tourism=zoo",
+          "theme park": "tourism=theme_park",
+          hostel: "tourism=hostel", hostels: "tourism=hostel",
+          "guest house": "tourism=guest_house",
+          campsite: "tourism=camp_site",
+          viewpoint: "tourism=viewpoint", viewpoints: "tourism=viewpoint",
+          road: "highway=primary", roads: "highway=primary",
+          highway: "highway=motorway",
+          "traffic signal": "highway=traffic_signals", "traffic signals": "highway=traffic_signals",
         };
         const q = (args.query || "").toLowerCase().trim();
         const tag = amenityMap[q] || `amenity=${q}`;
         const [key, value] = tag.split("=");
-        const radius = Math.min(args.radius || 2000, 10000);
+        const radius = Math.min(args.radius || 3000, 15000);
         const bbox = `(around:${radius},${args.lat},${args.lon})`;
-        const overpassQ = `[out:json][timeout:15];(node["${key}"="${value}"]${bbox};way["${key}"="${value}"]${bbox};);out body center 50;`;
+        const limit = (key === "building" && value === "yes") ? 200 : 80;
+        const overpassQ = `[out:json][timeout:25];(node["${key}"="${value}"]${bbox};way["${key}"="${value}"]${bbox};relation["${key}"="${value}"]${bbox};);out body center ${limit};`;
         for (const url of OVERPASS_ENDPOINTS) {
           try {
             const resp = await fetch(url, {
@@ -1277,7 +1358,7 @@ export async function registerRoutes(
             });
             if (!resp.ok) continue;
             const data = await resp.json();
-            const places = (data.elements || []).slice(0, 30).map((el: any) => ({
+            const places = (data.elements || []).slice(0, 80).map((el: any) => ({
               name: el.tags?.name || el.tags?.amenity || q,
               lat: el.lat || el.center?.lat,
               lon: el.lon || el.center?.lon,
@@ -1451,6 +1532,51 @@ Include:
         }
       }
 
+      case "create_buffer": {
+        const lat = Math.max(-85, Math.min(85, args.lat));
+        const lon = args.lon;
+        const radiusKm = Math.min(Math.max(args.radius_km || 1, 0.01), 100);
+        const label = args.label || `${radiusKm} km radius`;
+        const color = args.color || "#3B82F6";
+        const numPoints = 64;
+        const coords: [number, number][] = [];
+        const cosLat = Math.max(Math.cos(lat * Math.PI / 180), 0.01);
+        for (let i = 0; i <= numPoints; i++) {
+          const angle = (i / numPoints) * 2 * Math.PI;
+          const dLat = (radiusKm / 111.32) * Math.cos(angle);
+          const dLon = (radiusKm / (111.32 * cosLat)) * Math.sin(angle);
+          coords.push([lon + dLon, lat + dLat]);
+        }
+        const areaKm2 = Math.PI * radiusKm * radiusKm;
+        const geojson = {
+          type: "FeatureCollection",
+          features: [{
+            type: "Feature",
+            geometry: { type: "Polygon", coordinates: [coords] },
+            properties: { name: label, radius_km: radiusKm, area_km2: parseFloat(areaKm2.toFixed(2)), center_lat: lat, center_lon: lon, type: "buffer_zone" },
+          }],
+        };
+        return { action: "add_geojson", geojson, label, color, buffer_info: { radius_km: radiusKm, area_km2: parseFloat(areaKm2.toFixed(2)), center: [lat, lon] } };
+      }
+
+      case "measure_distance": {
+        const R = 6371;
+        const dLat = (args.lat2 - args.lat1) * Math.PI / 180;
+        const dLon = (args.lon2 - args.lon1) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) ** 2 + Math.cos(args.lat1 * Math.PI / 180) * Math.cos(args.lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const distanceKm = R * c;
+        const lineGeojson = {
+          type: "FeatureCollection",
+          features: [{
+            type: "Feature",
+            geometry: { type: "LineString", coordinates: [[args.lon1, args.lat1], [args.lon2, args.lat2]] },
+            properties: { name: `${distanceKm.toFixed(2)} km`, distance_km: parseFloat(distanceKm.toFixed(2)), type: "measurement" },
+          }],
+        };
+        return { action: "add_geojson", geojson: lineGeojson, label: `Distance: ${distanceKm.toFixed(2)} km`, color: "#EF4444", measurement: { distance_km: parseFloat(distanceKm.toFixed(2)), distance_m: parseFloat((distanceKm * 1000).toFixed(0)) } };
+      }
+
       default:
         return { error: `Unknown tool: ${name}` };
     }
@@ -1504,29 +1630,35 @@ ${mapStateContext}
 
 ## CORE CAPABILITIES
 - Navigate to any location, add markers, draw GeoJSON boundaries/routes/areas
-- Search for places/amenities via OpenStreetMap Overpass API
+- Search for places/amenities via OpenStreetMap Overpass API (80+ categories)
+- Create buffer zones / radius analysis around any point
+- Measure distances between points
 - Run full site suitability analysis (elevation, soil, flood, sun path, infrastructure)
 - Search the web for open GIS datasets and provide download links
 - Fetch and display open data directly from trusted portals (GeoJSON, CSV)
 - Generate representative GeoJSON data for visualization when real data isn't directly available
 
-## BEHAVIOR RULES — BE PROACTIVE AND VISUAL
-1. **ALWAYS show your work on the map.** When you discuss spatial features, boundaries, zones, or areas — add them as markers or GeoJSON overlays. Never just describe something without marking it.
-2. When users ask about a place, navigate there AND add a labeled marker at the key point.
-3. When users ask to find things nearby, use search_places with the selected location coordinates. The results automatically appear on the map.
-4. When a drawn region exists, ALWAYS use the drawn region's center/bounds for searches. The user drew a specific area and expects results WITHIN it.
-5. When users ask about data from the Data Catalog:
+## BEHAVIOR RULES — BE PROACTIVE, CONFIDENT, AND VISUAL
+1. **NEVER say "I'm not sure" or "I don't know".** You are an expert. Always provide a confident, substantive answer using your tools and knowledge. If data is uncertain, present your best analysis with appropriate caveats, but never refuse to engage.
+2. **ALWAYS show your work on the map.** When you discuss spatial features, boundaries, zones, or areas — add them as markers or GeoJSON overlays. Never just describe something without marking it.
+3. When users ask about a place, navigate there AND add a labeled marker at the key point.
+4. When users ask to find things nearby, use search_places with the selected location coordinates. The results automatically appear on the map.
+5. When a drawn region exists, ALWAYS use the drawn region's center/bounds for searches. The user drew a specific area and expects results WITHIN it.
+6. When users ask about data from the Data Catalog:
    a. First use search_web to find real open data sources
    b. Try fetch_open_data to load real datasets onto the map
    c. If direct fetch fails, generate representative GeoJSON with add_geojson using realistic coordinates constrained to the visible area
    d. Always provide download links to actual data sources
-6. **Think spatially and analytically.** Don't give generic text answers. Be specific:
+7. **Think spatially and analytically.** Don't give generic text answers. Be specific:
    - BAD: "This area has moderate flood risk."
    - GOOD: "I'll mark the flood-prone zones. The low-lying area south of the river at 17.38°N shows high risk due to elevation <5m. The northern ridge at 17.42°N is safer at 45m elevation." Then add GeoJSON showing these zones.
-7. **Use multiple tools per response.** When analyzing a site, combine: search_places for infrastructure, analyze_site for metrics, AND add_geojson to highlight key areas/zones you identify.
-8. When generating GeoJSON, ALWAYS constrain to the drawn region or visible viewport. Include descriptive properties (name, type, risk_level, notes).
-9. Reference active layers and custom overlays — acknowledge what's already visible and build on it.
-10. When asked about environmental factors, urban planning, or risks — create visual zones/boundaries on the map showing your analysis, not just text.
+8. **Use multiple tools per response.** When analyzing a site, combine: search_places for infrastructure, analyze_site for metrics, AND add_geojson to highlight key areas/zones you identify.
+9. When users mention "buffer", "radius", "zone around", or "within X km", use the create_buffer tool to create a visual buffer zone on the map, then search_places within that buffer.
+10. When generating GeoJSON, ALWAYS constrain to the drawn region or visible viewport. Include descriptive properties (name, type, risk_level, notes).
+11. Reference active layers and custom overlays — acknowledge what's already visible and build on it.
+12. When asked about environmental factors, urban planning, or risks — create visual zones/boundaries on the map showing your analysis, not just text.
+13. **Be proactive with multi-step workflows.** For example, if a user says "mark all buildings within 1km", you should: (a) create_buffer to show the 1km zone, (b) search_places for buildings within that radius, and (c) explain what you found with exact counts.
+14. When the user asks about distance or proximity, use measure_distance tool and show the line on the map.
 
 ## COMPREHENSIVE OPEN GIS DATA SOURCE KNOWLEDGE
 
@@ -1672,6 +1804,7 @@ Be concise but thorough. Use markdown for formatting. When you perform map actio
       const mapActions: any[] = [];
       const visualActions = new Set(["update_map_view", "add_marker", "add_geojson", "clear_map", "search_results", "analyze_site"]);
       let textResponse = "";
+      const toolSteps: Array<{ tool: string; status: string; summary: string }> = [];
 
       const parts = result.candidates?.[0]?.content?.parts || [];
       const functionCalls = parts.filter((p: any) => p.functionCall);
@@ -1683,6 +1816,36 @@ Be concise but thorough. Use markdown for formatting. When you perform map actio
         for (const part of functionCalls) {
           const fc = part.functionCall!;
           const toolResult = await executeCartoAITool(fc.name!, fc.args as any);
+          
+          let stepSummary = "";
+          const toolName = fc.name!;
+          if (toolName === "search_places") {
+            stepSummary = toolResult.count !== undefined ? `Found ${toolResult.count} ${(fc.args as any)?.query || "places"}` : "Search completed";
+          } else if (toolName === "create_buffer") {
+            stepSummary = `Created ${(fc.args as any)?.radius_km || 1} km buffer zone`;
+          } else if (toolName === "measure_distance") {
+            stepSummary = toolResult.measurement ? `Distance: ${toolResult.measurement.distance_km} km` : "Measured distance";
+          } else if (toolName === "update_map_view") {
+            stepSummary = `Navigated to ${(fc.args as any)?.name || "location"}`;
+          } else if (toolName === "add_marker") {
+            stepSummary = `Marked: ${(fc.args as any)?.label || "point"}`;
+          } else if (toolName === "add_geojson") {
+            stepSummary = `Added overlay: ${(fc.args as any)?.label || "data"}`;
+          } else if (toolName === "analyze_site") {
+            stepSummary = `Site analysis complete (score: ${toolResult.analysis?.score || "N/A"})`;
+          } else if (toolName === "clear_map") {
+            stepSummary = "Cleared all overlays";
+          } else if (toolName === "search_web") {
+            stepSummary = `Found data sources for "${(fc.args as any)?.query || "query"}"`;
+          } else if (toolName === "fetch_open_data") {
+            stepSummary = toolResult.error ? `Failed: ${toolResult.error}` : `Loaded: ${(fc.args as any)?.label || "data"}`;
+          } else if (toolName === "query_knowledge_base") {
+            stepSummary = `Retrieved knowledge on "${(fc.args as any)?.topic || "topic"}"`;
+          } else {
+            stepSummary = "Completed";
+          }
+          toolSteps.push({ tool: toolName, status: toolResult.error ? "error" : "completed", summary: stepSummary });
+
           if (toolResult && visualActions.has(toolResult.action) && !toolResult.error) {
             mapActions.push(toolResult);
           }
@@ -1711,13 +1874,13 @@ Be concise but thorough. Use markdown for formatting. When you perform map actio
       }
 
       if (!textResponse && mapActions.length > 0) {
-        textResponse = "Done! I've updated the map for you.";
+        textResponse = "Done! I've updated the map with the results.";
       }
       if (!textResponse) {
-        textResponse = "I'm not sure how to help with that. Try asking me to find places, navigate to a location, or analyze a site.";
+        textResponse = "Let me help you with that. Try asking me to find specific places, create buffer zones, analyze a site, or navigate to any location. You can also browse the Data Catalog for hundreds of GIS datasets.";
       }
 
-      res.json({ content: textResponse, mapActions, model: "CartoAI" });
+      res.json({ content: textResponse, mapActions, toolSteps: toolSteps.length > 0 ? toolSteps : undefined, model: "CartoAI" });
     } catch (error: any) {
       console.error("CartoAI error:", error.message);
       res.status(500).json({ error: "CartoAI failed", message: error.message });
@@ -2157,6 +2320,104 @@ Be concise but thorough. Use markdown for formatting. When you perform map actio
       } else {
         res.json({ name: `${numLat.toFixed(4)}, ${numLon.toFixed(4)}` });
       }
+    }
+  });
+
+  const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
+
+  app.post("/api/import", upload.single("file"), async (req, res) => {
+    try {
+      if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+
+      const fileName = req.file.originalname || "unknown";
+      const ext = fileName.split(".").pop()?.toLowerCase();
+      const content = req.file.buffer.toString("utf-8");
+
+      let geojson: any = null;
+
+      if (ext === "geojson" || ext === "json") {
+        const parsed = JSON.parse(content);
+        if (parsed.type === "FeatureCollection") {
+          geojson = parsed;
+        } else if (parsed.type === "Feature") {
+          geojson = { type: "FeatureCollection", features: [parsed] };
+        } else if (Array.isArray(parsed)) {
+          const features = parsed
+            .filter((item: any) => item.lat !== undefined && item.lon !== undefined || item.latitude !== undefined && item.longitude !== undefined)
+            .map((item: any) => ({
+              type: "Feature",
+              geometry: { type: "Point", coordinates: [item.lon || item.longitude || item.lng, item.lat || item.latitude] },
+              properties: Object.fromEntries(Object.entries(item).filter(([k]) => !["lat", "lon", "latitude", "longitude", "lng"].includes(k))),
+            }));
+          geojson = { type: "FeatureCollection", features };
+        }
+        if (!geojson) return res.status(400).json({ error: "Invalid GeoJSON/JSON structure" });
+      } else if (ext === "csv") {
+        const lines = content.split("\n").filter((l: string) => l.trim());
+        if (lines.length < 2) return res.status(400).json({ error: "CSV file is empty or has no data rows" });
+        const headers = lines[0].split(",").map((h: string) => h.trim().replace(/"/g, "").toLowerCase());
+        const latIdx = headers.findIndex((h: string) => /^(lat|latitude)$/i.test(h));
+        const lonIdx = headers.findIndex((h: string) => /^(lon|lng|longitude|long)$/i.test(h));
+        if (latIdx < 0 || lonIdx < 0) return res.status(400).json({ error: "CSV must have lat/latitude and lon/lng/longitude columns" });
+        const originalHeaders = lines[0].split(",").map((h: string) => h.trim().replace(/"/g, ""));
+        const features = lines.slice(1).map((line: string) => {
+          const cols = line.split(",").map((c: string) => c.trim().replace(/"/g, ""));
+          const lat = parseFloat(cols[latIdx]);
+          const lon = parseFloat(cols[lonIdx]);
+          if (!isFinite(lat) || !isFinite(lon)) return null;
+          const props: Record<string, string> = {};
+          originalHeaders.forEach((h: string, j: number) => { if (j !== latIdx && j !== lonIdx) props[h] = cols[j] || ""; });
+          return { type: "Feature", geometry: { type: "Point", coordinates: [lon, lat] }, properties: props };
+        }).filter(Boolean);
+        geojson = { type: "FeatureCollection", features };
+      } else if (ext === "kml") {
+        const placemarks: any[] = [];
+        const pmRegex = /<Placemark>([\s\S]*?)<\/Placemark>/gi;
+        let match;
+        while ((match = pmRegex.exec(content)) !== null) {
+          const pm = match[1];
+          const nameMatch = pm.match(/<name>([\s\S]*?)<\/name>/i);
+          const name = nameMatch ? nameMatch[1].trim() : "Feature";
+          const coordMatch = pm.match(/<coordinates>([\s\S]*?)<\/coordinates>/i);
+          if (!coordMatch) continue;
+          const coordStr = coordMatch[1].trim();
+          const coordPairs = coordStr.split(/\s+/).filter((s: string) => s.includes(",")).map((s: string) => {
+            const [lon, lat, alt] = s.split(",").map(Number);
+            return [lon, lat];
+          }).filter(([lon, lat]: number[]) => isFinite(lon) && isFinite(lat));
+          if (coordPairs.length === 0) continue;
+          let geometry: any;
+          if (coordPairs.length === 1) {
+            geometry = { type: "Point", coordinates: coordPairs[0] };
+          } else {
+            const isClosed = coordPairs.length > 2 && coordPairs[0][0] === coordPairs[coordPairs.length - 1][0] && coordPairs[0][1] === coordPairs[coordPairs.length - 1][1];
+            if (isClosed && coordPairs.length > 3) {
+              geometry = { type: "Polygon", coordinates: [coordPairs] };
+            } else {
+              geometry = { type: "LineString", coordinates: coordPairs };
+            }
+          }
+          const descMatch = pm.match(/<description>([\s\S]*?)<\/description>/i);
+          placemarks.push({
+            type: "Feature",
+            geometry,
+            properties: { name, description: descMatch ? descMatch[1].trim().replace(/<!\[CDATA\[|\]\]>/g, "") : "" },
+          });
+        }
+        if (placemarks.length === 0) return res.status(400).json({ error: "No valid placemarks found in KML file" });
+        geojson = { type: "FeatureCollection", features: placemarks };
+      } else {
+        return res.status(400).json({ error: `Unsupported format: .${ext}` });
+      }
+
+      if (geojson.features.length > 5000) {
+        geojson.features = geojson.features.slice(0, 5000);
+      }
+
+      res.json({ geojson, featureCount: geojson.features.length, fileName });
+    } catch (e: any) {
+      console.error("Import error:", e.message);
+      res.status(400).json({ error: e.message || "Failed to parse file" });
     }
   });
 

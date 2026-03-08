@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Bot, User, Loader2, MapPin, Navigation, Trash2, Search, BarChart3, Database, X, ChevronRight, BrainCircuit, Layers, PenTool } from "lucide-react";
+import { Send, Bot, User, Loader2, MapPin, Navigation, Trash2, Search, BarChart3, Database, X, ChevronRight, BrainCircuit, Layers, PenTool, CheckCircle2, AlertCircle, CircleDot } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export interface MapAction {
@@ -30,11 +30,18 @@ interface ChatPanelProps {
   getMapBounds?: () => { north: number; south: number; east: number; west: number; zoom: number } | null;
 }
 
+interface ToolStep {
+  tool: string;
+  status: string;
+  summary: string;
+}
+
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
   mapActions?: MapAction[];
+  toolSteps?: ToolStep[];
 }
 
 const DATA_CATEGORIES = [
@@ -290,6 +297,7 @@ export default function ChatPanel({ location, onToggleLayer, activeLayers, onMap
 
       const data = await response.json();
       const mapActions: MapAction[] = data.mapActions || [];
+      const toolSteps: ToolStep[] = data.toolSteps || [];
 
       for (const action of mapActions) {
         executeMapAction(action);
@@ -300,6 +308,7 @@ export default function ChatPanel({ location, onToggleLayer, activeLayers, onMap
         role: "assistant",
         content: data.content,
         mapActions: mapActions.length > 0 ? mapActions : undefined,
+        toolSteps: toolSteps.length > 0 ? toolSteps : undefined,
       }]);
     } catch (error: any) {
       toast({ title: "CartoAI Error", description: error.message || "Could not reach AI service.", variant: "destructive" });
@@ -430,6 +439,25 @@ export default function ChatPanel({ location, onToggleLayer, activeLayers, onMap
                 {msg.role === 'user' ? <User className="w-3 h-3 text-muted-foreground" /> : <Bot className="w-3 h-3" style={{ color: "#2C5282" }} />}
               </div>
               <div className="max-w-[85%] space-y-1.5">
+                {msg.toolSteps && msg.toolSteps.length > 0 && (
+                  <div className="rounded-lg border border-border/60 overflow-hidden" style={{ background: "rgba(42,157,143,0.04)" }}>
+                    {msg.toolSteps.map((step, i) => (
+                      <div key={i} className="flex items-center gap-2 px-2.5 py-1.5 border-b border-border/30 last:border-0">
+                        {step.status === "completed" ? (
+                          <CheckCircle2 className="w-3.5 h-3.5 shrink-0" style={{ color: "#2A9D8F" }} />
+                        ) : step.status === "error" ? (
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0 text-red-500" />
+                        ) : (
+                          <CircleDot className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <span className="text-[10px] font-medium text-foreground">{step.summary}</span>
+                        </div>
+                        <span className="text-[9px] text-muted-foreground shrink-0 capitalize">{step.status}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <div className={`p-2.5 rounded-lg text-xs leading-relaxed ${
                   msg.role === 'user'
                     ? 'bg-primary/15 text-foreground rounded-tr-none'
