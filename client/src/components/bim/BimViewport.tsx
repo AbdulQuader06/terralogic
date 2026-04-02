@@ -76,7 +76,7 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const frameRef = useRef(0);
-  const mouseRef = useRef({ isDown: false, button: 0, prevX: 0, prevY: 0, hasDragged: false });
+  const mouseRef = useRef({ isDown: false, button: 0, prevX: 0, prevY: 0, startX: 0, startY: 0, hasDragged: false });
   const camState = useRef({ theta: Math.PI / 4, phi: Math.PI / 3.5, distance: 400, tx: 0, ty: 0, tz: 0 });
   const sunRef = useRef<THREE.DirectionalLight | null>(null);
   const massingsRef = useRef<MassingBox[]>([]);
@@ -584,7 +584,7 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
     if (!container) return;
 
     const onDown = (e: MouseEvent) => {
-      mouseRef.current = { isDown: true, button: e.button, prevX: e.clientX, prevY: e.clientY, hasDragged: false };
+      mouseRef.current = { isDown: true, button: e.button, prevX: e.clientX, prevY: e.clientY, startX: e.clientX, startY: e.clientY, hasDragged: false };
     };
 
     const onMove = (e: MouseEvent) => {
@@ -645,9 +645,12 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
     };
 
     const onUp = (e: MouseEvent) => {
-      const dragged = mouseRef.current.hasDragged;
+      // Use total displacement from mousedown position — more reliable than accumulated delta
+      const totalDx = Math.abs(e.clientX - mouseRef.current.startX);
+      const totalDy = Math.abs(e.clientY - mouseRef.current.startY);
+      const wasDrag = totalDx > 6 || totalDy > 6;
       mouseRef.current.isDown = false;
-      if (dragged || e.button !== 0 || !cameraRef.current) return;
+      if (wasDrag || e.button !== 0 || !cameraRef.current) return;
 
       const rect = container.getBoundingClientRect();
       mouse2D.current.set(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
