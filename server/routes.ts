@@ -2619,20 +2619,15 @@ Be concise but thorough. Use markdown for formatting. When you perform map actio
   app.get("/api/3d/buildings", async (req, res) => {
     const { lat, lon, radius } = req.query;
     if (!lat || !lon) return res.status(400).json({ error: "lat and lon required" });
-    const clat = Number(lat), clon = Number(lon), r = Number(radius) || 800;
-    try {
-      const degOffset = r / 111000;
-      const bbox = `${clat - degOffset},${clon - degOffset},${clat + degOffset},${clon + degOffset}`;
-      const query = `[out:json][timeout:15];(way["building"](${bbox});relation["building"](${bbox}););out body geom;`;
-      const resp = await fetch("https://overpass-api.de/api/interpreter", {
-        method: "POST",
-        body: `data=${encodeURIComponent(query)}`,
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        signal: AbortSignal.timeout(20000),
-      });
-      if (!resp.ok) throw new Error(`Overpass error: ${resp.status}`);
-      const data = await resp.json();
+    const clat = Number(lat), clon = Number(lon);
+    // Cap radius at 900m to keep Overpass query fast; context areas can be huge
+    const r = Math.min(Number(radius) || 800, 900);
+    const degLat = r / 111000;
+    const degLon = r / (111000 * Math.cos(clat * Math.PI / 180));
+    const bbox = `${clat - degLat},${clon - degLon},${clat + degLat},${clon + degLon}`;
+    const query = `[out:json][timeout:25];(way["building"](${bbox});relation["building"](${bbox}););out body geom;`;
 
+    function parseBuildings(data: any): any[] {
       const buildings: any[] = [];
       for (const el of (data.elements || [])) {
         const tags = el.tags || {};
@@ -2640,27 +2635,75 @@ Be concise but thorough. Use markdown for formatting. When you perform map actio
         const name = tags.name || tags["addr:housename"] || "";
         const levels = parseInt(tags["building:levels"]) || 0;
         const height = parseFloat(tags.height) || 0;
-
         if (el.type === "way" && el.geometry && el.geometry.length >= 3) {
-          const polygon = el.geometry.map((g: any) => [g.lat, g.lon]);
-          buildings.push({ type: bType, name, levels, height, geometry: "polygon", polygon });
+          buildings.push({ type: bType, name, levels, height, geometry: "polygon", polygon: el.geometry.map((g: any) => [g.lat, g.lon]) });
         } else if (el.type === "node") {
           buildings.push({ type: bType, name, levels, height, geometry: "point", lat: el.lat, lon: el.lon, size: 12 });
         } else if (el.type === "relation" && el.members) {
           for (const m of el.members) {
             if (m.type === "way" && m.geometry && m.geometry.length >= 3) {
-              const polygon = m.geometry.map((g: any) => [g.lat, g.lon]);
-              buildings.push({ type: bType, name, levels, height, geometry: "polygon", polygon });
+              buildings.push({ type: bType, name, levels, height, geometry: "polygon", polygon: m.geometry.map((g: any) => [g.lat, g.lon]) });
             }
           }
         }
       }
-
-      res.json({ buildings, count: buildings.length });
-    } catch (e: any) {
-      console.error("3D buildings error:", e.message);
-      res.json({ buildings: [], count: 0 });
+      return buildings;
     }
+
+    // Try each Overpass mirror in turn
+    for (const endpoint of OVERPASS_ENDPOINTS) {
+      try {
+        const resp = await fetch(endpoint, {
+          method: "POST",
+          body: `data=${encodeURIComponent(query)}`,
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          signal: AbortSignal.timeout(28000),
+        });
+        if (!resp.ok) throw new Error(`Overpass error: ${resp.status}`);
+        const data = await resp.json();
+        const buildings = parseBuildings(data);
+        return res.json({ buildings, count: buildings.length, source: "osm" });
+      } catch (e: any) {
+        console.error(`3D buildings error (${endpoint}):`, e.message);
+      }
+    }
+
+    // All mirrors failed — generate synthetic Hyderabad-style buildings as fallback
+    console.warn("3D buildings: all Overpass mirrors failed, using synthetic fallback");
+    const rng = (seed: number) => { let x = Math.sin(seed) * 10000; return x - Math.floor(x); };
+    const synthetic: any[] = [];
+    const mPerDegLat = 111320;
+    const mPerDegLon = 111320 * Math.cos(clat * Math.PI / 180);
+    const bldgTypes = ["residential", "commercial", "yes", "apartments", "retail", "office"];
+    let seed = Math.round(clat * 10000 + clon * 10000);
+
+    // Place ~35 synthetic buildings in a realistic grid pattern
+    const gridCols = 7, gridRows = 5;
+    const cellW = (r * 2) / gridCols, cellH = (r * 2) / gridRows;
+    for (let row = 0; row < gridRows; row++) {
+      for (let col = 0; col < gridCols; col++) {
+        seed++;
+        if (rng(seed) < 0.25) continue; // ~25% empty cells
+        const ox = (col + 0.1 + rng(seed + 1) * 0.8) * cellW - r; // offset in metres
+        const oy = (row + 0.1 + rng(seed + 2) * 0.8) * cellH - r;
+        const bLat = clat + oy / mPerDegLat;
+        const bLon = clon + ox / mPerDegLon;
+        const bW = 8 + rng(seed + 3) * 22; // 8–30m wide
+        const bD = 8 + rng(seed + 4) * 18; // 8–26m deep
+        const floors = 1 + Math.floor(rng(seed + 5) * 6); // 1–6 floors
+        const ht = floors * 3.2;
+        const bType = bldgTypes[Math.floor(rng(seed + 6) * bldgTypes.length)];
+        const hw = (bW / 2) / mPerDegLon, hd = (bD / 2) / mPerDegLat;
+        synthetic.push({
+          type: bType, name: "", levels: floors, height: ht, geometry: "polygon",
+          polygon: [
+            [bLat - hd, bLon - hw], [bLat - hd, bLon + hw],
+            [bLat + hd, bLon + hw], [bLat + hd, bLon - hw], [bLat - hd, bLon - hw],
+          ],
+        });
+      }
+    }
+    res.json({ buildings: synthetic, count: synthetic.length, source: "synthetic" });
   });
 
   // Geocode endpoint using Nominatim (OSM)

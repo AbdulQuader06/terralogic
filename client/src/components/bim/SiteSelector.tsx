@@ -336,19 +336,22 @@ export default function SiteSelector({ onSiteSelected, initialCenter }: SiteSele
 
     setStatus("Fetching building footprints...");
     let footprints: BuildingFootprint[] = [];
+    let siteBldgSource = "osm";
     try {
       const resp = await fetch(`/api/3d/buildings?lat=${centerLat}&lon=${centerLon}&radius=${Math.round(Math.max(widthM, heightM))}`);
       const data = await resp.json();
+      siteBldgSource = data.source || "osm";
       footprints = (data.buildings || []).map((b: any, i: number) => ({
         id: `bld-${i}`, type: b.type || "yes", name: b.name || "",
         height: b.height || 0, floors: b.levels || 0, polygon: b.polygon || [],
       }));
-    } catch { /* fallback */ }
+    } catch { siteBldgSource = "error"; }
 
     setIsLoading(false);
     setSiteConfirmed(true);
     const shape = polygon ? `${polygon.length}-pt polygon` : "rectangle";
-    setStatus(`${shape} | ${Math.round(areaSqm).toLocaleString()} sqm | ${footprints.length} bldgs`);
+    const siteSrcLabel = siteBldgSource === "synthetic" ? " ~est" : "";
+    setStatus(`${shape} | ${Math.round(areaSqm).toLocaleString()} sqm | ${footprints.length} bldgs${siteSrcLabel}`);
 
     const siteResult: SiteData = {
       bounds,
@@ -377,18 +380,21 @@ export default function SiteSelector({ onSiteSelected, initialCenter }: SiteSele
     const areaSqm = widthM * heightM;
 
     let footprints: BuildingFootprint[] = [];
+    let bldgSource = "osm";
     try {
       const resp = await fetch(`/api/3d/buildings?lat=${centerLat}&lon=${centerLon}&radius=${Math.round(Math.max(widthM, heightM))}`);
       const data = await resp.json();
+      bldgSource = data.source || "osm";
       footprints = (data.buildings || []).map((b: any, i: number) => ({
         id: `ctx-${i}`, type: b.type || "yes", name: b.name || "",
         height: b.height || 0, floors: b.levels || 0, polygon: b.polygon || [],
       }));
-    } catch { /* fallback — show empty context */ }
+    } catch { bldgSource = "error"; }
 
     setIsContextLoading(false);
     setContextConfirmed(true);
-    setContextStatus(`${footprints.length} buildings in context area`);
+    const srcLabel = bldgSource === "synthetic" ? " (estimated)" : "";
+    setContextStatus(`${footprints.length} buildings in context area${srcLabel}`);
 
     const existing = lastSiteDataRef.current;
     if (existing) {
