@@ -23,11 +23,20 @@ export default function BimDesigner() {
   const [exporting, setExporting] = useState(false);
   const [rightTab, setRightTab] = useState<RightTab>("compliance");
 
+  const prevSiteCenterRef = useRef<{lat:number;lon:number} | null>(null);
+
   const onSiteSelected = useCallback((data: SiteData) => {
+    const prev = prevSiteCenterRef.current;
+    const siteChanged = !prev ||
+      Math.abs(data.center.lat - prev.lat) > 0.0001 ||
+      Math.abs(data.center.lon - prev.lon) > 0.0001;
+    prevSiteCenterRef.current = { lat: data.center.lat, lon: data.center.lon };
     setSiteData(data);
-    setMassings([]);
-    setMetrics(null);
-    setComplianceScore(0);
+    if (siteChanged) {
+      setMassings([]);
+      setMetrics(null);
+      setComplianceScore(0);
+    }
   }, []);
 
   const onMetricsUpdate = useCallback((m: BimMetrics) => {
@@ -98,7 +107,7 @@ export default function BimDesigner() {
         pdf.setFontSize(8);
         const siteLines = [
           `Location: ${siteData.center.lat.toFixed(5)}, ${siteData.center.lon.toFixed(5)}`,
-          `Elevation: ${siteData.elevation}m | Area: ${(siteData.area / 10000).toFixed(2)} Ha (${Math.round(siteData.area).toLocaleString()} sqm)`,
+          `Elevation: ${siteData.elevation}m | Area: ${Math.round(siteData.area).toLocaleString()} sqm`,
           `Context Buildings: ${siteData.buildingFootprints.length}`,
           `Amenities — Healthcare: ${siteData.amenities.hospitals} | Education: ${siteData.amenities.schools} | Transit: ${siteData.amenities.transit} | Parks: ${siteData.amenities.parks} | F&B: ${siteData.amenities.restaurants} | Retail: ${siteData.amenities.shops}`,
         ];

@@ -81,12 +81,15 @@ export default function SiteSelector({ onSiteSelected, initialCenter }: SiteSele
   // React state
   const [drawTool, setDrawTool] = useState<DrawTool>("none");
   const [isLoading, setIsLoading] = useState(false);
+  const [isContextLoading, setIsContextLoading] = useState(false);
   const [status, setStatus] = useState<string>("");
+  const [contextStatus, setContextStatus] = useState<string>("");
   const [siteConfirmed, setSiteConfirmed] = useState(false);
   const [contextConfirmed, setContextConfirmed] = useState(false);
   const [siteArea, setSiteArea] = useState(0);
   const [amenities, setAmenities] = useState<AmenityMix | null>(null);
   const [vertexCount, setVertexCount] = useState(0);
+  const [pendingContextBounds, setPendingContextBounds] = useState<{north:number;south:number;east:number;west:number} | null>(null);
 
   const center = initialCenter || { lat: 17.4767, lon: 78.4969 };
 
@@ -258,13 +261,10 @@ export default function SiteSelector({ onSiteSelected, initialCenter }: SiteSele
       setDrawTool("none");
       map.dragging.enable();
       map.getContainer().style.cursor = "";
-      setContextConfirmed(true);
 
-      // Re-emit siteData with contextBounds if site already confirmed
-      if (lastSiteDataRef.current) {
-        const ctxBounds = { north: ne.lat, south: sw.lat, east: ne.lng, west: sw.lng };
-        onSiteSelectedRef.current({ ...lastSiteDataRef.current, contextBounds: ctxBounds });
-      }
+      // Trigger async building fetch for context area via state
+      const ctxBounds = { north: ne.lat, south: sw.lat, east: ne.lng, west: sw.lng };
+      setPendingContextBounds(ctxBounds);
     });
 
     // ESC to cancel
@@ -362,6 +362,68 @@ export default function SiteSelector({ onSiteSelected, initialCenter }: SiteSele
     lastSiteDataRef.current = siteResult;
     onSiteSelected(siteResult);
   }, [onSiteSelected]);
+
+  // ── Fetch 3D buildings for the context / neighbourhood area ──────────
+  const fetchContextData = useCallback(async (ctxBounds: {north:number;south:number;east:number;west:number}) => {
+    setIsContextLoading(true);
+    setContextStatus("Loading neighbourhood buildings...");
+
+    const centerLat = (ctxBounds.north + ctxBounds.south) / 2;
+    const centerLon = (ctxBounds.east + ctxBounds.west) / 2;
+    const mPerDegLat = 111320;
+    const mPerDegLon = 111320 * Math.cos(centerLat * Math.PI / 180);
+    const widthM = (ctxBounds.east - ctxBounds.west) * mPerDegLon;
+    const heightM = (ctxBounds.north - ctxBounds.south) * mPerDegLat;
+    const areaSqm = widthM * heightM;
+
+    let footprints: BuildingFootprint[] = [];
+    try {
+      const resp = await fetch(`/api/3d/buildings?lat=${centerLat}&lon=${centerLon}&radius=${Math.round(Math.max(widthM, heightM))}`);
+      const data = await resp.json();
+      footprints = (data.buildings || []).map((b: any, i: number) => ({
+        id: `ctx-${i}`, type: b.type || "yes", name: b.name || "",
+        height: b.height || 0, floors: b.levels || 0, polygon: b.polygon || [],
+      }));
+    } catch { /* fallback — show empty context */ }
+
+    setIsContextLoading(false);
+    setContextConfirmed(true);
+    setContextStatus(`${footprints.length} buildings in context area`);
+
+    const existing = lastSiteDataRef.current;
+    if (existing) {
+      // Site polygon already drawn — update its buildings with the wider context set
+      const updated: SiteData = { ...existing, contextBounds: ctxBounds, buildingFootprints: footprints };
+      lastSiteDataRef.current = updated;
+      onSiteSelectedRef.current(updated);
+    } else {
+      // Context drawn before site polygon — use context bounds as temporary site
+      let elevation = 0;
+      try {
+        const r = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${centerLat}&longitude=${centerLon}`);
+        const d = await r.json();
+        elevation = d.elevation?.[0] || 0;
+      } catch { /* ignore */ }
+
+      const tempSite: SiteData = {
+        bounds: ctxBounds,
+        center: { lat: centerLat, lon: centerLon },
+        elevation,
+        amenities: { hospitals: 0, schools: 0, transit: 0, parks: 0, restaurants: 0, shops: 0, total: 0 },
+        buildingFootprints: footprints,
+        area: areaSqm,
+        contextBounds: ctxBounds,
+      };
+      lastSiteDataRef.current = tempSite;
+      onSiteSelectedRef.current(tempSite);
+    }
+    setPendingContextBounds(null);
+  }, []);
+
+  useEffect(() => {
+    if (!pendingContextBounds) return;
+    fetchContextData(pendingContextBounds);
+  }, [pendingContextBounds, fetchContextData]);
 
   const activateTool = (tool: DrawTool) => {
     if (drawTool === tool) { cancelDraw(); return; }
@@ -468,7 +530,22 @@ export default function SiteSelector({ onSiteSelected, initialCenter }: SiteSele
             </div>
           </div>
         )}
+        {isContextLoading && (
+          <div className="absolute inset-0 bg-background/70 flex items-center justify-center z-[1001]">
+            <div className="text-center space-y-2">
+              <div className="w-6 h-6 border-2 border-[#2A9D8F] border-t-transparent rounded-full animate-spin mx-auto" />
+              <div className="text-[10px] text-[#2A9D8F] font-medium">Fetching neighbourhood buildings…</div>
+            </div>
+          </div>
+        )}
       </div>
+
+      {contextConfirmed && contextStatus && !isContextLoading && (
+        <div className="px-3 py-1.5 border-t border-[#2A9D8F]/20 bg-[#2A9D8F]/5 flex items-center gap-2">
+          <span className="text-[10px] text-[#2A9D8F]">🏢</span>
+          <span className="text-[10px] text-[#2A9D8F] font-medium">{contextStatus}</span>
+        </div>
+      )}
 
       {siteConfirmed && (
         <div className="px-3 py-1.5 border-t border-green-200 bg-green-50 flex items-center gap-2">
@@ -483,7 +560,7 @@ export default function SiteSelector({ onSiteSelected, initialCenter }: SiteSele
             <div className="text-[10px] font-bold text-primary uppercase tracking-wider">Amenity Mix</div>
             {siteArea > 0 && (
               <span className="text-[10px] text-primary font-medium">
-                {(siteArea / 10000).toFixed(3)} Ha
+                {Math.round(siteArea).toLocaleString()} sqm
               </span>
             )}
           </div>

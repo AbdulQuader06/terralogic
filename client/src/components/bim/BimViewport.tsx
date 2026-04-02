@@ -755,7 +755,7 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
         })}
         {siteData && (
           <div className="ml-1 pl-1 border-l border-border text-[10px] text-green-600 font-medium">
-            Site: {(siteData.area / 10000).toFixed(2)} Ha
+            Site: {Math.round(siteData.area).toLocaleString()} sqm
           </div>
         )}
       </div>
