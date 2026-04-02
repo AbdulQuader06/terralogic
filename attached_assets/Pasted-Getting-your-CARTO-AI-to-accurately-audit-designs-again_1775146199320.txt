@@ -1,0 +1,49 @@
+Getting your **CARTO AI** to accurately audit designs against the **National Building Code (NBC) 2016** is the most important technical fix for your jury presentation. If the AI "hallucinates" these rules, your project loses credibility.
+
+To fix this in **Replit**, you don't just need the document—you need the **Logic Table** that the AI can reference. 
+
+### **The Core NBC 2016 Logic (Part 3: Development Control)**
+
+Below are the exact metrics from **NBC 2016, Part 3 (Development Control Rules)** that you should use to "ground" your bot.
+
+#### **1. Building Height vs. Minimum Setbacks**
+The NBC mandates that as building height increases, the mandatory open space (setbacks) must also increase to ensure fire safety and ventilation.
+
+| Building Height ($m$) | Min. Front Setback ($m$) | Min. Rear/Side Setback ($m$) |
+| :--- | :--- | :--- |
+| Up to $10\text{ m}$ | $3.0$ | $3.0$ |
+| $10\text{ m}$ to $12\text{ m}$ | $4.5$ | $3.0$ |
+| $12\text{ m}$ to $15\text{ m}$ | $5.0$ | $5.0$ |
+| $15\text{ m}$ to $18\text{ m}$ | $6.0$ | $6.0$ |
+| $18\text{ m}$ to $21\text{ m}$ | $7.0$ | $7.0$ |
+| $21\text{ m}$ to $24\text{ m}$ | $8.0$ | $8.0$ |
+
+* **Front Setback**: Every building fronting a street must have a front space of at least **$3\text{ m}$**.
+* **Small Plots**: For plots under **$125\text{ sqm}$**, front setbacks can be reduced to **$1.8\text{ m}$**.
+
+#### **2. FAR (Floor Area Ratio) Calculations**
+FAR is a critical metric for "Investment Readiness." While it varies by city (e.g., GHMC rules in Hyderabad), the NBC 2016 provides the national baseline.
+* **Formula**: $FAR = \frac{\text{Total Covered Area of All Floors}}{\text{Plot Area}}$.
+* **National Range**: Generally varies from **$1.3$ to $3.25$**, depending on street width and locality density.
+* **Exemptions**: Common areas like parking, basements (used only for parking), and open balconies are typically **excluded** from FAR calculations.
+
+#### **3. Ground Coverage**
+This limits how much of the site can be "roofed."
+* **Residential Baseline**: Typically **$50\%$ to $60\%$** of the total plot area.
+* **Calculation**: Does not include "open-to-sky" structures like fountains, swimming pools (if uncovered), or platforms around trees.
+
+---
+
+### **How to "Train" your Replit Bot (The Fix)**
+
+Don't just upload the whole $1000$+ page NBC PDF; it's too much data for a simple bot to process accurately in real-time. Instead, use **System Prompting**:
+
+1.  **Create a `laws.json` or `nbc_rules.txt` file** in your Replit.
+2.  **Paste the setback table above** into that file.
+3.  **Update your System Prompt**:
+    > *"You are CARTO AI. When auditing a 3D massing model, you MUST reference the `nbc_rules.txt` file. If the user's 'Massing Box' height is $15\text{ m}$, you MUST flag a violation if the side setback is less than $5\text{ m}$. Do not guess; use the provided table."*
+
+### **Why this wins the Jury Round:**
+When the jury asks, "How do we know the AI is right?", you can actually **show them the code** where the NBC tables are stored. This proves that your AI isn't just "chatting"—it's a **Rule-Based Expert System**.
+
+**Should I help you write the JavaScript function that automatically calculates the FAR and Setback based on these specific NBC numbers?**

@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { chatRequestSchema, analyzeRequestSchema } from "@shared/schema";
 import type { SiteAnalysis } from "@shared/schema";
+import { runNbcRuleEngine } from "./nbc_rules";
 import { GoogleGenAI, Type } from "@google/genai";
 import OpenAI from "openai";
 import multer from "multer";
@@ -3023,62 +3024,52 @@ Be concise but thorough. Use markdown for formatting. When you perform map actio
         return res.status(400).json({ error: "Valid metrics object required (far, groundCoverage, openSpace, maxHeight)" });
       }
 
-      const siteProfile = JSON.stringify({ location, elevation, siteArea, amenities, massings, metrics, sunHour }, null, 2);
+      // ── STEP 1: Deterministic NBC 2016 Rule Engine (always runs, always accurate) ──
+      const ruleResult = runNbcRuleEngine({ siteArea: siteArea || 0, massings, metrics });
 
-      const nbcPrompt = `You are an AI compliance officer specializing in the Indian National Building Code (NBC 2016), URDPFI Guidelines, and local zoning/development control regulations. You are given a BIM site profile with massing data and must evaluate compliance.
-
-KEY RULES TO CHECK:
-1. FAR (Floor Area Ratio): Typical residential zones allow 1.5-2.5 FAR; commercial zones 2.0-4.0
-2. Ground Coverage: Residential max 50%, Commercial max 60%
-3. Open Space: Minimum 30% open space required
-4. Height Restrictions: Varies by zone; default 15m (residential low-rise), 45m (high-rise), fire safety considerations above 15m
-5. Setbacks: Front 6m, Side 3m, Rear 3m minimum for residential; increases with building height
-6. Fire Safety: Buildings >15m require fire escape; >24m classified as high-rise with additional requirements
-7. Parking: 1 ECS per 100sqm residential; 1 ECS per 50sqm commercial
-8. Solar Access: Target 75% solar exposure for habitable rooms
-9. NBC Part 8 (Building Services): Ventilation requirements - min 1/10th floor area as openings
-10. Green Building Norms: Rain water harvesting mandatory for >300sqm plot
-
-RESPOND IN VALID JSON ONLY with this exact structure:
-{
-  "compliant": boolean,
-  "score": number (0-100),
-  "violations": [{"code": "NBC Section/Rule", "description": "What's wrong and how to fix", "severity": "critical|warning|info"}],
-  "recommendations": ["actionable suggestion strings"],
-  "solarExposure": number (0-100, estimated percentage),
-  "zoningSummary": "one-line summary of zoning assessment"
-}`;
-
-      const aiResponse = await callGemini(nbcPrompt, `Evaluate this BIM site profile for NBC compliance:\n${siteProfile}`);
-
-      let parsed;
+      // ── STEP 2: Gemini adds RECOMMENDATIONS only (does NOT change violations/score) ──
+      let aiRecommendations: string[] = [];
       try {
-        const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-        parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+        const aiPrompt = `You are CARTO AI, an expert Indian urban planner. The deterministic NBC 2016 rule engine has already calculated exact violations. Your ONLY job is to provide 3-5 concise, actionable RECOMMENDATIONS to improve this design.
+
+NBC RULE ENGINE RESULTS (authoritative — do NOT contradict):
+${ruleResult.rulesSummary}
+
+Violations found: ${ruleResult.violations.map(v => v.code).join(", ") || "None"}
+Score: ${ruleResult.score}/100
+
+Site context:
+- Location: ${location ? `${location.lat.toFixed(4)}, ${location.lon.toFixed(4)}` : "Hyderabad, India"}
+- Site Area: ${siteArea ? `${(siteArea / 10000).toFixed(2)} Ha` : "Unknown"}
+- Massings: ${massings.length} blocks, dominant type: ${massings[0]?.type || "mixed"}
+
+Respond with a JSON array of strings ONLY, like: ["recommendation 1", "recommendation 2", ...]
+Each recommendation must be specific, actionable, and reference NBC 2016 or GHMC DCR where relevant.`;
+
+        const aiResponse = await callGemini(aiPrompt, "Provide design recommendations.");
+        const arrMatch = aiResponse.match(/\[[\s\S]*\]/);
+        if (arrMatch) {
+          const parsed = JSON.parse(arrMatch[0]);
+          if (Array.isArray(parsed)) {
+            aiRecommendations = parsed.slice(0, 5).map(r => String(r));
+          }
+        }
       } catch {
-        parsed = null;
+        aiRecommendations = [
+          "Consider reducing ground coverage to improve natural ventilation between buildings.",
+          "Provide basement parking to meet ECS requirements without consuming FAR.",
+          "Install rainwater harvesting system as mandated by NBC 2016 Part 9.",
+        ];
       }
 
-      if (!parsed) {
-        parsed = {
-          compliant: metrics.far <= 2.5 && metrics.groundCoverage <= 50 && metrics.openSpace >= 30 && metrics.maxHeight <= 45,
-          score: Math.max(0, 100
-            - (metrics.far > 2.5 ? 20 : 0)
-            - (metrics.groundCoverage > 50 ? 15 : 0)
-            - (metrics.openSpace < 30 ? 15 : 0)
-            - (metrics.maxHeight > 45 ? 20 : 0)),
-          violations: [],
-          recommendations: ["AI analysis unavailable — rule-based fallback applied"],
-          solarExposure: Math.min(100, Math.max(30, 100 - (metrics.groundCoverage > 60 ? (metrics.groundCoverage - 60) * 2 : 0))),
-          zoningSummary: "Rule-based assessment: check local development control regulations for exact limits",
-        };
-        if (metrics.far > 2.5) parsed.violations.push({ code: "NBC/URDPFI FAR", description: `FAR ${metrics.far} exceeds typical limit of 2.5`, severity: "critical" });
-        if (metrics.groundCoverage > 50) parsed.violations.push({ code: "NBC Ground Coverage", description: `Ground coverage ${metrics.groundCoverage}% exceeds 50% limit`, severity: "critical" });
-        if (metrics.openSpace < 30) parsed.violations.push({ code: "NBC Open Space", description: `Open space ${metrics.openSpace}% below 30% minimum`, severity: "warning" });
-        if (metrics.maxHeight > 45) parsed.violations.push({ code: "NBC Height", description: `Max height ${metrics.maxHeight}m exceeds 45m limit — high-rise fire regulations apply`, severity: "critical" });
-      }
-
-      res.json(parsed);
+      res.json({
+        compliant: ruleResult.compliant,
+        score: ruleResult.score,
+        violations: ruleResult.violations,
+        recommendations: aiRecommendations,
+        solarExposure: ruleResult.solarExposure,
+        zoningSummary: ruleResult.zoningSummary,
+      });
     } catch (e: any) {
       console.error("BIM compliance error:", e.message);
       res.status(500).json({ error: "Compliance check failed" });
