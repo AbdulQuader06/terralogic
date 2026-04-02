@@ -35,10 +35,26 @@ export default function CompliancePanel({ siteData, metrics, massings, sunHour, 
     setError(null);
 
     try {
+      // Compute real site bounding-box dimensions from the drawn polygon
+      let siteDimensions: { width: number; depth: number } | undefined;
+      const poly = siteData.sitePolygon;
+      if (poly && poly.length >= 3) {
+        const lats = poly.map((p: [number, number]) => p[0]);
+        const lons = poly.map((p: [number, number]) => p[1]);
+        const centerLat = (Math.max(...lats) + Math.min(...lats)) / 2;
+        const mPerDegLat = 111320;
+        const mPerDegLon = 111320 * Math.cos(centerLat * Math.PI / 180);
+        siteDimensions = {
+          width: (Math.max(...lons) - Math.min(...lons)) * mPerDegLon,
+          depth: (Math.max(...lats) - Math.min(...lats)) * mPerDegLat,
+        };
+      }
+
       const siteProfile = {
         location: siteData.center,
         elevation: siteData.elevation,
         siteArea: siteData.area,
+        siteDimensions,
         amenities: siteData.amenities,
         massings: massings.map(m => ({
           type: m.type,
@@ -120,7 +136,7 @@ export default function CompliancePanel({ siteData, metrics, massings, sunHour, 
           <div className="space-y-2 py-3">
             <div className="flex items-center gap-2 p-2 bg-green-50 rounded border border-green-200">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              <div className="text-[11px] text-green-700 font-medium">Site selected: {(siteData.area / 10000).toFixed(2)} Ha</div>
+              <div className="text-[11px] text-green-700 font-medium">Site selected: {Math.round(siteData.area).toLocaleString()} sqm</div>
             </div>
             <div className="flex items-center gap-2 p-2 bg-primary/5 rounded border border-primary/20">
               <div className="w-5 h-5 rounded-full bg-primary text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">2</div>

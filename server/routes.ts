@@ -3016,7 +3016,7 @@ Be concise but thorough. Use markdown for formatting. When you perform map actio
 
   app.post("/api/bim/compliance", async (req, res) => {
     try {
-      const { location, elevation, siteArea, amenities, massings, metrics, sunHour } = req.body || {};
+      const { location, elevation, siteArea, siteDimensions, amenities, massings, metrics, sunHour } = req.body || {};
       if (!massings || !Array.isArray(massings) || massings.length === 0) {
         return res.status(400).json({ error: "No massings provided" });
       }
@@ -3025,7 +3025,7 @@ Be concise but thorough. Use markdown for formatting. When you perform map actio
       }
 
       // ── STEP 1: Deterministic NBC 2016 Rule Engine (always runs, always accurate) ──
-      const ruleResult = runNbcRuleEngine({ siteArea: siteArea || 0, massings, metrics });
+      const ruleResult = runNbcRuleEngine({ siteArea: siteArea || 0, siteDimensions, massings, metrics });
 
       // ── STEP 2: Gemini adds RECOMMENDATIONS only (does NOT change violations/score) ──
       let aiRecommendations: string[] = [];
@@ -3040,7 +3040,7 @@ Score: ${ruleResult.score}/100
 
 Site context:
 - Location: ${location ? `${location.lat.toFixed(4)}, ${location.lon.toFixed(4)}` : "Hyderabad, India"}
-- Site Area: ${siteArea ? `${(siteArea / 10000).toFixed(2)} Ha` : "Unknown"}
+- Site Area: ${siteArea ? `${Math.round(siteArea).toLocaleString()} sqm` : "Unknown"}
 - Massings: ${massings.length} blocks, dominant type: ${massings[0]?.type || "mixed"}
 
 Respond with a JSON array of strings ONLY, like: ["recommendation 1", "recommendation 2", ...]
