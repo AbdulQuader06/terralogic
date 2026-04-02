@@ -257,7 +257,7 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
     labelSpritesRef.current = [];
     buildingDataRef.current.clear();
 
-    const { bounds, center } = siteData;
+    const { bounds, center, sitePolygon, contextBounds } = siteData;
     const mLat = 111320;
     const mLon = 111320 * Math.cos(center.lat * Math.PI / 180);
     const scale = VIEWPORT_SIZE / (Math.max(
@@ -265,26 +265,88 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
       (bounds.north - bounds.south) * mLat
     ) * 1.5);
 
-    const hw = ((bounds.east - bounds.west) * mLon * scale) / 2;
-    const hh = ((bounds.north - bounds.south) * mLat * scale) / 2;
-    const outlineGeom = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(-hw, 0.2, -hh),
-      new THREE.Vector3(hw, 0.2, -hh),
-      new THREE.Vector3(hw, 0.2, hh),
-      new THREE.Vector3(-hw, 0.2, hh),
-    ]);
-    const outline = new THREE.LineLoop(outlineGeom, new THREE.LineBasicMaterial({ color: 0x2C5282, linewidth: 2 }));
-    scene.add(outline);
-    siteOutlineRef.current = outline;
+    // ── SITE SHAPE: polygon or bounding box ──────────────────────────────
+    if (sitePolygon && sitePolygon.length >= 3) {
+      // Freestyle polygon → THREE.Shape for accurate geometry
+      const pts3D = sitePolygon.map(([lat, lon]) => new THREE.Vector2(
+        (lon - center.lon) * mLon * scale,
+        -(lat - center.lat) * mLat * scale
+      ));
+      const shape = new THREE.Shape(pts3D);
 
-    const siteFill = new THREE.PlaneGeometry(hw * 2, hh * 2);
-    siteFill.rotateX(-Math.PI / 2);
-    const fillMesh = new THREE.Mesh(siteFill, new THREE.MeshStandardMaterial({
-      color: 0x2C5282, transparent: true, opacity: 0.06, side: THREE.DoubleSide,
-    }));
-    fillMesh.position.y = 0.1;
-    scene.add(fillMesh);
-    contextMeshesRef.current.push(fillMesh);
+      // Filled polygon (flat on ground)
+      const shapeGeom = new THREE.ShapeGeometry(shape);
+      const fillMat = new THREE.MeshStandardMaterial({ color: 0x2C5282, transparent: true, opacity: 0.1, side: THREE.DoubleSide, depthWrite: false });
+      const fillMesh = new THREE.Mesh(shapeGeom, fillMat);
+      fillMesh.rotation.x = -Math.PI / 2;
+      fillMesh.position.y = 0.15;
+      scene.add(fillMesh);
+      contextMeshesRef.current.push(fillMesh);
+
+      // Polygon outline
+      const outlinePts = [...sitePolygon, sitePolygon[0]].map(([lat, lon]) => new THREE.Vector3(
+        (lon - center.lon) * mLon * scale, 0.3, -(lat - center.lat) * mLat * scale
+      ));
+      const outlineGeom = new THREE.BufferGeometry().setFromPoints(outlinePts);
+      const outline = new THREE.LineLoop(outlineGeom, new THREE.LineBasicMaterial({ color: 0x2C5282 }));
+      scene.add(outline);
+      siteOutlineRef.current = outline;
+
+      // Vertex dots on ground
+      for (const [lat, lon] of sitePolygon) {
+        const dotGeom = new THREE.SphereGeometry(1.5, 6, 6);
+        const dotMat = new THREE.MeshStandardMaterial({ color: 0x2C5282 });
+        const dot = new THREE.Mesh(dotGeom, dotMat);
+        dot.position.set((lon - center.lon) * mLon * scale, 0.5, -(lat - center.lat) * mLat * scale);
+        scene.add(dot);
+        contextMeshesRef.current.push(dot);
+      }
+    } else {
+      // Fallback: bounding box rectangle
+      const hw = ((bounds.east - bounds.west) * mLon * scale) / 2;
+      const hh = ((bounds.north - bounds.south) * mLat * scale) / 2;
+      const outlineGeom = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-hw, 0.2, -hh), new THREE.Vector3(hw, 0.2, -hh),
+        new THREE.Vector3(hw, 0.2, hh), new THREE.Vector3(-hw, 0.2, hh),
+      ]);
+      const outline = new THREE.LineLoop(outlineGeom, new THREE.LineBasicMaterial({ color: 0x2C5282 }));
+      scene.add(outline);
+      siteOutlineRef.current = outline;
+
+      const siteFill = new THREE.PlaneGeometry(hw * 2, hh * 2);
+      siteFill.rotateX(-Math.PI / 2);
+      const fillMesh = new THREE.Mesh(siteFill, new THREE.MeshStandardMaterial({
+        color: 0x2C5282, transparent: true, opacity: 0.07, side: THREE.DoubleSide, depthWrite: false,
+      }));
+      fillMesh.position.y = 0.1;
+      scene.add(fillMesh);
+      contextMeshesRef.current.push(fillMesh);
+    }
+
+    // ── CONTEXT / NEIGHBOURHOOD BOUNDARY (dashed teal outline) ──────────
+    if (contextBounds) {
+      const chw = ((contextBounds.east - contextBounds.west) * mLon * scale) / 2;
+      const chh = ((contextBounds.north - contextBounds.south) * mLat * scale) / 2;
+      const cx = ((contextBounds.east + contextBounds.west) / 2 - center.lon) * mLon * scale;
+      const cz = -((contextBounds.north + contextBounds.south) / 2 - center.lat) * mLat * scale;
+      const ctxGeom = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(cx - chw, 0.3, cz - chh), new THREE.Vector3(cx + chw, 0.3, cz - chh),
+        new THREE.Vector3(cx + chw, 0.3, cz + chh), new THREE.Vector3(cx - chw, 0.3, cz + chh),
+      ]);
+      const ctxMesh = new THREE.LineLoop(ctxGeom, new THREE.LineDashedMaterial({ color: 0x2A9D8F, dashSize: 8, gapSize: 5 }));
+      ctxMesh.computeLineDistances();
+      scene.add(ctxMesh);
+      contextMeshesRef.current.push(ctxMesh as unknown as THREE.Mesh);
+
+      const ctxFill = new THREE.PlaneGeometry(chw * 2, chh * 2);
+      ctxFill.rotateX(-Math.PI / 2);
+      const ctxFillMesh = new THREE.Mesh(ctxFill, new THREE.MeshStandardMaterial({
+        color: 0x2A9D8F, transparent: true, opacity: 0.03, side: THREE.DoubleSide, depthWrite: false,
+      }));
+      ctxFillMesh.position.set(cx, 0.05, cz);
+      scene.add(ctxFillMesh);
+      contextMeshesRef.current.push(ctxFillMesh);
+    }
 
     for (const bld of siteData.buildingFootprints) {
       if (!bld.polygon || bld.polygon.length < 3) continue;
