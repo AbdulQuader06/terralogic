@@ -667,16 +667,33 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
 
       <div className="absolute top-2 left-2 z-10 flex items-center gap-1 bg-white/90 border border-border rounded-lg p-1 backdrop-blur-sm shadow-sm" data-testid="bim-toolbar">
         {([
-          { key: "navigate" as const, icon: "⊕", label: "Navigate" },
-          { key: "place" as const, icon: "+", label: "Place Massing" },
-          { key: "select" as const, icon: "◎", label: "Select" },
-        ]).map(t => (
-          <button key={t.key} onClick={() => setTool(t.key)}
-            className={`px-2.5 py-1.5 rounded text-[11px] font-medium transition-all ${tool === t.key ? "bg-primary/10 text-primary border border-primary/30" : "text-muted-foreground hover:text-foreground border border-transparent"}`}
-            data-testid={`bim-tool-${t.key}`}>
-            <span className="mr-1">{t.icon}</span>{t.label}
-          </button>
-        ))}
+          { key: "navigate" as const, icon: "⊕", label: "Navigate", requiresSite: false },
+          { key: "place" as const, icon: "+", label: "Place Massing", requiresSite: true },
+          { key: "select" as const, icon: "◎", label: "Select", requiresSite: true },
+        ]).map(t => {
+          const locked = t.requiresSite && !siteData;
+          return (
+            <button key={t.key}
+              onClick={() => { if (!locked) setTool(t.key); }}
+              title={locked ? "Select a site first (Step 1)" : t.label}
+              className={`px-2.5 py-1.5 rounded text-[11px] font-medium transition-all ${
+                locked
+                  ? "text-muted-foreground/40 border border-transparent cursor-not-allowed"
+                  : tool === t.key
+                    ? "bg-primary/10 text-primary border border-primary/30"
+                    : "text-muted-foreground hover:text-foreground border border-transparent"
+              }`}
+              data-testid={`bim-tool-${t.key}`}>
+              <span className="mr-1">{t.icon}</span>{t.label}
+              {locked && <span className="ml-1 text-[9px] text-muted-foreground/50">🔒</span>}
+            </button>
+          );
+        })}
+        {siteData && (
+          <div className="ml-1 pl-1 border-l border-border text-[10px] text-green-600 font-medium">
+            Site: {(siteData.area / 10000).toFixed(2)} Ha
+          </div>
+        )}
       </div>
 
       {tool === "place" && (
@@ -753,10 +770,41 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
 
       {!siteData && (
         <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-          <div className="text-center space-y-2 text-muted-foreground">
-            <div className="text-2xl">&#11036;</div>
-            <div className="text-sm font-medium">Select a site to begin</div>
-            <div className="text-xs">Use the Site Selection panel on the left</div>
+          <div className="text-center space-y-4 bg-white/80 backdrop-blur-sm border border-border rounded-2xl px-8 py-6 shadow-lg max-w-[280px]">
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-7 h-7 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center flex-shrink-0">1</div>
+                <div className="text-left">
+                  <div className="text-xs font-semibold text-primary">Select Site</div>
+                  <div className="text-[10px] text-muted-foreground">Click "Draw Site" → drag on the map</div>
+                </div>
+              </div>
+              <div className="w-px h-4 bg-border mx-auto" />
+              <div className="flex items-center gap-3 opacity-40">
+                <div className="w-7 h-7 rounded-full bg-muted border border-border text-xs font-bold flex items-center justify-center flex-shrink-0 text-muted-foreground">2</div>
+                <div className="text-left">
+                  <div className="text-xs font-semibold text-muted-foreground">Place Massings</div>
+                  <div className="text-[10px] text-muted-foreground">Add building blocks to site</div>
+                </div>
+              </div>
+              <div className="w-px h-4 bg-border mx-auto" />
+              <div className="flex items-center gap-3 opacity-40">
+                <div className="w-7 h-7 rounded-full bg-muted border border-border text-xs font-bold flex items-center justify-center flex-shrink-0 text-muted-foreground">3</div>
+                <div className="text-left">
+                  <div className="text-xs font-semibold text-muted-foreground">NBC Compliance</div>
+                  <div className="text-[10px] text-muted-foreground">View violations & score</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {siteData && massings.length === 0 && (
+        <div className="absolute bottom-14 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+          <div className="bg-primary text-white text-[11px] font-medium px-4 py-2 rounded-full shadow-lg flex items-center gap-2 animate-bounce">
+            <span className="w-5 h-5 bg-white/20 rounded-full text-center text-xs leading-5 font-bold">2</span>
+            Select "Place Massing" and click on the blue site to add blocks
           </div>
         </div>
       )}

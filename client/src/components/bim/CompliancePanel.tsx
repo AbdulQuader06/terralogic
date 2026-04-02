@@ -101,9 +101,35 @@ export default function CompliancePanel({ siteData, metrics, massings, sunHour, 
       </div>
 
       <div className="p-3 space-y-3 max-h-[400px] overflow-y-auto">
-        {!siteData || !metrics || massings.length === 0 ? (
-          <div className="text-[11px] text-muted-foreground text-center py-4">
-            Place massing boxes to begin compliance checking
+        {!siteData ? (
+          <div className="space-y-2 py-3">
+            <div className="flex items-center gap-2 p-2 bg-primary/5 rounded border border-primary/20">
+              <div className="w-5 h-5 rounded-full bg-primary text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">1</div>
+              <div className="text-[11px] text-primary font-medium">Draw your site boundary on the map first</div>
+            </div>
+            <div className="flex items-center gap-2 p-2 bg-muted/40 rounded border border-border opacity-50">
+              <div className="w-5 h-5 rounded-full bg-muted border border-border text-[10px] font-bold flex items-center justify-center flex-shrink-0 text-muted-foreground">2</div>
+              <div className="text-[11px] text-muted-foreground">Place massing blocks on the 3D site</div>
+            </div>
+            <div className="flex items-center gap-2 p-2 bg-muted/40 rounded border border-border opacity-50">
+              <div className="w-5 h-5 rounded-full bg-muted border border-border text-[10px] font-bold flex items-center justify-center flex-shrink-0 text-muted-foreground">3</div>
+              <div className="text-[11px] text-muted-foreground">NBC compliance score appears here</div>
+            </div>
+          </div>
+        ) : massings.length === 0 ? (
+          <div className="space-y-2 py-3">
+            <div className="flex items-center gap-2 p-2 bg-green-50 rounded border border-green-200">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <div className="text-[11px] text-green-700 font-medium">Site selected: {(siteData.area / 10000).toFixed(2)} Ha</div>
+            </div>
+            <div className="flex items-center gap-2 p-2 bg-primary/5 rounded border border-primary/20">
+              <div className="w-5 h-5 rounded-full bg-primary text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">2</div>
+              <div className="text-[11px] text-primary font-medium">Select "Place Massing" and click on the 3D site to add building blocks</div>
+            </div>
+            <div className="flex items-center gap-2 p-2 bg-muted/40 rounded border border-border opacity-50">
+              <div className="w-5 h-5 rounded-full bg-muted border border-border text-[10px] font-bold flex items-center justify-center flex-shrink-0 text-muted-foreground">3</div>
+              <div className="text-[11px] text-muted-foreground">NBC compliance score appears here</div>
+            </div>
           </div>
         ) : loading ? (
           <div className="flex items-center justify-center py-6">
