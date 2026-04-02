@@ -265,6 +265,10 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
       (bounds.north - bounds.south) * mLat
     ) * 1.5);
 
+    // hw/hh computed from bounds always (used for camera distance)
+    const hw = ((bounds.east - bounds.west) * mLon * scale) / 2;
+    const hh = ((bounds.north - bounds.south) * mLat * scale) / 2;
+
     // ── SITE SHAPE: polygon or bounding box ──────────────────────────────
     if (sitePolygon && sitePolygon.length >= 3) {
       // Freestyle polygon → THREE.Shape for accurate geometry
@@ -302,9 +306,7 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
         contextMeshesRef.current.push(dot);
       }
     } else {
-      // Fallback: bounding box rectangle
-      const hw = ((bounds.east - bounds.west) * mLon * scale) / 2;
-      const hh = ((bounds.north - bounds.south) * mLat * scale) / 2;
+      // Fallback: bounding box rectangle (hw/hh already computed above)
       const outlineGeom = new THREE.BufferGeometry().setFromPoints([
         new THREE.Vector3(-hw, 0.2, -hh), new THREE.Vector3(hw, 0.2, -hh),
         new THREE.Vector3(hw, 0.2, hh), new THREE.Vector3(-hw, 0.2, hh),
