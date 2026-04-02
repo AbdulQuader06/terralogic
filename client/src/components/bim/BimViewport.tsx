@@ -101,6 +101,8 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
   const raycaster = useRef(new THREE.Raycaster());
   const mouse2D = useRef(new THREE.Vector2());
   const ghostRef = useRef<THREE.Mesh | null>(null);
+  const toolRef = useRef<"navigate" | "place" | "select">("navigate");
+  const removeMassingRef = useRef<(id: string) => void>(() => {});
 
   const updateCamera = useCallback(() => {
     if (!cameraRef.current) return;
@@ -504,6 +506,34 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
     computeMetrics();
   }, [computeMetrics]);
 
+  // Keep refs in sync so keyboard handler always has latest values
+  useEffect(() => { toolRef.current = tool; }, [tool]);
+  useEffect(() => { removeMassingRef.current = removeMassing; }, [removeMassing]);
+
+  // Global keyboard shortcuts for the 3D viewport
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      // Don't intercept when typing in an input / textarea
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      if (e.key === "Escape") {
+        if (toolRef.current === "place") {
+          setTool("navigate");
+        } else if (selectedRef.current) {
+          selectedRef.current = null;
+          setSelectedId(null);
+        }
+      }
+
+      if ((e.key === "Delete" || e.key === "Backspace") && selectedRef.current) {
+        e.preventDefault();
+        removeMassingRef.current(selectedRef.current);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
   const updateMassingHeight = useCallback((id: string, newFloors: number) => {
     const scene = sceneRef.current;
     if (!scene || !siteData) return;
@@ -624,6 +654,17 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
       raycaster.current.setFromCamera(mouse2D.current, cameraRef.current);
 
       if (tool === "place" && terrainRef.current) {
+        // Check if clicking an existing massing — select it instead of adding another
+        const massMeshes = massingsRef.current.map(m => m.mesh);
+        const massHits = raycaster.current.intersectObjects(massMeshes);
+        if (massHits.length > 0) {
+          const id = massHits[0].object.userData.massId;
+          selectedRef.current = id;
+          setSelectedId(id);
+          setTool("select");
+          return;
+        }
+        // Otherwise place a new massing on terrain
         const hits = raycaster.current.intersectObject(terrainRef.current);
         if (hits.length > 0) addMassing(hits[0].point.x, hits[0].point.z);
         return;
@@ -794,14 +835,23 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
         </div>
       )}
 
+      {tool === "place" && siteData && (
+        <div className="absolute top-12 right-2 z-10 bg-white/90 border border-primary/20 rounded-lg px-2.5 py-1.5 shadow-sm backdrop-blur-sm flex items-center gap-1.5 pointer-events-none" data-testid="bim-place-hint">
+          <kbd className="text-[9px] bg-primary/10 text-primary border border-primary/20 rounded px-1 py-0.5 font-mono">ESC</kbd>
+          <span className="text-[10px] text-muted-foreground">Stop placing</span>
+          <span className="text-muted-foreground/40 text-[10px]">·</span>
+          <span className="text-[10px] text-muted-foreground">Click block to select</span>
+        </div>
+      )}
+
       {selectedId && selectedMassing && (
-        <div className="absolute top-12 left-2 z-10 bg-white/95 border border-border rounded-lg p-3 backdrop-blur-sm shadow-md w-[200px] space-y-2" data-testid="bim-edit-panel">
+        <div className="absolute top-12 left-2 z-10 bg-white/95 border border-border rounded-lg p-3 backdrop-blur-sm shadow-md w-[210px] space-y-2" data-testid="bim-edit-panel">
           <div className="flex items-center justify-between">
             <div className="text-[10px] font-bold text-primary uppercase tracking-wider">Edit Massing</div>
             <button onClick={() => { setSelectedId(null); selectedRef.current = null; }} className="text-muted-foreground hover:text-foreground text-sm">&times;</button>
           </div>
           <div className="text-[10px] text-muted-foreground">
-            Type: {selectedMassing.type} | {selectedMassing.width}m x {selectedMassing.depth}m
+            Type: {selectedMassing.type} | {selectedMassing.width}m × {selectedMassing.depth}m
           </div>
           <div>
             <label className="text-[10px] text-muted-foreground">Height (Floors)</label>
@@ -815,8 +865,13 @@ export default function BimViewport({ siteData, onMetricsUpdate, onMassingChange
             </div>
           </div>
           <button onClick={() => removeMassing(selectedMassing.id)}
-            className="w-full py-1.5 rounded text-[11px] font-medium bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition-colors" data-testid="bim-delete-massing">
-            Remove Massing
+            className="w-full py-1.5 rounded text-[11px] font-medium bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition-colors flex items-center justify-center gap-1.5" data-testid="bim-delete-massing">
+            <span>Remove Massing</span>
+            <kbd className="text-[9px] bg-red-100 border border-red-200 rounded px-1 font-mono">Del</kbd>
+          </button>
+          <button onClick={() => { setSelectedId(null); selectedRef.current = null; setTool("place"); }}
+            className="w-full py-1 rounded text-[11px] text-primary bg-primary/5 hover:bg-primary/10 border border-primary/15 transition-colors" data-testid="bim-resume-place">
+            ＋ Place Another
           </button>
         </div>
       )}
