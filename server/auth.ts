@@ -254,7 +254,7 @@ function ipOf(req: Request): string {
 }
 
 export function registerAuthRoutes(app: Express) {
-  app.use("/api/auth/*", (req, _res, next) => {
+  app.use("/api/auth", (req, _res, next) => {
     const ip = ipOf(req);
     if (!rateLimit("auth", 20, 60_000, ip)) {
       _res.status(429).json({ message: "Too many authentication requests. Try again in 1 minute." });
