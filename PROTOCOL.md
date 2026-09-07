@@ -10,14 +10,15 @@ Terralogic web application, its UI or its server routing.
 
 ## 1. Research question
 
-Does calibrating a deterministic pre-design compliance checker to the local
-Hyderabad regulatory framework (GHMC / TS-bPASS / G.O. Ms. No. 168) change its
-classification accuracy relative to a generic national baseline, and is that
-change statistically significant on paired data?
+How does the Terralogic hybrid deterministic pre-design checker — mathematics
+calibrated to the local Hyderabad regulatory framework (GHMC / TS-bPASS /
+G.O. Ms. No. 168) — perform across compliant, borderline and non-compliant
+sites?
 
-* **H0** — the two checkers have the same probability of a correct verdict
-  (equal discordant-pair proportions under McNemar's test).
-* **H1** — the two checkers differ.
+This phase establishes the deterministic baseline: the verdict the engine
+returns for each of the 60 synthetic sites, and where it diverges from the
+rule reference. Comparison against generic AI answers to the same sites is a
+separate, later phase and is not modelled in these scripts.
 
 ## 2. Scope: pre-design macro constraints only
 
@@ -79,41 +80,36 @@ than silently testing a different rule.
 Ground-truth labels are produced by the rule module evaluated with **zero
 tolerance** (floating-point epsilon only).
 
-## 5. Systems under comparison
+## 5. Engine under test
 
-| | System A | System B |
-|---|---|---|
-| Name | Generic national baseline | Hyderabad-calibrated hybrid deterministic engine |
-| Setbacks | height-driven table only | plot-area bracket, escalated by height, floored by road width |
-| Height | flat 45 m zoning ceiling | road-width ceiling + 1.5 x (road + front setback) clause |
-| FAR | single ceiling (2.0; 2.25 above 5 000 sq.m) | road-width schedule |
-| Coverage | plot-area table | plot-area table (Hyderabad brackets) |
-| Road width | not part of rule state | primary governing variable |
-| Tolerances | none | 1 % FAR, 1 % coverage, 25 mm setbacks |
+The Terralogic hybrid deterministic checker: setbacks from the plot-area
+bracket, escalated by height and floored by the abutting road width; height
+limited by road width and by the `1.5 x (road + front setback)` clause; FAR from
+the road-width schedule; coverage from the plot-area table; footprint bounded by
+the setback envelope actually provided.
 
-System A reproduces the pre-calibration Terralogic rule engine. System B is the
-calibrated engine as it would ship: same rules as the ground-truth oracle but
-with documented construction tolerances, so its residual error measures
-tolerance design rather than rule knowledge.
+It runs with the practical construction tolerances it would ship with — 1 % on
+FAR, 1 % on ground coverage, 25 mm on setbacks — while the reference labels use
+the same rule module at zero tolerance. Any divergence between the two is
+therefore attributable to tolerance design rather than to rule knowledge, and is
+reported site by site.
 
 ## 6. Metrics
 
 Per site: verdict (compliant / non-compliant), violation-code set, and the
-discrepancy decomposition *missed* (in ground truth, absent from prediction) and
-*spurious* (predicted, absent from ground truth).
+discrepancy decomposition *missed* (in the reference, absent from the engine's
+output) and *spurious* (reported by the engine, absent from the reference).
 
 Aggregate:
 
-* accuracy and error rate per system;
-* Type II errors (predicted compliant, truly non-compliant) and Type I errors
-  (predicted non-compliant, truly compliant);
-* 2 x 2 paired contingency matrix — both correct, only A correct, only B
-  correct, both wrong;
-* McNemar's test on the discordant pairs *b* and *c*: chi-square with Yates
-  continuity correction `(|b - c| - 1)^2 / (b + c)` on 1 d.o.f., and the exact
-  two-sided binomial p-value at p = 0.5 (the exact test is authoritative when
-  `b + c < 25`);
-* stratum-wise accuracy breakdown.
+* count of sites reported compliant / non-compliant;
+* verdicts matching the rule reference, overall and per stratum;
+* violations passed as compliant, and compliant sites flagged as violations;
+* frequency of each violation code;
+* an itemised list of every site where the engine and the reference differ.
+
+No cross-system statistical test is computed at this stage. The results CSV is
+structured so the later generic-AI comparison can be joined on `site_id`.
 
 ## 7. Execution
 
@@ -134,11 +130,12 @@ standard-library Python 3.10+ with no third-party dependencies.
    GHMC plots are irregular, may be corner plots with two abutting roads, and
    may carry site-specific conditions (nala buffers, heritage or airport
    restrictions) that are not modelled.
-3. **Shared lineage of oracle and System B.** System B and the ground truth
-   share a rule module and differ only in tolerance; System B's accuracy is
-   therefore an upper bound for a calibrated implementation, and the comparison
-   with System A measures the value of calibration, not of implementation
-   quality generally.
+3. **Shared lineage of reference and engine.** The engine and the reference
+   labels share a rule module and differ only in tolerance, so the reported
+   match rate is an upper bound for a calibrated implementation and measures
+   tolerance design, not rule knowledge. An independent check of the engine's
+   rule knowledge requires an external oracle — the planned generic-AI
+   comparison, or manual adjudication by a GHMC practitioner.
 4. **Stratum balance is by construction.** The 20/20/20 split is a design
    choice, not a prevalence estimate; accuracy figures should not be read as
    expected field performance.
