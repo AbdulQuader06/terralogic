@@ -33,6 +33,9 @@ attached_assets/
 
 # Python methodology (private research; keep local only):
 terralogic_test_sites.csv
+terralogic_test_results.csv
+site_compliance_briefs.md
+validation_report.md
 _generate_validated.ps1
 _audit_csv.ps1
 *.pyc
