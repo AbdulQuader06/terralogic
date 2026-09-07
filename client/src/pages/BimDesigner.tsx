@@ -140,11 +140,11 @@ export default function BimDesigner() {
 
       pdf.setTextColor(44, 82, 130);
       pdf.setFontSize(18);
-      pdf.text("TerraLogic AI — Construction Brief", margin, y + 5);
+      pdf.text("TerraLogic AI — Compliance Brief", margin, y + 5);
       y += 12;
       pdf.setTextColor(100, 116, 139);
       pdf.setFontSize(8);
-      pdf.text(`Generated: ${new Date().toLocaleString()} | BIM-GIS Hybrid Designer`, margin, y);
+      pdf.text(`Generated: ${new Date().toLocaleString()} | Compliance Checking`, margin, y);
       y += 10;
 
       const viewportCanvas = document.querySelector("[data-testid='bim-viewport'] canvas") as HTMLCanvasElement;
@@ -212,21 +212,6 @@ export default function BimDesigner() {
           y += 4;
         }
         y += 3;
-
-        const estCost = metrics.totalBuiltUp * 2500 * 0.0929;
-        const estRevenue = estCost * 1.35;
-        const roi = estCost > 0 ? ((estRevenue - estCost) / estCost * 100) : 0;
-        pdf.setDrawColor(44, 82, 130);
-        pdf.line(margin, y, pageW - margin, y);
-        y += 5;
-        pdf.setTextColor(44, 82, 130);
-        pdf.setFontSize(11);
-        pdf.text("Investment Estimate", margin, y);
-        y += 5;
-        pdf.setTextColor(31, 41, 51);
-        pdf.setFontSize(8);
-        pdf.text(`Construction Cost: Rs ${(estCost / 10000000).toFixed(1)} Cr | Est. Revenue: Rs ${(estRevenue / 10000000).toFixed(1)} Cr | ROI: ${roi.toFixed(1)}%`, margin, y);
-        y += 8;
       }
 
       const radarEl = document.querySelector("[data-testid='radar-chart']") as HTMLElement;
@@ -262,9 +247,9 @@ export default function BimDesigner() {
 
       pdf.setTextColor(148, 163, 184);
       pdf.setFontSize(7);
-      pdf.text("TerraLogic AI — BIM-GIS Hybrid Designer | For preliminary assessment only", margin, 290);
+      pdf.text("TerraLogic AI — Compliance Checking | For preliminary assessment only", margin, 290);
 
-      pdf.save(`TerraLogic_BIM_Brief_${new Date().toISOString().slice(0, 10)}.pdf`);
+      pdf.save(`TerraLogic_Compliance_Brief_${new Date().toISOString().slice(0, 10)}.pdf`);
     } catch (e) {
       console.error("PDF export error:", e);
     } finally {
@@ -285,7 +270,7 @@ export default function BimDesigner() {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary">
               <path d="m12 2 10 6.5v7L12 22 2 15.5v-7L12 2z"/><path d="M12 22V15.5"/><path d="m22 8.5-10 7-10-7"/>
             </svg>
-            <span className="text-xs font-bold text-primary uppercase tracking-wider">BIM-GIS Hybrid Designer</span>
+            <span className="text-xs font-bold text-primary uppercase tracking-wider">Compliance Checking</span>
           </div>
         </div>
         <div className="flex items-center gap-3">

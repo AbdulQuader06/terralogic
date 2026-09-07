@@ -42,11 +42,6 @@ export default function MetricsDashboard({ metrics, siteData, complianceScore, d
     { axis: "Density", value: Math.round(densityScore), fullMark: 100 },
   ];
 
-  const estCostPerSqft = 2500;
-  const estCost = metrics.totalBuiltUp * estCostPerSqft * 0.0929;
-  const estRevenue = estCost * 1.35;
-  const roi = estCost > 0 ? ((estRevenue - estCost) / estCost * 100) : 0;
-
   const farAllowed = limits.far;
   const maxHeightAllowed = limits.maxHeight;
   const coverageAllowed = limits.groundCoverage;
@@ -85,18 +80,6 @@ export default function MetricsDashboard({ metrics, siteData, complianceScore, d
           <MetricCard label="Avg Height" value={`${metrics.avgHeight}m`} />
         </div>
       </div>
-
-      <div className="bg-white border border-border rounded-lg overflow-hidden shadow-sm">
-        <div className="px-3 py-2 border-b border-border">
-          <h3 className="text-xs font-bold text-primary uppercase tracking-wider">Investment Estimate</h3>
-        </div>
-        <div className="p-2 space-y-1.5">
-          <InvestRow label="Construction Cost" value={`Rs.${(estCost / 10000000).toFixed(1)} Cr`} color="text-orange-600" />
-          <InvestRow label="Est. Revenue" value={`Rs.${(estRevenue / 10000000).toFixed(1)} Cr`} color="text-green-600" />
-          <InvestRow label="Est. ROI" value={`${roi.toFixed(1)}%`} color={roi > 20 ? "text-green-600" : "text-amber-600"} />
-          <InvestRow label="Cost/sqm (built-up)" value={`Rs.${Math.round(estCostPerSqft * 10.764).toLocaleString()}`} color="text-foreground" />
-        </div>
-      </div>
     </div>
   );
 }
@@ -109,15 +92,6 @@ function MetricCard({ label, value, limit, unit, warn }: { label: string; value:
         {unit && <span className="text-[10px] text-muted-foreground ml-0.5">{unit}</span>}
       </div>
       <div className="text-[9px] text-muted-foreground">{label}</div>
-    </div>
-  );
-}
-
-function InvestRow({ label, value, color }: { label: string; value: string; color: string }) {
-  return (
-    <div className="flex items-center justify-between text-[11px]">
-      <span className="text-muted-foreground">{label}</span>
-      <span className={`font-medium ${color}`}>{value}</span>
     </div>
   );
 }

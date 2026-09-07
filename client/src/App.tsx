@@ -25,7 +25,7 @@ function Router() {
       </Route>
       <Route path="/bim">
         <ProtectedRoute roles={["admin", "user"]}>
-          <Suspense fallback={<div className="h-screen w-screen bg-[#0d1117] flex items-center justify-center text-cyan-400 text-sm">Loading BIM Designer...</div>}>
+          <Suspense fallback={<div className="h-screen w-screen bg-[#0d1117] flex items-center justify-center text-cyan-400 text-sm">Loading Compliance Checking...</div>}>
             <BimDesigner />
           </Suspense>
         </ProtectedRoute>

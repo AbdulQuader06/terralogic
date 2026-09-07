@@ -90,6 +90,9 @@ export default function SiteSelector({ onSiteSelected, initialCenter }: SiteSele
   const [amenities, setAmenities] = useState<AmenityMix | null>(null);
   const [vertexCount, setVertexCount] = useState(0);
   const [pendingContextBounds, setPendingContextBounds] = useState<{north:number;south:number;east:number;west:number} | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   const center = initialCenter || { lat: 17.4767, lon: 78.4969 };
 
@@ -437,10 +440,70 @@ export default function SiteSelector({ onSiteSelected, initialCenter }: SiteSele
     setDrawTool(tool);
   };
 
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    setIsSearching(true);
+    try {
+      const response = await fetch(`/api/geocode?q=${encodeURIComponent(searchQuery)}`);
+      const data = await response.json();
+      setSearchResults(data || []);
+    } catch {
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const selectSearchResult = (result: any) => {
+    const { x, y } = result.location;
+    const map = leafletMap.current;
+    if (map) {
+      map.setView([y, x], 16);
+      setSearchResults([]);
+      setSearchQuery(result.address);
+    }
+  };
+
   return (
     <div className="flex flex-col" data-testid="site-selector">
       <div className="px-3 py-2 border-b border-border">
         <h3 className="text-xs font-bold text-primary uppercase tracking-wider">Step 1 — Select Site</h3>
+
+        <div className="mt-2">
+          <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Search Location</label>
+          <div className="flex gap-1.5">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                placeholder="City, address, or coordinates..."
+                className="w-full bg-input border border-border rounded-md px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary/50"
+              />
+            </div>
+            <button
+              onClick={handleSearch}
+              disabled={!searchQuery.trim() || isSearching}
+              className="px-2 py-1.5 bg-primary hover:bg-primary/90 text-white rounded-md text-xs disabled:opacity-50"
+            >
+              {isSearching ? "..." : "Search"}
+            </button>
+          </div>
+          {searchResults.length > 0 && (
+            <div className="mt-1 bg-card border border-border rounded-md shadow-lg overflow-hidden max-h-[120px] overflow-y-auto">
+              {searchResults.map((r, i) => (
+                <div
+                  key={i}
+                  onClick={() => selectSearchResult(r)}
+                  className="px-2 py-1.5 text-xs text-foreground hover:bg-muted/60 cursor-pointer border-b border-border/50 last:border-0"
+                >
+                  {r.address}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="flex gap-1.5 mt-2">
           <button
