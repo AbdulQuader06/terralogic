@@ -6,8 +6,10 @@ services:
     buildCommand: npm install && npm run build
     startCommand: npm run start
     healthCheckPath: /api/health
-    autoDeploy: yes
+    autoDeploy: no  # Disable auto-deploy temporarily to prevent timeout loops
     branch: main
+    # Add deployment timeout configuration
+    numInstances: 1
     # ---------------------------------------------------------------
     # PERSISTENT DISK — keeps user accounts, sessions, cached site
     # analyses, and hashed passwords across Render restarts / deploys.

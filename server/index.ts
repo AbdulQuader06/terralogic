@@ -8,6 +8,15 @@ import { storage } from "./storage";
 const app = express();
 const httpServer = createServer(app);
 
+// Health check FIRST - before any middleware or slow initialization
+app.get("/api/health", (_req, res) => {
+  res.status(200).json({
+    status: "ok",
+    uptimeSec: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+  });
+});
+
 declare module "http" {
   interface IncomingMessage {
     rawBody: unknown;
@@ -150,15 +159,6 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Health check first (always available)
-  app.get("/api/health", (_req, res) => {
-    res.status(200).json({
-      status: "ok",
-      uptimeSec: Math.floor(process.uptime()),
-      timestamp: new Date().toISOString(),
-    });
-  });
-
   // Auth routes BEFORE registerRoutes (so account creation/login never blocked by API auth)
   registerAuthRoutes(app);
 
