@@ -31,9 +31,9 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
 
 function AppWithLoader() {
   useEffect(() => {
-    if (typeof window !== "undefined" && (window as any).__removeLoader) {
-      (window as any).__removeLoader();
-    }
+    // Remove splash overlay from bundled JS — production CSP (script-src 'self')
+    // blocks the inline __removeLoader script in index.html.
+    document.getElementById("app-loader")?.remove();
   }, []);
   return <App />;
 }
