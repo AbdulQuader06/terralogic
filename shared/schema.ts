@@ -86,3 +86,14 @@ export interface SiteAnalysis {
     azimuthRange: { min: number; max: number };
   };
 }
+
+export type Role = "admin" | "user";
+
+export interface PublicUser {
+  id: string;
+  email: string;
+  role: Role;
+  createdAt: number;
+  lastLoginAt: number | null;
+}
+

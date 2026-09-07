@@ -7,14 +7,36 @@ Supported models: gemini-2.5-flash (fast), gemini-2.5-pro (advanced reasoning)
 Usage: Include httpOptions with baseUrl and empty apiVersion when using AI Integrations (required)
 */
 
-// This is using Replit's AI Integrations service, which provides Gemini-compatible API access without requiring your own Gemini API key.
-const ai = new GoogleGenAI({
-  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
-  httpOptions: {
-    apiVersion: "",
-    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
-  },
-});
+const DEFAULT_GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
+
+function envOr(first: string, second: string, fallback = ""): string {
+  const a = process.env[first];
+  const b = process.env[second];
+  if (a && a.trim().length > 0) return a.trim();
+  if (b && b.trim().length > 0) return b.trim();
+  return fallback;
+}
+
+const CHAT_GEMINI_KEY = envOr("AI_INTEGRATIONS_GEMINI_API_KEY", "GEMINI_API_KEY");
+const CHAT_GEMINI_BASE = envOr("AI_INTEGRATIONS_GEMINI_BASE_URL", "GEMINI_BASE_URL", DEFAULT_GEMINI_BASE_URL);
+const usingReplitProxy = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL && process.env.AI_INTEGRATIONS_GEMINI_BASE_URL !== DEFAULT_GEMINI_BASE_URL;
+
+let ai: GoogleGenAI | null = null;
+if (CHAT_GEMINI_KEY) {
+  try {
+    const opts: any = { apiKey: CHAT_GEMINI_KEY };
+    if (usingReplitProxy) {
+      opts.httpOptions = { apiVersion: "", baseUrl: CHAT_GEMINI_BASE };
+    } else if (CHAT_GEMINI_BASE && CHAT_GEMINI_BASE !== DEFAULT_GEMINI_BASE_URL) {
+      opts.httpOptions = { baseUrl: CHAT_GEMINI_BASE };
+    } else if (CHAT_GEMINI_BASE) {
+      opts.httpOptions = { baseUrl: CHAT_GEMINI_BASE };
+    }
+    ai = new GoogleGenAI(opts);
+  } catch (e) {
+    console.warn("[chat/routes] Gemini client init failed:", (e as Error).message);
+  }
+}
 
 export function registerChatRoutes(app: Express): void {
   // Get all conversations
@@ -90,6 +112,15 @@ export function registerChatRoutes(app: Express): void {
       res.setHeader("Connection", "keep-alive");
 
       // Stream response from Gemini
+      if (!ai) {
+        if (res.headersSent) {
+          res.write(`data: ${JSON.stringify({ error: "Gemini AI not configured" })}\n\n`);
+          res.end();
+        } else {
+          res.status(503).json({ error: "Gemini AI Integration not configured — check API key settings." });
+        }
+        return;
+      }
       const stream = await ai.models.generateContentStream({
         model: "gemini-2.5-flash",
         contents: chatMessages,

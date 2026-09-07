@@ -3,24 +3,82 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { chatRequestSchema, analyzeRequestSchema } from "@shared/schema";
 import type { SiteAnalysis } from "@shared/schema";
-import { runNbcRuleEngine } from "./nbc_rules";
+import { runNbcRuleEngine, computeMaxEnvelope } from "./nbc_rules";
+import type { MaxEnvelope } from "./nbc_rules";
 import { GoogleGenAI, Type } from "@google/genai";
 import OpenAI from "openai";
 import multer from "multer";
 
-const geminiAI = new GoogleGenAI({
-  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
-  httpOptions: { apiVersion: "", baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL },
-});
+const DEFAULT_GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
+const DEFAULT_OPENAI_BASE_URL = "https://api.openai.com/v1";
 
-const openaiClient = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-});
+function envOr(first: string, second: string, fallback = ""): string {
+  const a = process.env[first];
+  const b = process.env[second];
+  if (a && a.trim().length > 0) return a.trim();
+  if (b && b.trim().length > 0) return b.trim();
+  return fallback;
+}
 
-const GEMINI_AVAILABLE = !!(process.env.AI_INTEGRATIONS_GEMINI_API_KEY && process.env.AI_INTEGRATIONS_GEMINI_BASE_URL);
-const OPENAI_AVAILABLE = !!(process.env.AI_INTEGRATIONS_OPENAI_API_KEY && process.env.AI_INTEGRATIONS_OPENAI_BASE_URL);
-const ARCGIS_API_KEY = process.env.ARCGIS_API_KEY || "";
+const GEMINI_API_KEY = envOr("AI_INTEGRATIONS_GEMINI_API_KEY", "GEMINI_API_KEY");
+const GEMINI_BASE_URL = envOr("AI_INTEGRATIONS_GEMINI_BASE_URL", "GEMINI_BASE_URL", DEFAULT_GEMINI_BASE_URL);
+const OPENAI_API_KEY = envOr("AI_INTEGRATIONS_OPENAI_API_KEY", "OPENAI_API_KEY");
+const OPENAI_BASE_URL = envOr("AI_INTEGRATIONS_OPENAI_BASE_URL", "OPENAI_BASE_URL", DEFAULT_OPENAI_BASE_URL);
+const ARCGIS_API_KEY = envOr("ARCGIS_API_KEY", "ESRI_API_KEY");
+
+let _geminiAI: GoogleGenAI | null = null;
+let _openaiClient: OpenAI | null = null;
+
+function getGeminiAI(): GoogleGenAI | null {
+  if (_geminiAI) return _geminiAI;
+  if (!GEMINI_API_KEY) return null;
+  try {
+    _geminiAI = new GoogleGenAI({
+      apiKey: GEMINI_API_KEY,
+      httpOptions: {
+        baseUrl: GEMINI_BASE_URL,
+      },
+    });
+    return _geminiAI;
+  } catch (e) {
+    console.warn("[ai] Gemini client init failed:", (e as Error).message);
+    _geminiAI = null;
+    return null;
+  }
+}
+
+function getOpenAI(): OpenAI | null {
+  if (_openaiClient) return _openaiClient;
+  if (!OPENAI_API_KEY) return null;
+  try {
+    _openaiClient = new OpenAI({
+      apiKey: OPENAI_API_KEY,
+      baseURL: OPENAI_BASE_URL,
+    });
+    return _openaiClient;
+  } catch (e) {
+    console.warn("[ai] OpenAI client init failed:", (e as Error).message);
+    _openaiClient = null;
+    return null;
+  }
+}
+
+function geminiAvailable(): boolean {
+  return !!GEMINI_API_KEY && !!getGeminiAI();
+}
+function openaiAvailable(): boolean {
+  return !!OPENAI_API_KEY && !!getOpenAI();
+}
+
+if (process.env.NODE_ENV !== "test") {
+  console.log("[env] Config summary:");
+  console.log(`  Gemini key  : ${GEMINI_API_KEY ? "SET (" + GEMINI_API_KEY.substring(0, 6) + "..." + GEMINI_API_KEY.substring(GEMINI_API_KEY.length - 4) + ")" : "NOT SET"}`);
+  console.log(`  Gemini base : ${GEMINI_BASE_URL}`);
+  console.log(`  OpenAI key  : ${OPENAI_API_KEY ? "SET" : "NOT SET"}`);
+  console.log(`  ArcGIS key  : ${ARCGIS_API_KEY ? "SET (" + ARCGIS_API_KEY.substring(0, 6) + "..." + ARCGIS_API_KEY.substring(Math.max(0, ARCGIS_API_KEY.length - 4)) + ")" : "NOT SET"}`);
+  console.log(`  Gemini avail: ${geminiAvailable()}`);
+  console.log(`  OpenAI avail: ${openaiAvailable()}`);
+}
 const MAX_CHAT_HISTORY = 20;
 const OVERPASS_ENDPOINTS = [
   "https://overpass-api.de/api/interpreter",
@@ -88,7 +146,8 @@ async function fetchSunTimes(lat: number, lon: number): Promise<{ sunrise: strin
 }
 
 async function callGemini(systemPrompt: string, message: string, history?: { role: string; content: string }[]): Promise<string> {
-  if (!GEMINI_AVAILABLE) throw new Error("Gemini AI Integration not configured");
+  const ai = getGeminiAI();
+  if (!ai) throw new Error("Gemini AI Integration not configured");
   const chatHistory = (history || []).map(msg => ({
     role: msg.role === "user" ? "user" as const : "model" as const,
     parts: [{ text: msg.content }],
@@ -99,7 +158,7 @@ async function callGemini(systemPrompt: string, message: string, history?: { rol
     ...chatHistory,
     { role: "user" as const, parts: [{ text: message }] },
   ];
-  const result = await geminiAI.models.generateContent({
+  const result = await ai.models.generateContent({
     model: "gemini-2.5-flash",
     contents,
     config: { maxOutputTokens: 2048 },
@@ -108,13 +167,14 @@ async function callGemini(systemPrompt: string, message: string, history?: { rol
 }
 
 async function callOpenAI(systemPrompt: string, message: string, history?: { role: string; content: string }[]): Promise<string> {
-  if (!OPENAI_AVAILABLE) throw new Error("OpenAI AI Integration not configured");
+  const ai = getOpenAI();
+  if (!ai) throw new Error("OpenAI AI Integration not configured");
   const messages: any[] = [
     { role: "system", content: systemPrompt },
     ...(history || []).map(m => ({ role: m.role, content: m.content })),
     { role: "user", content: message },
   ];
-  const result = await openaiClient.chat.completions.create({
+  const result = await ai.chat.completions.create({
     model: "gpt-4o-mini",
     messages,
     max_tokens: 1024,
@@ -714,7 +774,7 @@ async function generateSiteAnalysis(lat: number, lon: number, name: string): Pro
 
   let aiNarrative = "";
   try {
-    if (GEMINI_AVAILABLE) {
+    if (geminiAvailable()) {
       const dataSummary = `Location: ${name} (${lat.toFixed(4)}°N, ${lon.toFixed(4)}°E). Elevation: ${centerElev.toFixed(1)}m ASL. Elevation profile range: ${Math.min(...elevArr).toFixed(1)}m to ${Math.max(...elevArr).toFixed(1)}m across 2.2km transect. Soil: ${soilClassName} (${soilDrainageLabel}, bearing capacity ${avgBearing} kPa, permeability ${avgPermeability}). Flood risk: ${floodRiskLabel} (${floodOsmCount} flood-prone OSM features, ${waterBodyCount} water bodies, ${hasWetlands ? "wetlands present" : "no wetlands"}). FEMA flood zone designation: ${femaZoneLabel}. Esri Sentinel-2 land cover: ${esriLandcover}. Sun: ${sunExposure}% exposure (sunrise ${sunPathData.sunrise}, sunset ${sunPathData.sunset}, ${sunPathData.dayLength}h daylight, max solar altitude ${sunPathData.maxAltitude}°). Wind: ${windExposure}% exposure. Infrastructure within 3km: ${schoolCount} schools, ${hospitalCount} hospitals, ${transitCount} transit stops, ${infraCount} govt facilities, ${parkCount} parks. Dominant zoning: ${zoningLabel} (${landuseCount} zones total). Urban density index: ${urbanDensity}%. Overall suitability: ${overallScore}/100 (${rating}).`;
       aiNarrative = await callGemini(
         `You are a senior professional combining Licensed Urban Planner, Real Estate Investment Analyst, and Registered Architect expertise. Write a professional site assessment for "${name}" in exactly 4 paragraphs:
@@ -1094,10 +1154,10 @@ export async function registerRoutes(
 
   app.get("/api/chat/models", (_req, res) => {
     const models = [
-      { id: "gemini", name: "Gemini", description: "Google Gemini 2.5 Flash — general GIS analysis", available: GEMINI_AVAILABLE, icon: "sparkles" },
+      { id: "gemini", name: "Gemini", description: "Google Gemini 2.5 Flash — general GIS analysis", available: geminiAvailable(), icon: "sparkles" },
       { id: "mapgpt", name: "MapGPT", description: "Geospatial specialist — map data & spatial analysis", available: true, icon: "map" },
       { id: "compass", name: "CompassAI", description: "Terrain & navigation specialist — elevation & routing", available: true, icon: "compass" },
-      { id: "chatgpt", name: "ChatGPT", description: "OpenAI GPT-4o mini — general purpose analysis", available: OPENAI_AVAILABLE, icon: "bot" },
+      { id: "chatgpt", name: "ChatGPT", description: "OpenAI GPT-4o mini — general purpose analysis", available: openaiAvailable(), icon: "bot" },
       { id: "auto", name: "Auto", description: "Best available model with automatic fallback", available: true, icon: "zap" },
     ];
     res.json({ models });
@@ -1441,7 +1501,9 @@ export async function registerRoutes(
       case "search_web": {
         const query = args.query || "";
         try {
-          const searchResult = await geminiAI.models.generateContent({
+          const ai = getGeminiAI();
+          if (!ai) throw new Error("Gemini AI Integration not configured");
+          const searchResult = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: [{ role: "user", parts: [{ text: `Search for open GIS data sources for: "${query}". Return a structured list of the best available open data sources with:
 - Source name
@@ -1558,7 +1620,9 @@ Focus on actually downloadable datasets, not just documentation pages. Prioritiz
       case "query_knowledge_base": {
         const topic = args.topic || "";
         try {
-          const kbResult = await geminiAI.models.generateContent({
+          const ai = getGeminiAI();
+          if (!ai) throw new Error("Gemini AI Integration not configured");
+          const kbResult = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: [{ role: "user", parts: [{ text: `You are an advanced GIS Machine Learning Knowledge Base. Provide a highly detailed, technical response about the topic: "${topic}".
 Include:
@@ -1631,7 +1695,7 @@ Include:
     if (!message || typeof message !== "string") {
       return res.status(400).json({ error: "message is required" });
     }
-    if (!GEMINI_AVAILABLE) {
+    if (!geminiAvailable()) {
       return res.status(503).json({ error: "Gemini AI Integration not available" });
     }
 
@@ -1903,7 +1967,9 @@ Be concise but thorough. Use markdown for formatting. When you perform map actio
         { role: "user" as const, parts: [{ text: message }] },
       ];
 
-      const result = await geminiAI.models.generateContent({
+      const ai = getGeminiAI();
+      if (!ai) throw new Error("Gemini AI Integration not configured");
+      const result = await ai.models.generateContent({
         model: "gemini-2.5-flash",
         contents,
         config: {
@@ -1969,7 +2035,7 @@ Be concise but thorough. Use markdown for formatting. When you perform map actio
           });
         }
 
-        const followUp = await geminiAI.models.generateContent({
+        const followUp = await (getGeminiAI() as any).models.generateContent({
           model: "gemini-2.5-flash",
           contents: [
             ...contents,
@@ -3067,16 +3133,45 @@ Be concise but thorough. Use markdown for formatting. When you perform map actio
         return res.status(400).json({ error: "Valid metrics object required (far, groundCoverage, openSpace, maxHeight)" });
       }
 
+      // ── PRE-DESIGN: compute dominant type first, then max envelope + limits ──
+      const typeCounts: Record<string, number> = {};
+      for (const m of massings) typeCounts[m.type] = (typeCounts[m.type] || 0) + (m.builtUp || 0);
+      const dominantTypeRaw = Object.entries(typeCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "residential";
+      const dominantType: MaxEnvelope["useType"] = (["residential","commercial","office","hotel","industrial","mixed_use"].includes(dominantTypeRaw) ? dominantTypeRaw : "mixed_use") as any;
+
+      const maxEnvelope = computeMaxEnvelope({
+        siteArea: siteArea || 0,
+        siteDimensions,
+        useType: dominantType,
+      });
+      const dynamicLimits = {
+        far: maxEnvelope.farLimit,
+        groundCoverage: maxEnvelope.groundCoverageLimit,
+        openSpace: maxEnvelope.openSpaceMinimum,
+        maxHeight: maxEnvelope.maxHeightLimit,
+        setbacks: maxEnvelope.setbacks,
+      };
+
       // ── STEP 1: Deterministic NBC 2016 Rule Engine (always runs, always accurate) ──
       const ruleResult = runNbcRuleEngine({ siteArea: siteArea || 0, siteDimensions, massings, metrics });
 
       // ── STEP 2: Gemini adds RECOMMENDATIONS only (does NOT change violations/score) ──
       let aiRecommendations: string[] = [];
       try {
-        const aiPrompt = `You are CARTO AI, an expert Indian urban planner. The deterministic NBC 2016 rule engine has already calculated exact violations. Your ONLY job is to provide 3-5 concise, actionable RECOMMENDATIONS to improve this design.
+        const aiPrompt = `You are CARTO AI, an expert Indian urban planner for HYBRID DETERMINISTIC PRE-DESIGN COMPLIANCE. The deterministic NBC 2016 rule engine has already calculated exact violations. Your ONLY job is to provide 3-5 concise, actionable RECOMMENDATIONS to improve this pre-design massing.
 
-NBC RULE ENGINE RESULTS (authoritative — do NOT contradict):
+CRITICAL RULES:
+- This is a PRE-DESIGN study: DO NOT mention interior elements (staircases, fire exits, room layouts, sprinklers, lifts, ducts). Focus only on macro site constraints (FAR, ground coverage, setbacks, open space, height, inter-building distance).
+- DO NOT contradict or override the rule engine. Its violations/score are final.
+
+NBC RULE ENGINE RESULTS (authoritative):
 ${ruleResult.rulesSummary}
+
+Max Compliant Envelope (legal upper bound):
+- Max Footprint: ${maxEnvelope.maxFootprintArea.toLocaleString()} sqm (${dynamicLimits.groundCoverage}%)
+- Max Built-Up: ${maxEnvelope.maxBuiltUpArea.toLocaleString()} sqm (FAR ${dynamicLimits.far})
+- Max Height: ${dynamicLimits.maxHeight}m | Setbacks: Front ${dynamicLimits.setbacks.front}m, Rear/Side ${dynamicLimits.setbacks.rearSide}m
+- Min Open Space: ${maxEnvelope.minOpenSpaceArea.toLocaleString()} sqm (30%)
 
 Violations found: ${ruleResult.violations.map(v => v.code).join(", ") || "None"}
 Score: ${ruleResult.score}/100
@@ -3084,10 +3179,10 @@ Score: ${ruleResult.score}/100
 Site context:
 - Location: ${location ? `${location.lat.toFixed(4)}, ${location.lon.toFixed(4)}` : "Hyderabad, India"}
 - Site Area: ${siteArea ? `${Math.round(siteArea).toLocaleString()} sqm` : "Unknown"}
-- Massings: ${massings.length} blocks, dominant type: ${massings[0]?.type || "mixed"}
+- Massings: ${massings.length} blocks, dominant type: ${dominantType}
 
 Respond with a JSON array of strings ONLY, like: ["recommendation 1", "recommendation 2", ...]
-Each recommendation must be specific, actionable, and reference NBC 2016 or GHMC DCR where relevant.`;
+Each recommendation must be specific, actionable, macro pre-design only, and reference NBC 2016 or GHMC DCR where relevant.`;
 
         const aiResponse = await callGemini(aiPrompt, "Provide design recommendations.");
         const arrMatch = aiResponse.match(/\[[\s\S]*\]/);
@@ -3099,8 +3194,9 @@ Each recommendation must be specific, actionable, and reference NBC 2016 or GHMC
         }
       } catch {
         aiRecommendations = [
-          "Consider reducing ground coverage to improve natural ventilation between buildings.",
+          `Stay below FAR ${dynamicLimits.far} and Coverage ${dynamicLimits.groundCoverage}% for this ${dominantType} site.`,
           "Provide basement parking to meet ECS requirements without consuming FAR.",
+          `Reserve setbacks: front ≥ ${dynamicLimits.setbacks.front}m, rear/side ≥ ${dynamicLimits.setbacks.rearSide}m for the target height.`,
           "Install rainwater harvesting system as mandated by NBC 2016 Part 9.",
         ];
       }
@@ -3112,10 +3208,51 @@ Each recommendation must be specific, actionable, and reference NBC 2016 or GHMC
         recommendations: aiRecommendations,
         solarExposure: ruleResult.solarExposure,
         zoningSummary: ruleResult.zoningSummary,
+        rulesSummary: ruleResult.rulesSummary,
+        dominantType,
+        dynamicLimits,
+        maxEnvelope,
       });
     } catch (e: any) {
       console.error("BIM compliance error:", e.message);
       res.status(500).json({ error: "Compliance check failed" });
+    }
+  });
+
+  // ── Clean API for external scripts (Phase 4's case study batch runner) ──────
+  // GET  /api/bim/envelope?siteArea=2000&useType=residential&width=60&depth=40&heightLimit=45
+  // POST /api/bim/envelope  { siteArea, useType?, siteDimensions?, customHeightLimit? }
+  app.get("/api/bim/envelope", async (req, res) => {
+    try {
+      const siteArea = Math.max(0, Number(req.query.siteArea) || 0);
+      const useTypeRaw = (req.query.useType as string) || "residential";
+      const useType = (["residential","commercial","office","hotel","industrial","mixed_use"].includes(useTypeRaw) ? useTypeRaw : "residential") as MaxEnvelope["useType"];
+      const width = Number(req.query.width) || undefined;
+      const depth = Number(req.query.depth) || undefined;
+      const customHeightLimit = req.query.heightLimit !== undefined ? Number(req.query.heightLimit) : undefined;
+      const siteDimensions = (width && depth && width > 0 && depth > 0) ? { width, depth } : undefined;
+
+      if (siteArea <= 0) return res.status(400).json({ error: "siteArea (sqm) is required and must be > 0" });
+
+      const envelope = computeMaxEnvelope({ siteArea, useType, siteDimensions, customHeightLimit });
+      res.json({ ok: true, input: { siteArea, useType, siteDimensions, customHeightLimit }, envelope });
+    } catch (e: any) {
+      console.error("Envelope API (GET) error:", e.message);
+      res.status(500).json({ error: "Failed to compute max compliant envelope" });
+    }
+  });
+
+  app.post("/api/bim/envelope", async (req, res) => {
+    try {
+      const { siteArea, useType, siteDimensions, customHeightLimit } = req.body || {};
+      const area = Math.max(0, Number(siteArea) || 0);
+      if (area <= 0) return res.status(400).json({ error: "siteArea (sqm) is required and must be > 0" });
+      const ut = (["residential","commercial","office","hotel","industrial","mixed_use"].includes(String(useType || "")) ? String(useType) : "residential") as MaxEnvelope["useType"];
+      const envelope = computeMaxEnvelope({ siteArea: area, useType: ut, siteDimensions, customHeightLimit });
+      res.json({ ok: true, input: { siteArea: area, useType: ut, siteDimensions, customHeightLimit }, envelope });
+    } catch (e: any) {
+      console.error("Envelope API (POST) error:", e.message);
+      res.status(500).json({ error: "Failed to compute max compliant envelope" });
     }
   });
 

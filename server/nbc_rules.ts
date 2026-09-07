@@ -209,25 +209,16 @@ export function runNbcRuleEngine(input: ComplianceInput): NbcRuleResult {
     });
   }
 
-  // ─── 5. FIRE SAFETY & HIGH-RISE CLASSIFICATION ─────────────────────────────
-  // NBC 2016 Part 4 §3.6 / §3.7
+  // ─── 5. HEIGHT CLASSIFICATION (SITE-LEVEL, PRE-DESIGN) ─────────────────────
+  // This is macro zoning: 45m typical ceiling, 24m high-rise threshold.
+  // NOTE: Interior elements (sprinklers, staircases, fire lifts, fire exits)
+  //       are BANNED per pre-design constraint. Only macro height zoning reported.
   if (metrics.maxHeight > 24) {
     violations.push({
-      code: "NBC 2016 Pt.4 §3.7 — High-Rise Building",
-      description: `Height ${metrics.maxHeight.toFixed(1)}m classifies this as a HIGH-RISE (>24m). Mandatory requirements: ` +
-        `(i) Automatic sprinkler system throughout; (ii) Two pressurised fire staircases (≥1.5m clear); ` +
-        `(iii) Refuge floors at every 15 floors; (iv) Fire lift (capacity ≥ 545 kg); ` +
-        `(v) Smoke detection and public address system; (vi) Fire command centre.`,
-      severity: "critical",
-    });
-    deductions += 10;
-  } else if (metrics.maxHeight > 15) {
-    violations.push({
-      code: "NBC 2016 Pt.4 §3.6 — Fire Escape Mandatory",
-      description: `Height ${metrics.maxHeight.toFixed(1)}m exceeds 15m threshold. Mandatory: ` +
-        `(i) Dedicated fire escape staircase (≥1.2m clear width); ` +
-        `(ii) Fire detection and alarm system; (iii) Wet riser or down-comer system; ` +
-        `(iv) Emergency lighting and exit signs.`,
+      code: "NBC 2016 Pt.4 §3.7 — High-Rise Threshold",
+      description: `Height ${metrics.maxHeight.toFixed(1)}m classifies this as HIGH-RISE (>24m). ` +
+        `At pre-design stage: confirm AAI NOC (airport proximity), structural wind analysis per IS 875 Part 3, ` +
+        `and consult GHMC high-rise committee. Interior fire/life-safety details deferred to detail design.`,
       severity: "warning",
     });
     deductions += 5;
@@ -235,58 +226,56 @@ export function runNbcRuleEngine(input: ComplianceInput): NbcRuleResult {
 
   if (metrics.maxHeight > 45) {
     violations.push({
-      code: "NBC 2016 — Extreme Height Advisory",
-      description: `Height ${metrics.maxHeight.toFixed(1)}m exceeds the typical 45m zoning ceiling. ` +
-        `GHMC special approval, AAI NOC (airport proximity), structural wind analysis per IS 875 Part 3, ` +
-        `and independent peer review are all required.`,
+      code: "NBC 2016 — Extreme Height Advisory (Zoning Ceiling)",
+      description: `Height ${metrics.maxHeight.toFixed(1)}m exceeds the typical 45m GHMC zoning ceiling. ` +
+        `Pre-design actions required: (i) GHMC special approval, (ii) AAI NOC, (iii) peer-reviewed structural/wind analysis. ` +
+        `Interior stair/fire/lift details are deferred to post-design.`,
       severity: "critical",
     });
     deductions += 15;
   }
 
-  // ─── 6. LIFT PROVISION ─────────────────────────────────────────────────────
-  // NBC 2016 Part 3 §3.15 + Part 8 Sec.5: Mandatory if height > 15m OR floors > 4
+  // ─── 6. LIFT PROVISION (MACRO MASSING INDICATOR ONLY) ──────────────────────
+  // Pre-design: flag it only as a massing-volume impact. Lift shaft dimensions
+  // themselves are interior detail; deferred. We only report capacity headroom.
+  // (Kept because >15m height affects the FAR / number of storeys the user can
+  //  actually reach — it's a massing constraint, not a staircase layout.)
   const maxFloors = massings.length > 0 ? Math.max(...massings.map(m => m.floors)) : 0;
   if (metrics.maxHeight > 15 || maxFloors > 4) {
+    const shaftSqm = massings.length * 2.5 * 2.0; // rough: 2.5m × 2m per lift shaft
     violations.push({
-      code: "NBC 2016 Pt.3 §3.15 — Lift Provision Mandatory",
-      description: `Building height ${metrics.maxHeight.toFixed(0)}m / ${maxFloors} floors exceeds the lift threshold (>15m or >4 floors). ` +
-        `At least one passenger lift (≥ 6-person capacity, 450 kg) is mandatory. ` +
-        `Residential buildings with more than 3 units per floor need a service lift as well.`,
-      severity: "warning",
+      code: "NBC 2016 Pt.3 §3.15 — Lift Provision (Massing Impact)",
+      description: `Building height ${metrics.maxHeight.toFixed(0)}m / ${maxFloors} floors exceeds lift threshold (>15m or >4 floors). ` +
+        `Pre-design massing impact: reserve ~${shaftSqm.toFixed(0)} sqm of core footprint per block ` +
+        `(exact shaft count and staircase widths deferred to detail design).`,
+      severity: "info",
     });
-    deductions += 5;
+    deductions += 2;
   }
 
-  // ─── 7. INTER-BUILDING DISTANCE ────────────────────────────────────────────
+  // ─── 7. INTER-BUILDING DISTANCE (PRE-DESIGN MASSING) ───────────────────────
   // NBC 2016 Part 3 §4.4: Distance between buildings ≥ H/2 (H = height of taller block)
+  // Site-level: constrains how massings can be arranged; this is macro layout.
   if (massings.length >= 2) {
     const tallestH = Math.max(...massings.map(m => m.height));
     const minGap = tallestH / 2;
     violations.push({
       code: "NBC 2016 Pt.3 §4.4 — Inter-Building Distance",
-      description: `With ${massings.length} blocks, the clear distance between parallel facades must be ≥ ${minGap.toFixed(1)}m ` +
+      description: `With ${massings.length} blocks, clear distance between parallel facades must be ≥ ${minGap.toFixed(1)}m ` +
         `(= H/2 where H = ${tallestH.toFixed(0)}m tallest building). ` +
-        `This ensures adequate light, ventilation, and emergency access between buildings.`,
+        `This is a macro massing constraint. Interior corridor widths deferred.`,
       severity: "info",
     });
   }
 
-  // ─── 8. STAIRCASE WIDTH ────────────────────────────────────────────────────
-  // NBC 2016 Part 3 §3.14: Residential ≥ 1.2m, Public/Commercial ≥ 1.5m, High-rise ≥ 2.0m
-  if (maxFloors > 3) {
-    const reqStair = metrics.maxHeight > 24 ? 2.0 : dominantType === "residential" ? 1.2 : 1.5;
-    violations.push({
-      code: "NBC 2016 Pt.3 §3.14 — Staircase Width",
-      description: `Building with ${maxFloors} floors requires internal staircases ≥ ${reqStair}m clear width ` +
-        `(${metrics.maxHeight > 24 ? "high-rise" : dominantType} occupancy). ` +
-        `Handrails on both sides are mandatory; maximum riser 190mm, minimum tread 250mm.`,
-      severity: "info",
-    });
-  }
+  // ─── 8. STAIRCASE WIDTH (DEFERRED PER PRE-DESIGN RULE) ─────────────────────
+  // BANNED LOGIC: staircase widths are interior / post-design detail.
+  // Code block intentionally removed. We skip this rule entirely in pre-design mode.
 
-  // ─── 9. PARKING REQUIREMENT ────────────────────────────────────────────────
+  // ─── 9. PARKING REQUIREMENT (PRE-DESIGN, FAR IMPACT) ────────────────────────
   // NBC 2016 Annex B: 1 ECS per 100 sqm residential, 1 ECS per 50 sqm commercial
+  // Important at pre-design because basement parking area affects FAR calculation
+  // and excavation volume.
   const resBuiltUp = massings.filter(m => m.type === "residential" || m.type === "mixed_use").reduce((s, m) => s + m.builtUp, 0);
   const commBuiltUp = massings.filter(m => m.type === "commercial" || m.type === "office" || m.type === "hotel").reduce((s, m) => s + m.builtUp, 0);
   const requiredECS = Math.ceil(resBuiltUp / 100) + Math.ceil(commBuiltUp / 50);
@@ -294,36 +283,40 @@ export function runNbcRuleEngine(input: ComplianceInput): NbcRuleResult {
   if (requiredECS > 0) {
     const ecsArea = requiredECS * 12.5; // 2.5m × 5m per ECS
     violations.push({
-      code: "NBC 2016 Annex B — Parking (ECS)",
+      code: "NBC 2016 Annex B — Parking (ECS) — Pre-design",
       description: `Required parking: ${requiredECS} ECS — Residential: ${Math.ceil(resBuiltUp / 100)} ECS (1/100 sqm of ${Math.round(resBuiltUp).toLocaleString()} sqm) + ` +
         `Commercial: ${Math.ceil(commBuiltUp / 50)} ECS (1/50 sqm of ${Math.round(commBuiltUp).toLocaleString()} sqm). ` +
-        `Area needed: ~${Math.round(ecsArea).toLocaleString()} sqm (each ECS = 2.5m × 5m). Basement parking is excluded from FAR.`,
+        `Pre-design massing implication: ~${Math.round(ecsArea).toLocaleString()} sqm parking footprint per level ` +
+        `(basement parking excluded from FAR per GHMC GO 168).`,
       severity: requiredECS > 30 ? "warning" : "info",
     });
     if (requiredECS > 30) deductions += 5;
   }
 
-  // ─── 10. RAINWATER HARVESTING ──────────────────────────────────────────────
+  // ─── 10. RAINWATER HARVESTING (PRE-DESIGN SITE CONSTRAINT) ──────────────────
   // NBC 2016 Part 9 Sec.2: Mandatory for plots > 300 sqm
+  // Site-level: affects open-space layout (recharge pits, tanks).
   if (siteArea > 300) {
     violations.push({
       code: "NBC 2016 Pt.9 Sec.2 — Rainwater Harvesting",
       description: `Plot area ${Math.round(siteArea).toLocaleString()} sqm exceeds 300 sqm threshold. ` +
-        `Rainwater harvesting is MANDATORY. Minimum one recharge pit per 100 sqm of roofed area ` +
-        `or an underground storage tank sized for 20mm/hour rainfall intensity.`,
+        `Rainwater harvesting is MANDATORY. Pre-design reserve: 1 recharge pit per 100 sqm of roofed area, ` +
+        `or underground storage sized for 20mm/hour rainfall. Interior plumbing deferred.`,
       severity: "warning",
     });
     deductions += 3;
   }
 
-  // ─── 11. VENTILATION & NATURAL LIGHT ───────────────────────────────────────
+  // ─── 11. VENTILATION & NATURAL LIGHT (MACRO MASSING) ───────────────────────
   // NBC 2016 Part 8 §2.1: Openings ≥ 1/10th of floor area for habitable rooms
+  // Pre-design: only flag when GROUND COVERAGE is so high that the per-floor
+  // perimeter can't physically satisfy this. Interior room-by-room is banned.
   if (metrics.groundCoverage > 70) {
     violations.push({
-      code: "NBC 2016 Pt.8 §2.1 — Ventilation Risk",
-      description: `Ground coverage ${metrics.groundCoverage.toFixed(1)}% leaves limited perimeter for natural light and ventilation openings. ` +
-        `NBC requires openings (windows/vents) ≥ 1/10th of floor area per habitable room. ` +
-        `Internal rooms must have access to ventilation shafts or atria.`,
+      code: "NBC 2016 Pt.8 §2.1 — Ventilation Risk (Massing Level)",
+      description: `Ground coverage ${metrics.groundCoverage.toFixed(1)}% leaves limited perimeter for facade openings. ` +
+        `Pre-design massing action: reduce coverage or introduce internal courtyards so total facade ` +
+        `perimeter can yield openings ≥ 1/10 floor area. Interior room layouts deferred.`,
       severity: "warning",
     });
     deductions += 5;
@@ -367,4 +360,67 @@ function getDominantType(massings: ComplianceInput["massings"]): string {
   const counts: Record<string, number> = {};
   for (const m of massings) counts[m.type] = (counts[m.type] || 0) + m.builtUp;
   return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+}
+
+// ─── MAXIMUM COMPLIANT ENVELOPE CALCULATOR (PRE-DESIGN) ─────────────────────
+// Given a site, returns the theoretical maximum legally-buildable volume
+// WITHOUT violating FAR, Ground Coverage, Setbacks, or Height — so the user
+// knows the upper bound BEFORE placing any massings.
+// STRICTLY PRE-DESIGN: no interior elements, no room layouts, no stairs/fire.
+
+export interface MaxEnvelope {
+  farLimit: number;
+  groundCoverageLimit: number;
+  openSpaceMinimum: number;
+  maxHeightLimit: number;
+  setbacks: { front: number; rearSide: number };
+
+  maxFootprintArea: number;
+  maxBuiltUpArea: number;
+  minOpenSpaceArea: number;
+
+  maxEnvelopeVolume: number;
+  theoreticalFloors: number;
+
+  useType: string;
+  siteArea: number;
+}
+
+const ZONING_MAX_HEIGHT = 45; // GHMC typical ceiling; extreme advisory above this
+
+export function computeMaxEnvelope(params: {
+  siteArea: number;
+  siteDimensions?: { width: number; depth: number };
+  useType?: "residential" | "commercial" | "office" | "hotel" | "industrial" | "mixed_use";
+  customHeightLimit?: number;
+}): MaxEnvelope {
+  const siteArea = Math.max(0, params.siteArea || 0);
+  const useType = params.useType || "residential";
+
+  const farLimit = getFarLimit(useType, siteArea);
+  const groundCoverageLimit = getGroundCoverageLimit(siteArea, useType);
+  const openSpaceMinimum = 30;
+  const maxHeightLimit = params.customHeightLimit ?? ZONING_MAX_HEIGHT;
+  const setbacks = getRequiredSetbacks(maxHeightLimit);
+
+  const maxFootprintArea = (siteArea * groundCoverageLimit) / 100;
+  const maxBuiltUpArea = siteArea * farLimit;
+  const minOpenSpaceArea = (siteArea * openSpaceMinimum) / 100;
+  const maxEnvelopeVolume = maxFootprintArea * maxHeightLimit;
+  const theoreticalFloors = maxFootprintArea > 0 ? Math.floor(maxBuiltUpArea / maxFootprintArea) : 0;
+
+  return {
+    farLimit,
+    groundCoverageLimit,
+    openSpaceMinimum,
+    maxHeightLimit,
+    setbacks,
+    maxFootprintArea: Math.round(maxFootprintArea * 100) / 100,
+    maxBuiltUpArea: Math.round(maxBuiltUpArea * 100) / 100,
+    minOpenSpaceArea: Math.round(minOpenSpaceArea * 100) / 100,
+    maxEnvelopeVolume: Math.round(maxEnvelopeVolume * 100) / 100,
+    theoreticalFloors,
+    useType,
+    siteArea: Math.round(siteArea * 100) / 100,
+  };
 }

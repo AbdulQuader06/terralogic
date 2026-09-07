@@ -6,12 +6,30 @@ import CompliancePanel from "@/components/bim/CompliancePanel";
 import MetricsDashboard from "@/components/bim/MetricsDashboard";
 import SunAnalysis from "@/components/bim/SunAnalysis";
 import ChatPanel from "@/components/ChatPanel";
+import UserNav from "@/components/UserNav";
 import type { MapAction } from "@/components/ChatPanel";
 import type { SiteData } from "@/components/bim/SiteSelector";
 import type { BimMetrics } from "@/components/bim/BimViewport";
 import { Button } from "@/components/ui/button";
 
 type RightTab = "compliance" | "sun" | "chat";
+
+interface EnvelopeResult {
+  farLimit: number;
+  groundCoverageLimit: number;
+  openSpaceMinimum: number;
+  maxHeightLimit: number;
+  setbacks: { front: number; rearSide: number };
+  maxFootprintArea: number;
+  maxBuiltUpArea: number;
+  minOpenSpaceArea: number;
+  maxEnvelopeVolume: number;
+  theoreticalFloors: number;
+  useType: string;
+  siteArea: number;
+}
+
+const DEFAULT_LIMITS = { far: 2.5, groundCoverage: 50, openSpace: 30, maxHeight: 45 };
 
 export default function BimDesigner() {
   const [, navigate] = useLocation();
@@ -22,10 +40,12 @@ export default function BimDesigner() {
   const [complianceScore, setComplianceScore] = useState(0);
   const [exporting, setExporting] = useState(false);
   const [rightTab, setRightTab] = useState<RightTab>("compliance");
+  const [dynamicLimits, setDynamicLimits] = useState<typeof DEFAULT_LIMITS>(DEFAULT_LIMITS);
+  const [maxEnvelope, setMaxEnvelope] = useState<EnvelopeResult | null>(null);
 
   const prevSiteCenterRef = useRef<{lat:number;lon:number} | null>(null);
 
-  const onSiteSelected = useCallback((data: SiteData) => {
+  const onSiteSelected = useCallback(async (data: SiteData) => {
     const prev = prevSiteCenterRef.current;
     const siteChanged = !prev ||
       Math.abs(data.center.lat - prev.lat) > 0.0001 ||
@@ -36,6 +56,41 @@ export default function BimDesigner() {
       setMassings([]);
       setMetrics(null);
       setComplianceScore(0);
+      setMaxEnvelope(null);
+      setDynamicLimits(DEFAULT_LIMITS);
+      // Fetch max compliant envelope & dynamic limits immediately after site selection
+      try {
+        const poly = data.sitePolygon;
+        let width: number | undefined;
+        let depth: number | undefined;
+        if (poly && poly.length >= 3) {
+          const lats = poly.map((p: [number, number]) => p[0]);
+          const lons = poly.map((p: [number, number]) => p[1]);
+          const centerLat = (Math.max(...lats) + Math.min(...lats)) / 2;
+          const mPerDegLat = 111320;
+          const mPerDegLon = 111320 * Math.cos(centerLat * Math.PI / 180);
+          width = (Math.max(...lons) - Math.min(...lons)) * mPerDegLon;
+          depth = (Math.max(...lats) - Math.min(...lats)) * mPerDegLat;
+        }
+        const params = new URLSearchParams({ siteArea: String(Math.round(data.area)) });
+        if (width && depth) { params.set("width", String(width)); params.set("depth", String(depth)); }
+        const resp = await fetch(`/api/bim/envelope?${params.toString()}`);
+        if (resp.ok) {
+          const json = await resp.json();
+          if (json?.envelope) {
+            const env: EnvelopeResult = json.envelope;
+            setMaxEnvelope(env);
+            setDynamicLimits({
+              far: env.farLimit,
+              groundCoverage: env.groundCoverageLimit,
+              openSpace: env.openSpaceMinimum,
+              maxHeight: env.maxHeightLimit,
+            });
+          }
+        }
+      } catch (e) {
+        console.warn("[bim-designer] Failed to prefetch envelope:", e);
+      }
     }
   }, []);
 
@@ -45,6 +100,16 @@ export default function BimDesigner() {
 
   const onMassingChange = useCallback((ms: any[]) => {
     setMassings(ms);
+  }, []);
+
+  const onLimitsUpdate = useCallback((limits: any, envelope?: EnvelopeResult) => {
+    if (limits) setDynamicLimits({
+      far: limits.far,
+      groundCoverage: limits.groundCoverage,
+      openSpace: limits.openSpace,
+      maxHeight: limits.maxHeight,
+    });
+    if (envelope) setMaxEnvelope(envelope);
   }, []);
 
   const handleMapAction = useCallback((action: MapAction) => {
@@ -119,6 +184,7 @@ export default function BimDesigner() {
       }
 
       if (metrics) {
+        const limits = dynamicLimits || DEFAULT_LIMITS;
         pdf.setDrawColor(44, 82, 130);
         pdf.line(margin, y, pageW - margin, y);
         y += 5;
@@ -129,10 +195,18 @@ export default function BimDesigner() {
         pdf.setTextColor(31, 41, 51);
         pdf.setFontSize(8);
         const metricLines = [
-          `FAR: ${metrics.far.toFixed(2)} (Allowed: 2.5) | Ground Coverage: ${metrics.groundCoverage}% (Allowed: 50%)`,
-          `Open Space: ${metrics.openSpace}% (Min: 30%) | Max Height: ${metrics.maxHeight}m (Limit: 45m)`,
+          `FAR: ${metrics.far.toFixed(2)} (Allowed: ${limits.far}) | Ground Coverage: ${metrics.groundCoverage}% (Allowed: ${limits.groundCoverage}%)`,
+          `Open Space: ${metrics.openSpace}% (Min: ${limits.openSpace}%) | Max Height: ${metrics.maxHeight}m (Limit: ${limits.maxHeight}m)`,
           `Total Built-Up: ${metrics.totalBuiltUp.toLocaleString()} sqm | Massings: ${metrics.massingCount} | Est. Units: ${metrics.estimatedUnits}`,
         ];
+        if (maxEnvelope) {
+          metricLines.push(
+            `Max Compliant Envelope: Footprint ${maxEnvelope.maxFootprintArea.toLocaleString()} sqm | Built-Up ${maxEnvelope.maxBuiltUpArea.toLocaleString()} sqm | ${maxEnvelope.theoreticalFloors} storeys max at this coverage`
+          );
+          metricLines.push(
+            `Required Setbacks (max envelope): Front ≥ ${maxEnvelope.setbacks.front}m, Rear/Side ≥ ${maxEnvelope.setbacks.rearSide}m`
+          );
+        }
         for (const line of metricLines) {
           pdf.text(line, margin, y);
           y += 4;
@@ -196,7 +270,7 @@ export default function BimDesigner() {
     } finally {
       setExporting(false);
     }
-  }, [siteData, metrics]);
+  }, [siteData, metrics, dynamicLimits, maxEnvelope]);
 
   return (
     <div className="h-screen w-screen bg-background text-foreground flex flex-col overflow-hidden" data-testid="bim-designer">
@@ -225,6 +299,8 @@ export default function BimDesigner() {
           >
             {exporting ? "Generating..." : "Export Brief"}
           </Button>
+          <div className="h-5 w-px bg-border" aria-hidden />
+          <UserNav />
         </div>
       </header>
 
@@ -306,11 +382,13 @@ export default function BimDesigner() {
                   massings={massings}
                   sunHour={sunHour}
                   onScoreUpdate={setComplianceScore}
+                  onLimitsUpdate={onLimitsUpdate}
                 />
                 <MetricsDashboard
                   metrics={metrics}
                   siteData={siteData}
                   complianceScore={complianceScore}
+                  dynamicLimits={dynamicLimits}
                 />
               </>
             )}

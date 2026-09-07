@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: terralogic
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    healthCheckPath: /api/health
+    autoDeploy: yes
+    branch: main
+    # ---------------------------------------------------------------
+    # PERSISTENT DISK — keeps user accounts, sessions, cached site
+    # analyses, and hashed passwords across Render restarts / deploys.
+    # Without this, the .data/ folder is EPHEMERAL (wiped on every
+    # restart), which causes the "wrong password" login error.
+    # ---------------------------------------------------------------
+    disk:
+      name: terralogic-data
+      mountPath: /opt/render/project/src/.data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: SESSION_SECRET
+        generateValue: true  # Render auto-generates a secure random secret
+      # Optional: add your AI / GIS keys below in Render dashboard.
+      # NOTE: The app accepts EITHER naming convention below (use only one):
+      #   Google Gemini:   AI_INTEGRATIONS_GEMINI_API_KEY  OR  GEMINI_API_KEY
+      #   Gemini base URL: AI_INTEGRATIONS_GEMINI_BASE_URL (defaults to Google v1beta)
+      #   OpenAI:          AI_INTEGRATIONS_OPENAI_API_KEY  OR  OPENAI_API_KEY
+      #   OpenAI base URL: AI_INTEGRATIONS_OPENAI_BASE_URL (defaults to api.openai.com/v1)
+      #   ArcGIS:          ARCGIS_API_KEY  OR  ESRI_API_KEY
+      #   CORS origins:    CORS_ORIGIN (comma-separated list)

@@ -6,9 +6,17 @@ interface MetricsDashboardProps {
   metrics: BimMetrics | null;
   siteData: SiteData | null;
   complianceScore: number;
+  dynamicLimits?: {
+    far: number;
+    groundCoverage: number;
+    openSpace: number;
+    maxHeight: number;
+  };
 }
 
-export default function MetricsDashboard({ metrics, siteData, complianceScore }: MetricsDashboardProps) {
+const DEFAULT_LIMITS = { far: 2.5, groundCoverage: 50, openSpace: 30, maxHeight: 45 };
+
+export default function MetricsDashboard({ metrics, siteData, complianceScore, dynamicLimits }: MetricsDashboardProps) {
   if (!metrics || !siteData) {
     return (
       <div className="bg-white border border-border rounded-lg p-4 text-center text-muted-foreground text-[11px] shadow-sm" data-testid="metrics-dashboard">
@@ -17,11 +25,13 @@ export default function MetricsDashboard({ metrics, siteData, complianceScore }:
     );
   }
 
+  const limits = { ...DEFAULT_LIMITS, ...(dynamicLimits || {}) };
+
   const transitScore = Math.min(100, (siteData.amenities.transit / 5) * 100);
   const greenScore = Math.min(100, metrics.openSpace);
   const solarScore = Math.min(100, Math.max(0, 100 - (metrics.groundCoverage > 60 ? (metrics.groundCoverage - 60) * 2 : 0)));
   const structuralScore = metrics.maxHeight > 100 ? Math.max(30, 100 - (metrics.maxHeight - 100)) : 100;
-  const densityScore = metrics.far > 0 ? Math.min(100, (metrics.far / 4) * 100) : 0;
+  const densityScore = metrics.far > 0 ? Math.min(100, (metrics.far / Math.max(0.1, limits.far + 1)) * 100) : 0;
 
   const radarData = [
     { axis: "Solar", value: Math.round(solarScore), fullMark: 100 },
@@ -37,9 +47,10 @@ export default function MetricsDashboard({ metrics, siteData, complianceScore }:
   const estRevenue = estCost * 1.35;
   const roi = estCost > 0 ? ((estRevenue - estCost) / estCost * 100) : 0;
 
-  const farAllowed = 2.5;
-  const maxHeightAllowed = 45;
-  const coverageAllowed = 50;
+  const farAllowed = limits.far;
+  const maxHeightAllowed = limits.maxHeight;
+  const coverageAllowed = limits.groundCoverage;
+  const openSpaceMin = limits.openSpace;
 
   return (
     <div className="space-y-3" data-testid="metrics-dashboard">
@@ -66,7 +77,7 @@ export default function MetricsDashboard({ metrics, siteData, complianceScore }:
         <div className="p-2 grid grid-cols-2 gap-1.5">
           <MetricCard label="FAR" value={metrics.far.toFixed(2)} limit={`/ ${farAllowed}`} warn={metrics.far > farAllowed} />
           <MetricCard label="Ground Coverage" value={`${metrics.groundCoverage}%`} limit={`/ ${coverageAllowed}%`} warn={metrics.groundCoverage > coverageAllowed} />
-          <MetricCard label="Open Space" value={`${metrics.openSpace}%`} limit="/ 30%" warn={metrics.openSpace < 30} />
+          <MetricCard label="Open Space" value={`${metrics.openSpace}%`} limit={`/ ${openSpaceMin}%`} warn={metrics.openSpace < openSpaceMin} />
           <MetricCard label="Max Height" value={`${metrics.maxHeight}m`} limit={`/ ${maxHeightAllowed}m`} warn={metrics.maxHeight > maxHeightAllowed} />
           <MetricCard label="Total Built-Up" value={`${(metrics.totalBuiltUp / 1000).toFixed(1)}K`} unit="sqm" />
           <MetricCard label="Est. Units" value={`${metrics.estimatedUnits}`} />

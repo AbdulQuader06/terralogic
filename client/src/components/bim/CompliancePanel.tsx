@@ -9,6 +9,29 @@ interface ComplianceResult {
   recommendations: string[];
   solarExposure: number;
   zoningSummary: string;
+  rulesSummary?: string;
+  dominantType?: string;
+  dynamicLimits?: {
+    far: number;
+    groundCoverage: number;
+    openSpace: number;
+    maxHeight: number;
+    setbacks?: { front: number; rearSide: number };
+  };
+  maxEnvelope?: {
+    farLimit: number;
+    groundCoverageLimit: number;
+    openSpaceMinimum: number;
+    maxHeightLimit: number;
+    setbacks: { front: number; rearSide: number };
+    maxFootprintArea: number;
+    maxBuiltUpArea: number;
+    minOpenSpaceArea: number;
+    maxEnvelopeVolume: number;
+    theoreticalFloors: number;
+    useType: string;
+    siteArea: number;
+  };
 }
 
 interface CompliancePanelProps {
@@ -17,13 +40,20 @@ interface CompliancePanelProps {
   massings: any[];
   sunHour: number;
   onScoreUpdate?: (score: number) => void;
+  onLimitsUpdate?: (limits: ComplianceResult["dynamicLimits"], envelope?: ComplianceResult["maxEnvelope"]) => void;
 }
 
-export default function CompliancePanel({ siteData, metrics, massings, sunHour, onScoreUpdate }: CompliancePanelProps) {
+export default function CompliancePanel({ siteData, metrics, massings, sunHour, onScoreUpdate, onLimitsUpdate }: CompliancePanelProps) {
   const [result, setResult] = useState<ComplianceResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    if (result?.dynamicLimits && onLimitsUpdate) {
+      onLimitsUpdate(result.dynamicLimits, result.maxEnvelope);
+    }
+  }, [result?.dynamicLimits, result?.maxEnvelope, onLimitsUpdate]);
 
   const checkCompliance = useCallback(async () => {
     if (!siteData || !metrics || massings.length === 0) {

@@ -4,3 +4,48 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+
+# ------ TerraLogic custom ------
+# User accounts / sessions / cached site analyses (hashed passwords live here):
+.data/
+storage.json
+*.tmp
+
+# Secrets & local env:
+.env
+.env.*
+!.env.example
+
+# Replit IDE agent cache:
+.local/
+
+# Screenshots, videos, GIS zips, large binary assets from Replit exports:
+attached_assets/
+*.zip
+*.mp4
+*.mov
+*.webm
+*.png
+!client/public/**/*.png
+!client/public/**/*.jpg
+!client/public/**/*.jpeg
+!client/public/**/*.webp
+
+# Python methodology (private research; keep local only):
+terralogic_test_sites.csv
+_generate_validated.ps1
+_audit_csv.ps1
+*.pyc
+__pycache__/
+*.egg-info/
+.pytest_cache/
+
+# IDE:
+.vscode/
+.idea/
+
+# Logs:
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
