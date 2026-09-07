@@ -111,18 +111,43 @@ Aggregate:
 No cross-system statistical test is computed at this stage. The results CSV is
 structured so the later generic-AI comparison can be joined on `site_id`.
 
-## 7. Execution
+## 7. Running the sites through the live application
+
+`analyze_results.py` scores a standalone Python transcription of the rules.
+`run_case_study_through_app.py` scores the **application itself**: it POSTs each
+site to `/api/bim/compliance` on the running server, which is the hybrid
+pipeline the UI calls — the deterministic engine in `server/nbc_rules.ts`
+followed by the AI recommendation pass. No application file is modified; the app
+is exercised over HTTP exactly as a user would exercise it.
+
+Each site becomes one rectangular massing centred in the plot bounding box, its
+dimensions taken from the setback envelope actually provided and scaled to the
+proposed footprint area, so the app's clearance-based setback check sees the
+site's real setbacks. The app rate-limits this endpoint to 15 requests per
+minute, so the runner paces itself at one request per 4.2 s.
+
+The AI stage in `/api/bim/compliance` is explicitly advisory — it returns
+recommendations and, by design, cannot alter the violations or the score. With
+no `GEMINI_API_KEY` set it falls back to canned recommendations; the verdicts
+recorded are unaffected either way.
+
+## 8. Execution
 
 ```bash
-python3 generate_synthetic_sites.py   # -> terralogic_test_sites.csv
-python3 analyze_results.py            # -> briefs, validation report, results CSV
+python3 generate_synthetic_sites.py       # -> terralogic_test_sites.csv
+python3 analyze_results.py                # -> briefs, validation report, results CSV
+
+npm install                               # once
+PORT=5000 SESSION_SECRET=... npx tsx server/index.ts &
+python3 run_case_study_through_app.py     # -> app_* results against the live app
 ```
 
 Outputs: `terralogic_test_sites.csv`, `site_compliance_briefs.md`,
-`validation_report.md`, `terralogic_test_results.csv`. Both scripts are pure
-standard-library Python 3.10+ with no third-party dependencies.
+`validation_report.md`, `terralogic_test_results.csv`, `app_test_results.csv`,
+`app_validation_report.md`, `app_raw_responses.json`. All three Python scripts
+are pure standard-library Python 3.10+ with no third-party dependencies.
 
-## 8. Threats to validity
+## 9. Threats to validity
 
 1. **Regulatory transcription.** Results are conditional on the tables in §3
    matching the operative gazette; see the verification note.
@@ -136,6 +161,11 @@ standard-library Python 3.10+ with no third-party dependencies.
    tolerance design, not rule knowledge. An independent check of the engine's
    rule knowledge requires an external oracle — the planned generic-AI
    comparison, or manual adjudication by a GHMC practitioner.
-4. **Stratum balance is by construction.** The 20/20/20 split is a design
+4. **Massing abstraction in the app run.** `/api/bim/compliance` models one
+   centred rectangular block per site and checks setbacks as symmetric
+   clearance, so asymmetric side setbacks are averaged; sites are constructed
+   near-symmetrically to limit this effect, but it is an abstraction, not the
+   plot's exact geometry.
+5. **Stratum balance is by construction.** The 20/20/20 split is a design
    choice, not a prevalence estimate; accuracy figures should not be read as
    expected field performance.
