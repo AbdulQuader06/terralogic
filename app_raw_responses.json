@@ -1,0 +1,3702 @@
+{
+  "HYD-CMP-01": {
+    "compliant": true,
+    "score": 100,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (9m) on road 12m: front setback \u2265 4.5m, rear \u2265 1m, side \u2265 0m. Site dimensions (7m \u00d7 13m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 2 ECS \u2014 Residential: 2 ECS (1/100 sqm of 106 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~25 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 2.5 and Coverage 75% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 4.5m, rear/side \u2265 5m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "COMPLIANT \u2014 FAR: 1.09/2.5 | Coverage: 36.3%/75% | Open: 63.7% | Height: 9.0m | Road: 12m | Plot: 97 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 97 sqm, Use: residential, Abutting Road: 12m):\n\u2022 FAR limit (GHMC GO 168): 2.5  |  Actual: 1.09\n\u2022 Ground coverage limit (GHMC GO 168): 75%  |  Actual: 36.3%\n\u2022 Open space minimum (GHMC GO 168): 25%  |  Actual: 63.7%\n\u2022 Permissible height ceiling for 12m road: 18m  |  Actual: 9.0m\n\u2022 Setbacks required: Front \u2265 4.5m, Rear \u2265 1m, Side \u2265 0m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 2 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 2.5,
+      "groundCoverage": 75,
+      "openSpace": 25,
+      "maxHeight": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 2.5,
+      "groundCoverageLimit": 75,
+      "openSpaceMinimum": 25,
+      "maxHeightLimit": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      },
+      "maxFootprintArea": 72.83,
+      "maxBuiltUpArea": 242.75,
+      "minOpenSpaceArea": 24.28,
+      "maxEnvelopeVolume": 1310.85,
+      "theoreticalFloors": 3,
+      "useType": "residential",
+      "siteArea": 97.1
+    }
+  },
+  "HYD-CMP-02": {
+    "compliant": true,
+    "score": 100,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (9m) on road 9m: front setback \u2265 3m, rear \u2265 1.5m, side \u2265 1m. Site dimensions (10m \u00d7 19m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 3 ECS \u2014 Residential: 3 ECS (1/100 sqm of 288 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~38 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 2 and Coverage 70% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 3m, rear/side \u2265 4m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "COMPLIANT \u2014 FAR: 1.45/2 | Coverage: 48.4%/70% | Open: 51.6% | Height: 9.0m | Road: 9m | Plot: 199 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 199 sqm, Use: residential, Abutting Road: 9m):\n\u2022 FAR limit (GHMC GO 168): 2  |  Actual: 1.45\n\u2022 Ground coverage limit (GHMC GO 168): 70%  |  Actual: 48.4%\n\u2022 Open space minimum (GHMC GO 168): 30%  |  Actual: 51.6%\n\u2022 Permissible height ceiling for 9m road: 15m  |  Actual: 9.0m\n\u2022 Setbacks required: Front \u2265 3m, Rear \u2265 1.5m, Side \u2265 1m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 3 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 2,
+      "groundCoverage": 70,
+      "openSpace": 30,
+      "maxHeight": 15,
+      "setbacks": {
+        "front": 3,
+        "rearSide": 4
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 2,
+      "groundCoverageLimit": 70,
+      "openSpaceMinimum": 30,
+      "maxHeightLimit": 15,
+      "setbacks": {
+        "front": 3,
+        "rearSide": 4
+      },
+      "maxFootprintArea": 138.95,
+      "maxBuiltUpArea": 397,
+      "minOpenSpaceArea": 59.55,
+      "maxEnvelopeVolume": 2084.25,
+      "theoreticalFloors": 2,
+      "useType": "residential",
+      "siteArea": 198.5
+    }
+  },
+  "HYD-CMP-03": {
+    "compliant": true,
+    "score": 100,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (9m) on road 7.5m: front setback \u2265 2m, rear \u2265 2m, side \u2265 1.5m. Site dimensions (12m \u00d7 22m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 4 ECS \u2014 Residential: 4 ECS (1/100 sqm of 383 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~50 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 1.75 and Coverage 65% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 2m, rear/side \u2265 3m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "COMPLIANT \u2014 FAR: 1.41/1.75 | Coverage: 50.3%/65% | Open: 49.7% | Height: 9.0m | Road: 7.5m | Plot: 271 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 271 sqm, Use: residential, Abutting Road: 7.5m):\n\u2022 FAR limit (GHMC GO 168): 1.75  |  Actual: 1.41\n\u2022 Ground coverage limit (GHMC GO 168): 65%  |  Actual: 50.3%\n\u2022 Open space minimum (GHMC GO 168): 35%  |  Actual: 49.7%\n\u2022 Permissible height ceiling for 7.5m road: 10m  |  Actual: 9.0m\n\u2022 Setbacks required: Front \u2265 2m, Rear \u2265 2m, Side \u2265 1.5m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 4 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 1.75,
+      "groundCoverage": 65,
+      "openSpace": 35,
+      "maxHeight": 10,
+      "setbacks": {
+        "front": 2,
+        "rearSide": 3
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 1.75,
+      "groundCoverageLimit": 65,
+      "openSpaceMinimum": 35,
+      "maxHeightLimit": 10,
+      "setbacks": {
+        "front": 2,
+        "rearSide": 3
+      },
+      "maxFootprintArea": 176.02,
+      "maxBuiltUpArea": 473.9,
+      "minOpenSpaceArea": 94.78,
+      "maxEnvelopeVolume": 1760.2,
+      "theoreticalFloors": 2,
+      "useType": "residential",
+      "siteArea": 270.8
+    }
+  },
+  "HYD-CMP-04": {
+    "compliant": true,
+    "score": 97,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (9m) on road 7.5m: front setback \u2265 3m, rear \u2265 2m, side \u2265 2m. Site dimensions (15m \u00d7 24m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 5 ECS \u2014 Residential: 5 ECS (1/100 sqm of 478 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~63 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.9 Sec.2 \u2014 Rainwater Harvesting",
+        "description": "Plot area 352 sqm exceeds 300 sqm threshold. Rainwater harvesting is MANDATORY. Pre-design reserve: 1 recharge pit per 100 sqm of roofed area, or underground storage sized for 20mm/hour rainfall. Interior plumbing deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 1.75 and Coverage 60% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 3m, rear/side \u2265 3m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "COMPLIANT \u2014 FAR: 1.36/1.75 | Coverage: 47.6%/60% | Open: 52.4% | Height: 9.0m | Road: 7.5m | Plot: 352 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 352 sqm, Use: residential, Abutting Road: 7.5m):\n\u2022 FAR limit (GHMC GO 168): 1.75  |  Actual: 1.36\n\u2022 Ground coverage limit (GHMC GO 168): 60%  |  Actual: 47.6%\n\u2022 Open space minimum (GHMC GO 168): 40%  |  Actual: 52.4%\n\u2022 Permissible height ceiling for 7.5m road: 10m  |  Actual: 9.0m\n\u2022 Setbacks required: Front \u2265 3m, Rear \u2265 2m, Side \u2265 2m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 5 ECS  |  Rainwater harvesting: MANDATORY",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 1.75,
+      "groundCoverage": 60,
+      "openSpace": 40,
+      "maxHeight": 10,
+      "setbacks": {
+        "front": 3,
+        "rearSide": 3
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 1.75,
+      "groundCoverageLimit": 60,
+      "openSpaceMinimum": 40,
+      "maxHeightLimit": 10,
+      "setbacks": {
+        "front": 3,
+        "rearSide": 3
+      },
+      "maxFootprintArea": 211.08,
+      "maxBuiltUpArea": 615.65,
+      "minOpenSpaceArea": 140.72,
+      "maxEnvelopeVolume": 2110.8,
+      "theoreticalFloors": 2,
+      "useType": "residential",
+      "siteArea": 351.8
+    }
+  },
+  "HYD-CMP-05": {
+    "compliant": true,
+    "score": 95,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (18m) on road 18m: front setback \u2265 6m, rear \u2265 5m, side \u2265 5m. Site dimensions (19m \u00d7 28m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.3 \u00a73.15 \u2014 Lift Provision (Massing Impact)",
+        "description": "Building height 18m / 6 floors exceeds lift threshold (>15m or >4 floors). Pre-design massing impact: reserve ~5 sqm of core footprint per block (exact shaft count and staircase widths deferred to detail design).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 9 ECS \u2014 Residential: 9 ECS (1/100 sqm of 815 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~113 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.9 Sec.2 \u2014 Rainwater Harvesting",
+        "description": "Plot area 549 sqm exceeds 300 sqm threshold. Rainwater harvesting is MANDATORY. Pre-design reserve: 1 recharge pit per 100 sqm of roofed area, or underground storage sized for 20mm/hour rainfall. Interior plumbing deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 3 and Coverage 55% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 6m, rear/side \u2265 7m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "COMPLIANT \u2014 FAR: 1.48/3 | Coverage: 24.7%/55% | Open: 75.3% | Height: 18.0m | Road: 18m | Plot: 549 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 549 sqm, Use: residential, Abutting Road: 18m):\n\u2022 FAR limit (GHMC GO 168): 3  |  Actual: 1.48\n\u2022 Ground coverage limit (GHMC GO 168): 55%  |  Actual: 24.7%\n\u2022 Open space minimum (GHMC GO 168): 45%  |  Actual: 75.3%\n\u2022 Permissible height ceiling for 18m road: 24m  |  Actual: 18.0m\n\u2022 Setbacks required: Front \u2265 6m, Rear \u2265 5m, Side \u2265 5m\n\u2022 Fire class: Medium-rise (NBC Pt.4 \u00a73.6)\n\u2022 Lift mandatory: YES (>15m / >4 floors)\n\u2022 Required parking: 9 ECS  |  Rainwater harvesting: MANDATORY",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 3,
+      "groundCoverage": 55,
+      "openSpace": 45,
+      "maxHeight": 24,
+      "setbacks": {
+        "front": 6,
+        "rearSide": 7
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 3,
+      "groundCoverageLimit": 55,
+      "openSpaceMinimum": 45,
+      "maxHeightLimit": 24,
+      "setbacks": {
+        "front": 6,
+        "rearSide": 7
+      },
+      "maxFootprintArea": 301.84,
+      "maxBuiltUpArea": 1646.4,
+      "minOpenSpaceArea": 246.96,
+      "maxEnvelopeVolume": 7244.16,
+      "theoreticalFloors": 5,
+      "useType": "residential",
+      "siteArea": 548.8
+    }
+  },
+  "HYD-CMP-06": {
+    "compliant": true,
+    "score": 90,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (18m) on road 18m: front setback \u2265 6m, rear \u2265 5m, side \u2265 5m. Site dimensions (33m \u00d7 46m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.3 \u00a73.15 \u2014 Lift Provision (Massing Impact)",
+        "description": "Building height 18m / 6 floors exceeds lift threshold (>15m or >4 floors). Pre-design massing impact: reserve ~5 sqm of core footprint per block (exact shaft count and staircase widths deferred to detail design).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 36 ECS \u2014 Residential: 36 ECS (1/100 sqm of 3,504 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~450 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "warning"
+      },
+      {
+        "code": "NBC 2016 Pt.9 Sec.2 \u2014 Rainwater Harvesting",
+        "description": "Plot area 1,516 sqm exceeds 300 sqm threshold. Rainwater harvesting is MANDATORY. Pre-design reserve: 1 recharge pit per 100 sqm of roofed area, or underground storage sized for 20mm/hour rainfall. Interior plumbing deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 3 and Coverage 50% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 6m, rear/side \u2265 7m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "COMPLIANT \u2014 FAR: 2.31/3 | Coverage: 40.6%/50% | Open: 59.4% | Height: 18.0m | Road: 18m | Plot: 1,516 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 1,516 sqm, Use: residential, Abutting Road: 18m):\n\u2022 FAR limit (GHMC GO 168): 3  |  Actual: 2.31\n\u2022 Ground coverage limit (GHMC GO 168): 50%  |  Actual: 40.6%\n\u2022 Open space minimum (GHMC GO 168): 50%  |  Actual: 59.4%\n\u2022 Permissible height ceiling for 18m road: 24m  |  Actual: 18.0m\n\u2022 Setbacks required: Front \u2265 6m, Rear \u2265 5m, Side \u2265 5m\n\u2022 Fire class: Medium-rise (NBC Pt.4 \u00a73.6)\n\u2022 Lift mandatory: YES (>15m / >4 floors)\n\u2022 Required parking: 36 ECS  |  Rainwater harvesting: MANDATORY",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 3,
+      "groundCoverage": 50,
+      "openSpace": 50,
+      "maxHeight": 24,
+      "setbacks": {
+        "front": 6,
+        "rearSide": 7
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 3,
+      "groundCoverageLimit": 50,
+      "openSpaceMinimum": 50,
+      "maxHeightLimit": 24,
+      "setbacks": {
+        "front": 6,
+        "rearSide": 7
+      },
+      "maxFootprintArea": 757.85,
+      "maxBuiltUpArea": 4547.1,
+      "minOpenSpaceArea": 757.85,
+      "maxEnvelopeVolume": 18188.4,
+      "theoreticalFloors": 6,
+      "useType": "residential",
+      "siteArea": 1515.7
+    }
+  },
+  "HYD-CMP-07": {
+    "compliant": true,
+    "score": 100,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (9m) on road 7.5m: front setback \u2265 1.5m, rear \u2265 1m, side \u2265 0m. Site dimensions (7m \u00d7 11m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 2 ECS \u2014 Residential: 2 ECS (1/100 sqm of 105 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~25 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 1.75 and Coverage 75% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 1.5m, rear/side \u2265 3m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "COMPLIANT \u2014 FAR: 1.45/1.75 | Coverage: 48.4%/75% | Open: 51.6% | Height: 9.0m | Road: 7.5m | Plot: 72 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 72 sqm, Use: residential, Abutting Road: 7.5m):\n\u2022 FAR limit (GHMC GO 168): 1.75  |  Actual: 1.45\n\u2022 Ground coverage limit (GHMC GO 168): 75%  |  Actual: 48.4%\n\u2022 Open space minimum (GHMC GO 168): 25%  |  Actual: 51.6%\n\u2022 Permissible height ceiling for 7.5m road: 10m  |  Actual: 9.0m\n\u2022 Setbacks required: Front \u2265 1.5m, Rear \u2265 1m, Side \u2265 0m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 2 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 1.75,
+      "groundCoverage": 75,
+      "openSpace": 25,
+      "maxHeight": 10,
+      "setbacks": {
+        "front": 1.5,
+        "rearSide": 3
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 1.75,
+      "groundCoverageLimit": 75,
+      "openSpaceMinimum": 25,
+      "maxHeightLimit": 10,
+      "setbacks": {
+        "front": 1.5,
+        "rearSide": 3
+      },
+      "maxFootprintArea": 54,
+      "maxBuiltUpArea": 126,
+      "minOpenSpaceArea": 18,
+      "maxEnvelopeVolume": 540,
+      "theoreticalFloors": 2,
+      "useType": "residential",
+      "siteArea": 72
+    }
+  },
+  "HYD-CMP-08": {
+    "compliant": true,
+    "score": 100,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (9m) on road 7.5m: front setback \u2265 1.5m, rear \u2265 1.5m, side \u2265 1m. Site dimensions (11m \u00d7 13m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 2 ECS \u2014 Residential: 2 ECS (1/100 sqm of 188 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~25 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 1.75 and Coverage 70% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 1.5m, rear/side \u2265 3m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "COMPLIANT \u2014 FAR: 1.29/1.75 | Coverage: 43.1%/70% | Open: 56.9% | Height: 9.0m | Road: 7.5m | Plot: 145 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 145 sqm, Use: residential, Abutting Road: 7.5m):\n\u2022 FAR limit (GHMC GO 168): 1.75  |  Actual: 1.29\n\u2022 Ground coverage limit (GHMC GO 168): 70%  |  Actual: 43.1%\n\u2022 Open space minimum (GHMC GO 168): 30%  |  Actual: 56.9%\n\u2022 Permissible height ceiling for 7.5m road: 10m  |  Actual: 9.0m\n\u2022 Setbacks required: Front \u2265 1.5m, Rear \u2265 1.5m, Side \u2265 1m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 2 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 1.75,
+      "groundCoverage": 70,
+      "openSpace": 30,
+      "maxHeight": 10,
+      "setbacks": {
+        "front": 1.5,
+        "rearSide": 3
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 1.75,
+      "groundCoverageLimit": 70,
+      "openSpaceMinimum": 30,
+      "maxHeightLimit": 10,
+      "setbacks": {
+        "front": 1.5,
+        "rearSide": 3
+      },
+      "maxFootprintArea": 101.71,
+      "maxBuiltUpArea": 254.28,
+      "minOpenSpaceArea": 43.59,
+      "maxEnvelopeVolume": 1017.1,
+      "theoreticalFloors": 2,
+      "useType": "residential",
+      "siteArea": 145.3
+    }
+  },
+  "HYD-CMP-09": {
+    "compliant": true,
+    "score": 100,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (9m) on road 12m: front setback \u2265 4.5m, rear \u2265 2m, side \u2265 1.5m. Site dimensions (13m \u00d7 18m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 3 ECS \u2014 Residential: 3 ECS (1/100 sqm of 262 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~38 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 2.5 and Coverage 65% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 4.5m, rear/side \u2265 5m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "COMPLIANT \u2014 FAR: 1.07/2.5 | Coverage: 35.5%/65% | Open: 64.5% | Height: 9.0m | Road: 12m | Plot: 246 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 246 sqm, Use: residential, Abutting Road: 12m):\n\u2022 FAR limit (GHMC GO 168): 2.5  |  Actual: 1.07\n\u2022 Ground coverage limit (GHMC GO 168): 65%  |  Actual: 35.5%\n\u2022 Open space minimum (GHMC GO 168): 35%  |  Actual: 64.5%\n\u2022 Permissible height ceiling for 12m road: 18m  |  Actual: 9.0m\n\u2022 Setbacks required: Front \u2265 4.5m, Rear \u2265 2m, Side \u2265 1.5m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 3 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 2.5,
+      "groundCoverage": 65,
+      "openSpace": 35,
+      "maxHeight": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 2.5,
+      "groundCoverageLimit": 65,
+      "openSpaceMinimum": 35,
+      "maxHeightLimit": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      },
+      "maxFootprintArea": 159.64,
+      "maxBuiltUpArea": 614,
+      "minOpenSpaceArea": 85.96,
+      "maxEnvelopeVolume": 2873.52,
+      "theoreticalFloors": 3,
+      "useType": "residential",
+      "siteArea": 245.6
+    }
+  },
+  "HYD-CMP-10": {
+    "compliant": true,
+    "score": 95,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (15m) on road 12m: front setback \u2265 4.5m, rear \u2265 4m, side \u2265 4m. Site dimensions (20m \u00d7 24m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.3 \u00a73.15 \u2014 Lift Provision (Massing Impact)",
+        "description": "Building height 15m / 5 floors exceeds lift threshold (>15m or >4 floors). Pre-design massing impact: reserve ~5 sqm of core footprint per block (exact shaft count and staircase widths deferred to detail design).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 8 ECS \u2014 Residential: 8 ECS (1/100 sqm of 764 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~100 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.9 Sec.2 \u2014 Rainwater Harvesting",
+        "description": "Plot area 487 sqm exceeds 300 sqm threshold. Rainwater harvesting is MANDATORY. Pre-design reserve: 1 recharge pit per 100 sqm of roofed area, or underground storage sized for 20mm/hour rainfall. Interior plumbing deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 2.5 and Coverage 60% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 4.5m, rear/side \u2265 5m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "COMPLIANT \u2014 FAR: 1.57/2.5 | Coverage: 33.0%/60% | Open: 67.0% | Height: 15.0m | Road: 12m | Plot: 487 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 487 sqm, Use: residential, Abutting Road: 12m):\n\u2022 FAR limit (GHMC GO 168): 2.5  |  Actual: 1.57\n\u2022 Ground coverage limit (GHMC GO 168): 60%  |  Actual: 33.0%\n\u2022 Open space minimum (GHMC GO 168): 40%  |  Actual: 67.0%\n\u2022 Permissible height ceiling for 12m road: 18m  |  Actual: 15.0m\n\u2022 Setbacks required: Front \u2265 4.5m, Rear \u2265 4m, Side \u2265 4m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: YES (>15m / >4 floors)\n\u2022 Required parking: 8 ECS  |  Rainwater harvesting: MANDATORY",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 2.5,
+      "groundCoverage": 60,
+      "openSpace": 40,
+      "maxHeight": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 2.5,
+      "groundCoverageLimit": 60,
+      "openSpaceMinimum": 40,
+      "maxHeightLimit": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      },
+      "maxFootprintArea": 292.32,
+      "maxBuiltUpArea": 1218,
+      "minOpenSpaceArea": 194.88,
+      "maxEnvelopeVolume": 5261.76,
+      "theoreticalFloors": 4,
+      "useType": "residential",
+      "siteArea": 487.2
+    }
+  },
+  "HYD-CMP-11": {
+    "compliant": true,
+    "score": 95,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (15m) on road 15m: front setback \u2265 4.5m, rear \u2265 4m, side \u2265 4m. Site dimensions (18m \u00d7 33m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.3 \u00a73.15 \u2014 Lift Provision (Massing Impact)",
+        "description": "Building height 15m / 5 floors exceeds lift threshold (>15m or >4 floors). Pre-design massing impact: reserve ~5 sqm of core footprint per block (exact shaft count and staircase widths deferred to detail design).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 10 ECS \u2014 Residential: 10 ECS (1/100 sqm of 1,000 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~125 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.9 Sec.2 \u2014 Rainwater Harvesting",
+        "description": "Plot area 595 sqm exceeds 300 sqm threshold. Rainwater harvesting is MANDATORY. Pre-design reserve: 1 recharge pit per 100 sqm of roofed area, or underground storage sized for 20mm/hour rainfall. Interior plumbing deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 2.5 and Coverage 55% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 4.5m, rear/side \u2265 5m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "COMPLIANT \u2014 FAR: 1.68/2.5 | Coverage: 33.6%/55% | Open: 66.4% | Height: 15.0m | Road: 15m | Plot: 595 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 595 sqm, Use: residential, Abutting Road: 15m):\n\u2022 FAR limit (GHMC GO 168): 2.5  |  Actual: 1.68\n\u2022 Ground coverage limit (GHMC GO 168): 55%  |  Actual: 33.6%\n\u2022 Open space minimum (GHMC GO 168): 45%  |  Actual: 66.4%\n\u2022 Permissible height ceiling for 15m road: 18m  |  Actual: 15.0m\n\u2022 Setbacks required: Front \u2265 4.5m, Rear \u2265 4m, Side \u2265 4m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: YES (>15m / >4 floors)\n\u2022 Required parking: 10 ECS  |  Rainwater harvesting: MANDATORY",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 2.5,
+      "groundCoverage": 55,
+      "openSpace": 45,
+      "maxHeight": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 2.5,
+      "groundCoverageLimit": 55,
+      "openSpaceMinimum": 45,
+      "maxHeightLimit": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      },
+      "maxFootprintArea": 327.2,
+      "maxBuiltUpArea": 1487.25,
+      "minOpenSpaceArea": 267.71,
+      "maxEnvelopeVolume": 5889.51,
+      "theoreticalFloors": 4,
+      "useType": "residential",
+      "siteArea": 594.9
+    }
+  },
+  "HYD-CMP-12": {
+    "compliant": true,
+    "score": 95,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (18m) on road 18m: front setback \u2265 6m, rear \u2265 5m, side \u2265 5m. Site dimensions (25m \u00d7 44m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.3 \u00a73.15 \u2014 Lift Provision (Massing Impact)",
+        "description": "Building height 18m / 6 floors exceeds lift threshold (>15m or >4 floors). Pre-design massing impact: reserve ~5 sqm of core footprint per block (exact shaft count and staircase widths deferred to detail design).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 25 ECS \u2014 Residential: 25 ECS (1/100 sqm of 2,443 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~313 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.9 Sec.2 \u2014 Rainwater Harvesting",
+        "description": "Plot area 1,103 sqm exceeds 300 sqm threshold. Rainwater harvesting is MANDATORY. Pre-design reserve: 1 recharge pit per 100 sqm of roofed area, or underground storage sized for 20mm/hour rainfall. Interior plumbing deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 3 and Coverage 50% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 6m, rear/side \u2265 7m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "COMPLIANT \u2014 FAR: 2.22/3 | Coverage: 36.9%/50% | Open: 63.1% | Height: 18.0m | Road: 18m | Plot: 1,103 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 1,103 sqm, Use: residential, Abutting Road: 18m):\n\u2022 FAR limit (GHMC GO 168): 3  |  Actual: 2.22\n\u2022 Ground coverage limit (GHMC GO 168): 50%  |  Actual: 36.9%\n\u2022 Open space minimum (GHMC GO 168): 50%  |  Actual: 63.1%\n\u2022 Permissible height ceiling for 18m road: 24m  |  Actual: 18.0m\n\u2022 Setbacks required: Front \u2265 6m, Rear \u2265 5m, Side \u2265 5m\n\u2022 Fire class: Medium-rise (NBC Pt.4 \u00a73.6)\n\u2022 Lift mandatory: YES (>15m / >4 floors)\n\u2022 Required parking: 25 ECS  |  Rainwater harvesting: MANDATORY",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 3,
+      "groundCoverage": 50,
+      "openSpace": 50,
+      "maxHeight": 24,
+      "setbacks": {
+        "front": 6,
+        "rearSide": 7
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 3,
+      "groundCoverageLimit": 50,
+      "openSpaceMinimum": 50,
+      "maxHeightLimit": 24,
+      "setbacks": {
+        "front": 6,
+        "rearSide": 7
+      },
+      "maxFootprintArea": 551.4,
+      "maxBuiltUpArea": 3308.4,
+      "minOpenSpaceArea": 551.4,
+      "maxEnvelopeVolume": 13233.6,
+      "theoreticalFloors": 6,
+      "useType": "residential",
+      "siteArea": 1102.8
+    }
+  },
+  "HYD-CMP-13": {
+    "compliant": true,
+    "score": 100,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (9m) on road 6m: front setback \u2265 1.5m, rear \u2265 1m, side \u2265 0m. Site dimensions (8m \u00d7 12m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 2 ECS \u2014 Residential: 2 ECS (1/100 sqm of 124 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~25 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 1.75 and Coverage 75% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 1.5m, rear/side \u2265 3m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 97.1060433295325,
+    "zoningSummary": "COMPLIANT \u2014 FAR: 1.41/1.75 | Coverage: 57.4%/75% | Open: 42.6% | Height: 9.0m | Road: 6m | Plot: 88 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 88 sqm, Use: residential, Abutting Road: 6m):\n\u2022 FAR limit (GHMC GO 168): 1.75  |  Actual: 1.41\n\u2022 Ground coverage limit (GHMC GO 168): 75%  |  Actual: 57.4%\n\u2022 Open space minimum (GHMC GO 168): 25%  |  Actual: 42.6%\n\u2022 Permissible height ceiling for 6m road: 10m  |  Actual: 9.0m\n\u2022 Setbacks required: Front \u2265 1.5m, Rear \u2265 1m, Side \u2265 0m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 2 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 1.75,
+      "groundCoverage": 75,
+      "openSpace": 25,
+      "maxHeight": 10,
+      "setbacks": {
+        "front": 1.5,
+        "rearSide": 3
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 1.75,
+      "groundCoverageLimit": 75,
+      "openSpaceMinimum": 25,
+      "maxHeightLimit": 10,
+      "setbacks": {
+        "front": 1.5,
+        "rearSide": 3
+      },
+      "maxFootprintArea": 65.78,
+      "maxBuiltUpArea": 153.48,
+      "minOpenSpaceArea": 21.93,
+      "maxEnvelopeVolume": 657.75,
+      "theoreticalFloors": 2,
+      "useType": "residential",
+      "siteArea": 87.7
+    }
+  },
+  "HYD-CMP-14": {
+    "compliant": true,
+    "score": 100,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (9m) on road 12m: front setback \u2265 4.5m, rear \u2265 1.5m, side \u2265 1m. Site dimensions (10m \u00d7 13m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 2 ECS \u2014 Residential: 2 ECS (1/100 sqm of 112 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~25 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 2.5 and Coverage 70% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 4.5m, rear/side \u2265 5m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "COMPLIANT \u2014 FAR: 0.87/2.5 | Coverage: 29.0%/70% | Open: 71.0% | Height: 9.0m | Road: 12m | Plot: 129 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 129 sqm, Use: residential, Abutting Road: 12m):\n\u2022 FAR limit (GHMC GO 168): 2.5  |  Actual: 0.87\n\u2022 Ground coverage limit (GHMC GO 168): 70%  |  Actual: 29.0%\n\u2022 Open space minimum (GHMC GO 168): 30%  |  Actual: 71.0%\n\u2022 Permissible height ceiling for 12m road: 18m  |  Actual: 9.0m\n\u2022 Setbacks required: Front \u2265 4.5m, Rear \u2265 1.5m, Side \u2265 1m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 2 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 2.5,
+      "groundCoverage": 70,
+      "openSpace": 30,
+      "maxHeight": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 2.5,
+      "groundCoverageLimit": 70,
+      "openSpaceMinimum": 30,
+      "maxHeightLimit": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      },
+      "maxFootprintArea": 90.3,
+      "maxBuiltUpArea": 322.5,
+      "minOpenSpaceArea": 38.7,
+      "maxEnvelopeVolume": 1625.4,
+      "theoreticalFloors": 3,
+      "useType": "residential",
+      "siteArea": 129
+    }
+  },
+  "HYD-CMP-15": {
+    "compliant": true,
+    "score": 100,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (9m) on road 15m: front setback \u2265 4.5m, rear \u2265 2m, side \u2265 1.5m. Site dimensions (13m \u00d7 20m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 4 ECS \u2014 Residential: 4 ECS (1/100 sqm of 347 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~50 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 2.5 and Coverage 65% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 4.5m, rear/side \u2265 5m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "COMPLIANT \u2014 FAR: 1.28/2.5 | Coverage: 42.7%/65% | Open: 57.3% | Height: 9.0m | Road: 15m | Plot: 271 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 271 sqm, Use: residential, Abutting Road: 15m):\n\u2022 FAR limit (GHMC GO 168): 2.5  |  Actual: 1.28\n\u2022 Ground coverage limit (GHMC GO 168): 65%  |  Actual: 42.7%\n\u2022 Open space minimum (GHMC GO 168): 35%  |  Actual: 57.3%\n\u2022 Permissible height ceiling for 15m road: 18m  |  Actual: 9.0m\n\u2022 Setbacks required: Front \u2265 4.5m, Rear \u2265 2m, Side \u2265 1.5m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 4 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 2.5,
+      "groundCoverage": 65,
+      "openSpace": 35,
+      "maxHeight": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 2.5,
+      "groundCoverageLimit": 65,
+      "openSpaceMinimum": 35,
+      "maxHeightLimit": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      },
+      "maxFootprintArea": 176.28,
+      "maxBuiltUpArea": 678,
+      "minOpenSpaceArea": 94.92,
+      "maxEnvelopeVolume": 3173.04,
+      "theoreticalFloors": 3,
+      "useType": "residential",
+      "siteArea": 271.2
+    }
+  },
+  "HYD-CMP-16": {
+    "compliant": true,
+    "score": 97,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (9m) on road 7.5m: front setback \u2265 3m, rear \u2265 2m, side \u2265 2m. Site dimensions (13m \u00d7 25m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 5 ECS \u2014 Residential: 5 ECS (1/100 sqm of 423 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~63 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.9 Sec.2 \u2014 Rainwater Harvesting",
+        "description": "Plot area 333 sqm exceeds 300 sqm threshold. Rainwater harvesting is MANDATORY. Pre-design reserve: 1 recharge pit per 100 sqm of roofed area, or underground storage sized for 20mm/hour rainfall. Interior plumbing deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 1.75 and Coverage 60% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 3m, rear/side \u2265 3m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "COMPLIANT \u2014 FAR: 1.27/1.75 | Coverage: 42.4%/60% | Open: 57.6% | Height: 9.0m | Road: 7.5m | Plot: 333 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 333 sqm, Use: residential, Abutting Road: 7.5m):\n\u2022 FAR limit (GHMC GO 168): 1.75  |  Actual: 1.27\n\u2022 Ground coverage limit (GHMC GO 168): 60%  |  Actual: 42.4%\n\u2022 Open space minimum (GHMC GO 168): 40%  |  Actual: 57.6%\n\u2022 Permissible height ceiling for 7.5m road: 10m  |  Actual: 9.0m\n\u2022 Setbacks required: Front \u2265 3m, Rear \u2265 2m, Side \u2265 2m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 5 ECS  |  Rainwater harvesting: MANDATORY",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 1.75,
+      "groundCoverage": 60,
+      "openSpace": 40,
+      "maxHeight": 10,
+      "setbacks": {
+        "front": 3,
+        "rearSide": 3
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 1.75,
+      "groundCoverageLimit": 60,
+      "openSpaceMinimum": 40,
+      "maxHeightLimit": 10,
+      "setbacks": {
+        "front": 3,
+        "rearSide": 3
+      },
+      "maxFootprintArea": 199.86,
+      "maxBuiltUpArea": 582.93,
+      "minOpenSpaceArea": 133.24,
+      "maxEnvelopeVolume": 1998.6,
+      "theoreticalFloors": 2,
+      "useType": "residential",
+      "siteArea": 333.1
+    }
+  },
+  "HYD-CMP-17": {
+    "compliant": true,
+    "score": 95,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (18m) on road 18m: front setback \u2265 6m, rear \u2265 5m, side \u2265 5m. Site dimensions (19m \u00d7 34m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.3 \u00a73.15 \u2014 Lift Provision (Massing Impact)",
+        "description": "Building height 18m / 6 floors exceeds lift threshold (>15m or >4 floors). Pre-design massing impact: reserve ~5 sqm of core footprint per block (exact shaft count and staircase widths deferred to detail design).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 11 ECS \u2014 Residential: 11 ECS (1/100 sqm of 1,056 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~138 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.9 Sec.2 \u2014 Rainwater Harvesting",
+        "description": "Plot area 672 sqm exceeds 300 sqm threshold. Rainwater harvesting is MANDATORY. Pre-design reserve: 1 recharge pit per 100 sqm of roofed area, or underground storage sized for 20mm/hour rainfall. Interior plumbing deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 3 and Coverage 55% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 6m, rear/side \u2265 7m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "COMPLIANT \u2014 FAR: 1.57/3 | Coverage: 26.2%/55% | Open: 73.8% | Height: 18.0m | Road: 18m | Plot: 672 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 672 sqm, Use: residential, Abutting Road: 18m):\n\u2022 FAR limit (GHMC GO 168): 3  |  Actual: 1.57\n\u2022 Ground coverage limit (GHMC GO 168): 55%  |  Actual: 26.2%\n\u2022 Open space minimum (GHMC GO 168): 45%  |  Actual: 73.8%\n\u2022 Permissible height ceiling for 18m road: 24m  |  Actual: 18.0m\n\u2022 Setbacks required: Front \u2265 6m, Rear \u2265 5m, Side \u2265 5m\n\u2022 Fire class: Medium-rise (NBC Pt.4 \u00a73.6)\n\u2022 Lift mandatory: YES (>15m / >4 floors)\n\u2022 Required parking: 11 ECS  |  Rainwater harvesting: MANDATORY",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 3,
+      "groundCoverage": 55,
+      "openSpace": 45,
+      "maxHeight": 24,
+      "setbacks": {
+        "front": 6,
+        "rearSide": 7
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 3,
+      "groundCoverageLimit": 55,
+      "openSpaceMinimum": 45,
+      "maxHeightLimit": 24,
+      "setbacks": {
+        "front": 6,
+        "rearSide": 7
+      },
+      "maxFootprintArea": 369.38,
+      "maxBuiltUpArea": 2014.8,
+      "minOpenSpaceArea": 302.22,
+      "maxEnvelopeVolume": 8865.12,
+      "theoreticalFloors": 5,
+      "useType": "residential",
+      "siteArea": 671.6
+    }
+  },
+  "HYD-CMP-18": {
+    "compliant": true,
+    "score": 85,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (36m) on road 30m: front setback \u2265 9m, rear \u2265 9m, side \u2265 9m. Site dimensions (36m \u00d7 49m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.4 \u00a73.7 \u2014 High-Rise Threshold",
+        "description": "Height 36.0m classifies this as HIGH-RISE (>24m). At pre-design stage: confirm AAI NOC (airport proximity), structural wind analysis per IS 875 Part 3, and consult GHMC high-rise committee. Interior fire/life-safety details deferred to detail design.",
+        "severity": "warning"
+      },
+      {
+        "code": "NBC 2016 Pt.3 \u00a73.15 \u2014 Lift Provision (Massing Impact)",
+        "description": "Building height 36m / 12 floors exceeds lift threshold (>15m or >4 floors). Pre-design massing impact: reserve ~5 sqm of core footprint per block (exact shaft count and staircase widths deferred to detail design).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 52 ECS \u2014 Residential: 52 ECS (1/100 sqm of 5,116 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~650 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "warning"
+      },
+      {
+        "code": "NBC 2016 Pt.9 Sec.2 \u2014 Rainwater Harvesting",
+        "description": "Plot area 1,778 sqm exceeds 300 sqm threshold. Rainwater harvesting is MANDATORY. Pre-design reserve: 1 recharge pit per 100 sqm of roofed area, or underground storage sized for 20mm/hour rainfall. Interior plumbing deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 3.5 and Coverage 50% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 9m, rear/side \u2265 9m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 92,
+    "zoningSummary": "COMPLIANT \u2014 FAR: 2.88/3.5 | Coverage: 27.4%/50% | Open: 72.6% | Height: 36.0m | Road: 30m | Plot: 1,778 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 1,778 sqm, Use: residential, Abutting Road: 30m):\n\u2022 FAR limit (GHMC GO 168): 3.5  |  Actual: 2.88\n\u2022 Ground coverage limit (GHMC GO 168): 50%  |  Actual: 27.4%\n\u2022 Open space minimum (GHMC GO 168): 50%  |  Actual: 72.6%\n\u2022 Permissible height ceiling for 30m road: 45m  |  Actual: 36.0m\n\u2022 Setbacks required: Front \u2265 9m, Rear \u2265 9m, Side \u2265 9m\n\u2022 Fire class: HIGH-RISE (NBC Pt.4 \u00a73.7)\n\u2022 Lift mandatory: YES (>15m / >4 floors)\n\u2022 Required parking: 52 ECS  |  Rainwater harvesting: MANDATORY",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 3.5,
+      "groundCoverage": 50,
+      "openSpace": 50,
+      "maxHeight": 45,
+      "setbacks": {
+        "front": 9,
+        "rearSide": 9
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 3.5,
+      "groundCoverageLimit": 50,
+      "openSpaceMinimum": 50,
+      "maxHeightLimit": 45,
+      "setbacks": {
+        "front": 9,
+        "rearSide": 9
+      },
+      "maxFootprintArea": 888.75,
+      "maxBuiltUpArea": 6221.25,
+      "minOpenSpaceArea": 888.75,
+      "maxEnvelopeVolume": 39993.75,
+      "theoreticalFloors": 7,
+      "useType": "residential",
+      "siteArea": 1777.5
+    }
+  },
+  "HYD-CMP-19": {
+    "compliant": true,
+    "score": 100,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (9m) on road 7.5m: front setback \u2265 1.5m, rear \u2265 1m, side \u2265 0m. Site dimensions (8m \u00d7 9m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 1 ECS \u2014 Residential: 1 ECS (1/100 sqm of 100 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~13 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 1.75 and Coverage 75% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 1.5m, rear/side \u2265 3m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "COMPLIANT \u2014 FAR: 1.35/1.75 | Coverage: 45.0%/75% | Open: 55.0% | Height: 9.0m | Road: 7.5m | Plot: 74 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 74 sqm, Use: residential, Abutting Road: 7.5m):\n\u2022 FAR limit (GHMC GO 168): 1.75  |  Actual: 1.35\n\u2022 Ground coverage limit (GHMC GO 168): 75%  |  Actual: 45.0%\n\u2022 Open space minimum (GHMC GO 168): 25%  |  Actual: 55.0%\n\u2022 Permissible height ceiling for 7.5m road: 10m  |  Actual: 9.0m\n\u2022 Setbacks required: Front \u2265 1.5m, Rear \u2265 1m, Side \u2265 0m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 1 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 1.75,
+      "groundCoverage": 75,
+      "openSpace": 25,
+      "maxHeight": 10,
+      "setbacks": {
+        "front": 1.5,
+        "rearSide": 3
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 1.75,
+      "groundCoverageLimit": 75,
+      "openSpaceMinimum": 25,
+      "maxHeightLimit": 10,
+      "setbacks": {
+        "front": 1.5,
+        "rearSide": 3
+      },
+      "maxFootprintArea": 55.35,
+      "maxBuiltUpArea": 129.15,
+      "minOpenSpaceArea": 18.45,
+      "maxEnvelopeVolume": 553.5,
+      "theoreticalFloors": 2,
+      "useType": "residential",
+      "siteArea": 73.8
+    }
+  },
+  "HYD-CMP-20": {
+    "compliant": true,
+    "score": 100,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (9m) on road 12m: front setback \u2265 4.5m, rear \u2265 1.5m, side \u2265 1m. Site dimensions (12m \u00d7 15m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 3 ECS \u2014 Residential: 3 ECS (1/100 sqm of 204 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~38 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 2.5 and Coverage 70% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 4.5m, rear/side \u2265 5m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "COMPLIANT \u2014 FAR: 1.13/2.5 | Coverage: 37.6%/70% | Open: 62.4% | Height: 9.0m | Road: 12m | Plot: 181 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 181 sqm, Use: residential, Abutting Road: 12m):\n\u2022 FAR limit (GHMC GO 168): 2.5  |  Actual: 1.13\n\u2022 Ground coverage limit (GHMC GO 168): 70%  |  Actual: 37.6%\n\u2022 Open space minimum (GHMC GO 168): 30%  |  Actual: 62.4%\n\u2022 Permissible height ceiling for 12m road: 18m  |  Actual: 9.0m\n\u2022 Setbacks required: Front \u2265 4.5m, Rear \u2265 1.5m, Side \u2265 1m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 3 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 2.5,
+      "groundCoverage": 70,
+      "openSpace": 30,
+      "maxHeight": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 2.5,
+      "groundCoverageLimit": 70,
+      "openSpaceMinimum": 30,
+      "maxHeightLimit": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      },
+      "maxFootprintArea": 126.63,
+      "maxBuiltUpArea": 452.25,
+      "minOpenSpaceArea": 54.27,
+      "maxEnvelopeVolume": 2279.34,
+      "theoreticalFloors": 3,
+      "useType": "residential",
+      "siteArea": 180.9
+    }
+  },
+  "HYD-BRD-01": {
+    "compliant": true,
+    "score": 88,
+    "violations": [
+      {
+        "code": "NBC 2016 Pt.3 \u00a74.1 \u2014 FAR Near Limit",
+        "description": "FAR 1.74 is within 10% of the 1.75 limit. Note: Basement parking, open stilt floors, and utility shafts may be excluded from FAR per GHMC GO 168.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.3 \u00a74.2 \u2014 Ground Coverage Advisory",
+        "description": "Ground coverage 73.4% is near the 75% limit for this plot size. Adequate open-to-sky areas and ventilation shafts are recommended.",
+        "severity": "info"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Open Space Advisory",
+        "description": "Open space 26.6% meets the 25% minimum but is near the limit for comfortable habitable density. Consider additional courtyards or landscape buffers.",
+        "severity": "info"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (9m) on road 6m: front setback \u2265 1.5m, rear \u2265 1m, side \u2265 0m. Site dimensions (7m \u00d7 10m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 2 ECS \u2014 Residential: 2 ECS (1/100 sqm of 112 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~25 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.8 \u00a72.1 \u2014 Ventilation Risk (Massing Level)",
+        "description": "Ground coverage 73.4% leaves limited perimeter for facade openings. Pre-design massing action: reduce coverage or introduce internal courtyards so total facade perimeter can yield openings \u2265 1/10 floor area. Interior room layouts deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 1.75 and Coverage 75% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 1.5m, rear/side \u2265 3m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 77.91925465838511,
+    "zoningSummary": "COMPLIANT \u2014 FAR: 1.74/1.75 | Coverage: 73.4%/75% | Open: 26.6% | Height: 9.0m | Road: 6m | Plot: 64 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 64 sqm, Use: residential, Abutting Road: 6m):\n\u2022 FAR limit (GHMC GO 168): 1.75  |  Actual: 1.74\n\u2022 Ground coverage limit (GHMC GO 168): 75%  |  Actual: 73.4%\n\u2022 Open space minimum (GHMC GO 168): 25%  |  Actual: 26.6%\n\u2022 Permissible height ceiling for 6m road: 10m  |  Actual: 9.0m\n\u2022 Setbacks required: Front \u2265 1.5m, Rear \u2265 1m, Side \u2265 0m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 2 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 1.75,
+      "groundCoverage": 75,
+      "openSpace": 25,
+      "maxHeight": 10,
+      "setbacks": {
+        "front": 1.5,
+        "rearSide": 3
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 1.75,
+      "groundCoverageLimit": 75,
+      "openSpaceMinimum": 25,
+      "maxHeightLimit": 10,
+      "setbacks": {
+        "front": 1.5,
+        "rearSide": 3
+      },
+      "maxFootprintArea": 48.3,
+      "maxBuiltUpArea": 112.7,
+      "minOpenSpaceArea": 16.1,
+      "maxEnvelopeVolume": 483,
+      "theoreticalFloors": 2,
+      "useType": "residential",
+      "siteArea": 64.4
+    }
+  },
+  "HYD-BRD-02": {
+    "compliant": false,
+    "score": 85,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Footprint Outside Setback Envelope",
+        "description": "Proposed footprint 67.7 sqm exceeds buildable envelope (67.4 sqm) defined by provided setbacks.",
+        "severity": "critical"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 2 ECS \u2014 Residential: 2 ECS (1/100 sqm of 174 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~25 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 2.5 and Coverage 70% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 4.5m, rear/side \u2265 5m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 90,
+    "zoningSummary": "1 critical violation(s) \u2014 FAR: 1.24/2.5 | Coverage: 48.4%/70% | Open: 51.6% | Height: 9.0m | Road: 12m | Plot: 140 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 140 sqm, Use: residential, Abutting Road: 12m):\n\u2022 FAR limit (GHMC GO 168): 2.5  |  Actual: 1.24\n\u2022 Ground coverage limit (GHMC GO 168): 70%  |  Actual: 48.4%\n\u2022 Open space minimum (GHMC GO 168): 30%  |  Actual: 51.6%\n\u2022 Permissible height ceiling for 12m road: 18m  |  Actual: 9.0m\n\u2022 Setbacks required: Front \u2265 4.5m, Rear \u2265 1.5m, Side \u2265 1m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 2 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 2.5,
+      "groundCoverage": 70,
+      "openSpace": 30,
+      "maxHeight": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 2.5,
+      "groundCoverageLimit": 70,
+      "openSpaceMinimum": 30,
+      "maxHeightLimit": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      },
+      "maxFootprintArea": 97.86,
+      "maxBuiltUpArea": 349.5,
+      "minOpenSpaceArea": 41.94,
+      "maxEnvelopeVolume": 1761.48,
+      "theoreticalFloors": 3,
+      "useType": "residential",
+      "siteArea": 139.8
+    }
+  },
+  "HYD-BRD-03": {
+    "compliant": true,
+    "score": 100,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (9m) on road 7.5m: front setback \u2265 2m, rear \u2265 2m, side \u2265 1.5m. Site dimensions (14m \u00d7 21m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 5 ECS \u2014 Residential: 5 ECS (1/100 sqm of 449 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~63 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 1.75 and Coverage 65% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 2m, rear/side \u2265 3m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "COMPLIANT \u2014 FAR: 1.52/1.75 | Coverage: 53.4%/65% | Open: 46.6% | Height: 9.0m | Road: 7.5m | Plot: 296 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 296 sqm, Use: residential, Abutting Road: 7.5m):\n\u2022 FAR limit (GHMC GO 168): 1.75  |  Actual: 1.52\n\u2022 Ground coverage limit (GHMC GO 168): 65%  |  Actual: 53.4%\n\u2022 Open space minimum (GHMC GO 168): 35%  |  Actual: 46.6%\n\u2022 Permissible height ceiling for 7.5m road: 10m  |  Actual: 9.0m\n\u2022 Setbacks required: Front \u2265 2m, Rear \u2265 2m, Side \u2265 1.5m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 5 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 1.75,
+      "groundCoverage": 65,
+      "openSpace": 35,
+      "maxHeight": 10,
+      "setbacks": {
+        "front": 2,
+        "rearSide": 3
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 1.75,
+      "groundCoverageLimit": 65,
+      "openSpaceMinimum": 35,
+      "maxHeightLimit": 10,
+      "setbacks": {
+        "front": 2,
+        "rearSide": 3
+      },
+      "maxFootprintArea": 192.27,
+      "maxBuiltUpArea": 517.65,
+      "minOpenSpaceArea": 103.53,
+      "maxEnvelopeVolume": 1922.7,
+      "theoreticalFloors": 2,
+      "useType": "residential",
+      "siteArea": 295.8
+    }
+  },
+  "HYD-BRD-04": {
+    "compliant": false,
+    "score": 80,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Front Setback Violation (15m massing)",
+        "description": "Provided front setback 4.48m is below required 4.50m for road width 15m on a 374 sqm plot.",
+        "severity": "critical"
+      },
+      {
+        "code": "NBC 2016 Pt.3 \u00a73.15 \u2014 Lift Provision (Massing Impact)",
+        "description": "Building height 15m / 5 floors exceeds lift threshold (>15m or >4 floors). Pre-design massing impact: reserve ~5 sqm of core footprint per block (exact shaft count and staircase widths deferred to detail design).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 5 ECS \u2014 Residential: 5 ECS (1/100 sqm of 419 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~63 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.9 Sec.2 \u2014 Rainwater Harvesting",
+        "description": "Plot area 374 sqm exceeds 300 sqm threshold. Rainwater harvesting is MANDATORY. Pre-design reserve: 1 recharge pit per 100 sqm of roofed area, or underground storage sized for 20mm/hour rainfall. Interior plumbing deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 2.5 and Coverage 60% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 4.5m, rear/side \u2265 5m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 90,
+    "zoningSummary": "1 critical violation(s) \u2014 FAR: 1.12/2.5 | Coverage: 22.4%/60% | Open: 77.6% | Height: 15.0m | Road: 15m | Plot: 374 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 374 sqm, Use: residential, Abutting Road: 15m):\n\u2022 FAR limit (GHMC GO 168): 2.5  |  Actual: 1.12\n\u2022 Ground coverage limit (GHMC GO 168): 60%  |  Actual: 22.4%\n\u2022 Open space minimum (GHMC GO 168): 40%  |  Actual: 77.6%\n\u2022 Permissible height ceiling for 15m road: 18m  |  Actual: 15.0m\n\u2022 Setbacks required: Front \u2265 4.5m, Rear \u2265 4m, Side \u2265 4m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: YES (>15m / >4 floors)\n\u2022 Required parking: 5 ECS  |  Rainwater harvesting: MANDATORY",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 2.5,
+      "groundCoverage": 60,
+      "openSpace": 40,
+      "maxHeight": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 2.5,
+      "groundCoverageLimit": 60,
+      "openSpaceMinimum": 40,
+      "maxHeightLimit": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      },
+      "maxFootprintArea": 224.64,
+      "maxBuiltUpArea": 936,
+      "minOpenSpaceArea": 149.76,
+      "maxEnvelopeVolume": 4043.52,
+      "theoreticalFloors": 4,
+      "useType": "residential",
+      "siteArea": 374.4
+    }
+  },
+  "HYD-BRD-05": {
+    "compliant": true,
+    "score": 95,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (18m) on road 12m: front setback \u2265 4.5m, rear \u2265 4m, side \u2265 4m. Site dimensions (26m \u00d7 36m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.3 \u00a73.15 \u2014 Lift Provision (Massing Impact)",
+        "description": "Building height 18m / 5 floors exceeds lift threshold (>15m or >4 floors). Pre-design massing impact: reserve ~5 sqm of core footprint per block (exact shaft count and staircase widths deferred to detail design).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 21 ECS \u2014 Residential: 21 ECS (1/100 sqm of 2,098 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~263 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.9 Sec.2 \u2014 Rainwater Harvesting",
+        "description": "Plot area 933 sqm exceeds 300 sqm threshold. Rainwater harvesting is MANDATORY. Pre-design reserve: 1 recharge pit per 100 sqm of roofed area, or underground storage sized for 20mm/hour rainfall. Interior plumbing deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 2.5 and Coverage 55% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 4.5m, rear/side \u2265 5m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "COMPLIANT \u2014 FAR: 2.25/2.5 | Coverage: 47.4%/55% | Open: 52.6% | Height: 17.9m | Road: 12m | Plot: 933 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 933 sqm, Use: residential, Abutting Road: 12m):\n\u2022 FAR limit (GHMC GO 168): 2.5  |  Actual: 2.25\n\u2022 Ground coverage limit (GHMC GO 168): 55%  |  Actual: 47.4%\n\u2022 Open space minimum (GHMC GO 168): 45%  |  Actual: 52.6%\n\u2022 Permissible height ceiling for 12m road: 18m  |  Actual: 17.9m\n\u2022 Setbacks required: Front \u2265 4.5m, Rear \u2265 4m, Side \u2265 4m\n\u2022 Fire class: Medium-rise (NBC Pt.4 \u00a73.6)\n\u2022 Lift mandatory: YES (>15m / >4 floors)\n\u2022 Required parking: 21 ECS  |  Rainwater harvesting: MANDATORY",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 2.5,
+      "groundCoverage": 55,
+      "openSpace": 45,
+      "maxHeight": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 2.5,
+      "groundCoverageLimit": 55,
+      "openSpaceMinimum": 45,
+      "maxHeightLimit": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      },
+      "maxFootprintArea": 512.93,
+      "maxBuiltUpArea": 2331.5,
+      "minOpenSpaceArea": 419.67,
+      "maxEnvelopeVolume": 9232.74,
+      "theoreticalFloors": 4,
+      "useType": "residential",
+      "siteArea": 932.6
+    }
+  },
+  "HYD-BRD-06": {
+    "compliant": false,
+    "score": 60,
+    "violations": [
+      {
+        "code": "NBC 2016 Pt.3 \u00a74.1 / GHMC GO 168 \u2014 FAR Exceeded",
+        "description": "FAR 3.52 exceeds the 3.5 limit for residential use (plot 1987 sqm, road 30m) by 0.02. Formula: Total Covered Area \u00f7 Plot Area. Basement parking, staircases, and ducts are excluded. Reduce built-up area by 35 sqm or apply for FAR variance.",
+        "severity": "critical"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (36m) on road 30m: front setback \u2265 9m, rear \u2265 9m, side \u2265 9m. Site dimensions (36m \u00d7 56m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.4 \u00a73.7 \u2014 High-Rise Threshold",
+        "description": "Height 36.0m classifies this as HIGH-RISE (>24m). At pre-design stage: confirm AAI NOC (airport proximity), structural wind analysis per IS 875 Part 3, and consult GHMC high-rise committee. Interior fire/life-safety details deferred to detail design.",
+        "severity": "warning"
+      },
+      {
+        "code": "NBC 2016 Pt.3 \u00a73.15 \u2014 Lift Provision (Massing Impact)",
+        "description": "Building height 36m / 12 floors exceeds lift threshold (>15m or >4 floors). Pre-design massing impact: reserve ~5 sqm of core footprint per block (exact shaft count and staircase widths deferred to detail design).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 70 ECS \u2014 Residential: 70 ECS (1/100 sqm of 6,990 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~875 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "warning"
+      },
+      {
+        "code": "NBC 2016 Pt.9 Sec.2 \u2014 Rainwater Harvesting",
+        "description": "Plot area 1,987 sqm exceeds 300 sqm threshold. Rainwater harvesting is MANDATORY. Pre-design reserve: 1 recharge pit per 100 sqm of roofed area, or underground storage sized for 20mm/hour rainfall. Interior plumbing deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 3.5 and Coverage 50% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 9m, rear/side \u2265 9m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 92,
+    "zoningSummary": "1 critical violation(s) \u2014 FAR: 3.52/3.5 | Coverage: 33.3%/50% | Open: 66.7% | Height: 36.0m | Road: 30m | Plot: 1,987 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 1,987 sqm, Use: residential, Abutting Road: 30m):\n\u2022 FAR limit (GHMC GO 168): 3.5  |  Actual: 3.52\n\u2022 Ground coverage limit (GHMC GO 168): 50%  |  Actual: 33.3%\n\u2022 Open space minimum (GHMC GO 168): 50%  |  Actual: 66.7%\n\u2022 Permissible height ceiling for 30m road: 45m  |  Actual: 36.0m\n\u2022 Setbacks required: Front \u2265 9m, Rear \u2265 9m, Side \u2265 9m\n\u2022 Fire class: HIGH-RISE (NBC Pt.4 \u00a73.7)\n\u2022 Lift mandatory: YES (>15m / >4 floors)\n\u2022 Required parking: 70 ECS  |  Rainwater harvesting: MANDATORY",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 3.5,
+      "groundCoverage": 50,
+      "openSpace": 50,
+      "maxHeight": 45,
+      "setbacks": {
+        "front": 9,
+        "rearSide": 9
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 3.5,
+      "groundCoverageLimit": 50,
+      "openSpaceMinimum": 50,
+      "maxHeightLimit": 45,
+      "setbacks": {
+        "front": 9,
+        "rearSide": 9
+      },
+      "maxFootprintArea": 993.65,
+      "maxBuiltUpArea": 6955.55,
+      "minOpenSpaceArea": 993.65,
+      "maxEnvelopeVolume": 44714.25,
+      "theoreticalFloors": 7,
+      "useType": "residential",
+      "siteArea": 1987.3
+    }
+  },
+  "HYD-BRD-07": {
+    "compliant": true,
+    "score": 91,
+    "violations": [
+      {
+        "code": "NBC 2016 Pt.3 \u00a74.2 \u2014 Ground Coverage Advisory",
+        "description": "Ground coverage 74.6% is near the 75% limit for this plot size. Adequate open-to-sky areas and ventilation shafts are recommended.",
+        "severity": "info"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Open Space Advisory",
+        "description": "Open space 25.4% meets the 25% minimum but is near the limit for comfortable habitable density. Consider additional courtyards or landscape buffers.",
+        "severity": "info"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (9m) on road 7.5m: front setback \u2265 1.5m, rear \u2265 1m, side \u2265 0m. Site dimensions (8m \u00d7 12m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 2 ECS \u2014 Residential: 2 ECS (1/100 sqm of 141 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~25 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.8 \u00a72.1 \u2014 Ventilation Risk (Massing Level)",
+        "description": "Ground coverage 74.6% leaves limited perimeter for facade openings. Pre-design massing action: reduce coverage or introduce internal courtyards so total facade perimeter can yield openings \u2265 1/10 floor area. Interior room layouts deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 1.75 and Coverage 75% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 1.5m, rear/side \u2265 3m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 76.45585215605749,
+    "zoningSummary": "COMPLIANT \u2014 FAR: 1.45/1.75 | Coverage: 74.6%/75% | Open: 25.4% | Height: 9.0m | Road: 7.5m | Plot: 97 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 97 sqm, Use: residential, Abutting Road: 7.5m):\n\u2022 FAR limit (GHMC GO 168): 1.75  |  Actual: 1.45\n\u2022 Ground coverage limit (GHMC GO 168): 75%  |  Actual: 74.6%\n\u2022 Open space minimum (GHMC GO 168): 25%  |  Actual: 25.4%\n\u2022 Permissible height ceiling for 7.5m road: 10m  |  Actual: 9.0m\n\u2022 Setbacks required: Front \u2265 1.5m, Rear \u2265 1m, Side \u2265 0m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 2 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 1.75,
+      "groundCoverage": 75,
+      "openSpace": 25,
+      "maxHeight": 10,
+      "setbacks": {
+        "front": 1.5,
+        "rearSide": 3
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 1.75,
+      "groundCoverageLimit": 75,
+      "openSpaceMinimum": 25,
+      "maxHeightLimit": 10,
+      "setbacks": {
+        "front": 1.5,
+        "rearSide": 3
+      },
+      "maxFootprintArea": 73.05,
+      "maxBuiltUpArea": 170.45,
+      "minOpenSpaceArea": 24.35,
+      "maxEnvelopeVolume": 730.5,
+      "theoreticalFloors": 2,
+      "useType": "residential",
+      "siteArea": 97.4
+    }
+  },
+  "HYD-BRD-08": {
+    "compliant": false,
+    "score": 85,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Side Setback Violation (9m massing)",
+        "description": "Provided side setback 0.98m is below required 1.00m for height 9m on a 171 sqm plot.",
+        "severity": "critical"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 3 ECS \u2014 Residential: 3 ECS (1/100 sqm of 250 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~38 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 1.75 and Coverage 70% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 1.5m, rear/side \u2265 3m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 90,
+    "zoningSummary": "1 critical violation(s) \u2014 FAR: 1.46/1.75 | Coverage: 53.2%/70% | Open: 46.8% | Height: 9.0m | Road: 6m | Plot: 171 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 171 sqm, Use: residential, Abutting Road: 6m):\n\u2022 FAR limit (GHMC GO 168): 1.75  |  Actual: 1.46\n\u2022 Ground coverage limit (GHMC GO 168): 70%  |  Actual: 53.2%\n\u2022 Open space minimum (GHMC GO 168): 30%  |  Actual: 46.8%\n\u2022 Permissible height ceiling for 6m road: 10m  |  Actual: 9.0m\n\u2022 Setbacks required: Front \u2265 1.5m, Rear \u2265 1.5m, Side \u2265 1m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 3 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 1.75,
+      "groundCoverage": 70,
+      "openSpace": 30,
+      "maxHeight": 10,
+      "setbacks": {
+        "front": 1.5,
+        "rearSide": 3
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 1.75,
+      "groundCoverageLimit": 70,
+      "openSpaceMinimum": 30,
+      "maxHeightLimit": 10,
+      "setbacks": {
+        "front": 1.5,
+        "rearSide": 3
+      },
+      "maxFootprintArea": 119.7,
+      "maxBuiltUpArea": 299.25,
+      "minOpenSpaceArea": 51.3,
+      "maxEnvelopeVolume": 1197,
+      "theoreticalFloors": 2,
+      "useType": "residential",
+      "siteArea": 171
+    }
+  },
+  "HYD-BRD-09": {
+    "compliant": true,
+    "score": 97,
+    "violations": [
+      {
+        "code": "NBC 2016 Pt.3 \u00a74.1 \u2014 FAR Near Limit",
+        "description": "FAR 1.59 is within 10% of the 1.75 limit. Note: Basement parking, open stilt floors, and utility shafts may be excluded from FAR per GHMC GO 168.",
+        "severity": "info"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (9m) on road 7.5m: front setback \u2265 2m, rear \u2265 2m, side \u2265 1.5m. Site dimensions (15m \u00d7 19m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 5 ECS \u2014 Residential: 5 ECS (1/100 sqm of 461 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~63 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 1.75 and Coverage 65% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 2m, rear/side \u2265 3m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "COMPLIANT \u2014 FAR: 1.59/1.75 | Coverage: 54.9%/65% | Open: 45.1% | Height: 9.0m | Road: 7.5m | Plot: 290 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 290 sqm, Use: residential, Abutting Road: 7.5m):\n\u2022 FAR limit (GHMC GO 168): 1.75  |  Actual: 1.59\n\u2022 Ground coverage limit (GHMC GO 168): 65%  |  Actual: 54.9%\n\u2022 Open space minimum (GHMC GO 168): 35%  |  Actual: 45.1%\n\u2022 Permissible height ceiling for 7.5m road: 10m  |  Actual: 9.0m\n\u2022 Setbacks required: Front \u2265 2m, Rear \u2265 2m, Side \u2265 1.5m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 5 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 1.75,
+      "groundCoverage": 65,
+      "openSpace": 35,
+      "maxHeight": 10,
+      "setbacks": {
+        "front": 2,
+        "rearSide": 3
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 1.75,
+      "groundCoverageLimit": 65,
+      "openSpaceMinimum": 35,
+      "maxHeightLimit": 10,
+      "setbacks": {
+        "front": 2,
+        "rearSide": 3
+      },
+      "maxFootprintArea": 188.57,
+      "maxBuiltUpArea": 507.68,
+      "minOpenSpaceArea": 101.54,
+      "maxEnvelopeVolume": 1885.65,
+      "theoreticalFloors": 2,
+      "useType": "residential",
+      "siteArea": 290.1
+    }
+  },
+  "HYD-BRD-10": {
+    "compliant": false,
+    "score": 70,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (18m) on road 12m: front setback \u2265 4.5m, rear \u2265 5m, side \u2265 5m. Site dimensions (16m \u00d7 20m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Height Exceeds Road Width Limit",
+        "description": "Building height 18.1m exceeds the 18.0m statutory ceiling for an abutting road width of 12m.",
+        "severity": "critical"
+      },
+      {
+        "code": "NBC 2016 Pt.3 \u00a73.15 \u2014 Lift Provision (Massing Impact)",
+        "description": "Building height 18m / 6 floors exceeds lift threshold (>15m or >4 floors). Pre-design massing impact: reserve ~5 sqm of core footprint per block (exact shaft count and staircase widths deferred to detail design).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 4 ECS \u2014 Residential: 4 ECS (1/100 sqm of 317 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~50 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.9 Sec.2 \u2014 Rainwater Harvesting",
+        "description": "Plot area 321 sqm exceeds 300 sqm threshold. Rainwater harvesting is MANDATORY. Pre-design reserve: 1 recharge pit per 100 sqm of roofed area, or underground storage sized for 20mm/hour rainfall. Interior plumbing deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 2.5 and Coverage 60% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 4.5m, rear/side \u2265 5m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "1 critical violation(s) \u2014 FAR: 0.99/2.5 | Coverage: 16.4%/60% | Open: 83.6% | Height: 18.1m | Road: 12m | Plot: 321 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 321 sqm, Use: residential, Abutting Road: 12m):\n\u2022 FAR limit (GHMC GO 168): 2.5  |  Actual: 0.99\n\u2022 Ground coverage limit (GHMC GO 168): 60%  |  Actual: 16.4%\n\u2022 Open space minimum (GHMC GO 168): 40%  |  Actual: 83.6%\n\u2022 Permissible height ceiling for 12m road: 18m  |  Actual: 18.1m\n\u2022 Setbacks required: Front \u2265 4.5m, Rear \u2265 5m, Side \u2265 5m\n\u2022 Fire class: Medium-rise (NBC Pt.4 \u00a73.6)\n\u2022 Lift mandatory: YES (>15m / >4 floors)\n\u2022 Required parking: 4 ECS  |  Rainwater harvesting: MANDATORY",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 2.5,
+      "groundCoverage": 60,
+      "openSpace": 40,
+      "maxHeight": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 2.5,
+      "groundCoverageLimit": 60,
+      "openSpaceMinimum": 40,
+      "maxHeightLimit": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      },
+      "maxFootprintArea": 192.66,
+      "maxBuiltUpArea": 802.75,
+      "minOpenSpaceArea": 128.44,
+      "maxEnvelopeVolume": 3467.88,
+      "theoreticalFloors": 4,
+      "useType": "residential",
+      "siteArea": 321.1
+    }
+  },
+  "HYD-BRD-11": {
+    "compliant": true,
+    "score": 90,
+    "violations": [
+      {
+        "code": "NBC 2016 Pt.3 \u00a74.1 \u2014 FAR Near Limit",
+        "description": "FAR 1.99 is within 10% of the 2 limit. Note: Basement parking, open stilt floors, and utility shafts may be excluded from FAR per GHMC GO 168.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.3 \u00a74.2 \u2014 Ground Coverage Advisory",
+        "description": "Ground coverage 54.4% is near the 55% limit for this plot size. Adequate open-to-sky areas and ventilation shafts are recommended.",
+        "severity": "info"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Open Space Advisory",
+        "description": "Open space 45.6% meets the 45% minimum but is near the limit for comfortable habitable density. Consider additional courtyards or landscape buffers.",
+        "severity": "info"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (12m) on road 9m: front setback \u2265 3.5m, rear \u2265 3.5m, side \u2265 3.5m. Site dimensions (25m \u00d7 36m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 18 ECS \u2014 Residential: 18 ECS (1/100 sqm of 1,788 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~225 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.9 Sec.2 \u2014 Rainwater Harvesting",
+        "description": "Plot area 899 sqm exceeds 300 sqm threshold. Rainwater harvesting is MANDATORY. Pre-design reserve: 1 recharge pit per 100 sqm of roofed area, or underground storage sized for 20mm/hour rainfall. Interior plumbing deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 2 and Coverage 55% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 3.5m, rear/side \u2265 4m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "COMPLIANT \u2014 FAR: 1.99/2 | Coverage: 54.4%/55% | Open: 45.6% | Height: 12.0m | Road: 9m | Plot: 899 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 899 sqm, Use: residential, Abutting Road: 9m):\n\u2022 FAR limit (GHMC GO 168): 2  |  Actual: 1.99\n\u2022 Ground coverage limit (GHMC GO 168): 55%  |  Actual: 54.4%\n\u2022 Open space minimum (GHMC GO 168): 45%  |  Actual: 45.6%\n\u2022 Permissible height ceiling for 9m road: 15m  |  Actual: 12.0m\n\u2022 Setbacks required: Front \u2265 3.5m, Rear \u2265 3.5m, Side \u2265 3.5m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 18 ECS  |  Rainwater harvesting: MANDATORY",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 2,
+      "groundCoverage": 55,
+      "openSpace": 45,
+      "maxHeight": 15,
+      "setbacks": {
+        "front": 3.5,
+        "rearSide": 4
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 2,
+      "groundCoverageLimit": 55,
+      "openSpaceMinimum": 45,
+      "maxHeightLimit": 15,
+      "setbacks": {
+        "front": 3.5,
+        "rearSide": 4
+      },
+      "maxFootprintArea": 494.18,
+      "maxBuiltUpArea": 1797,
+      "minOpenSpaceArea": 404.33,
+      "maxEnvelopeVolume": 7412.63,
+      "theoreticalFloors": 3,
+      "useType": "residential",
+      "siteArea": 898.5
+    }
+  },
+  "HYD-BRD-12": {
+    "compliant": false,
+    "score": 55,
+    "violations": [
+      {
+        "code": "NBC 2016 Pt.3 \u00a74.2 / GHMC GO 168 \u2014 Ground Coverage Exceeded",
+        "description": "Ground coverage 50.25% exceeds the 50% GHMC limit for a 1665 sqm residential plot by 0.25%. Reduce footprint area by 4 sqm. Open-to-sky courtyards, podium gardens, and stilts count as open space.",
+        "severity": "critical"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Insufficient Open Space",
+        "description": "Open space 49.8% is below the required 50% minimum for this 1665 sqm plot (833 sqm required). Open-to-sky courts, pools, landscape areas at grade, and roof gardens (up to 50% credit) may be included in this calculation.",
+        "severity": "critical"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (18m) on road 18m: front setback \u2265 6m, rear \u2265 5m, side \u2265 5m. Site dimensions (34m \u00d7 49m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.3 \u00a73.15 \u2014 Lift Provision (Massing Impact)",
+        "description": "Building height 18m / 6 floors exceeds lift threshold (>15m or >4 floors). Pre-design massing impact: reserve ~5 sqm of core footprint per block (exact shaft count and staircase widths deferred to detail design).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 42 ECS \u2014 Residential: 42 ECS (1/100 sqm of 4,178 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~525 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "warning"
+      },
+      {
+        "code": "NBC 2016 Pt.9 Sec.2 \u2014 Rainwater Harvesting",
+        "description": "Plot area 1,665 sqm exceeds 300 sqm threshold. Rainwater harvesting is MANDATORY. Pre-design reserve: 1 recharge pit per 100 sqm of roofed area, or underground storage sized for 20mm/hour rainfall. Interior plumbing deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 3 and Coverage 50% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 6m, rear/side \u2265 7m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "2 critical violation(s) \u2014 FAR: 2.51/3 | Coverage: 50.2%/50% | Open: 49.8% | Height: 18.0m | Road: 18m | Plot: 1,665 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 1,665 sqm, Use: residential, Abutting Road: 18m):\n\u2022 FAR limit (GHMC GO 168): 3  |  Actual: 2.51\n\u2022 Ground coverage limit (GHMC GO 168): 50%  |  Actual: 50.2%\n\u2022 Open space minimum (GHMC GO 168): 50%  |  Actual: 49.8%\n\u2022 Permissible height ceiling for 18m road: 24m  |  Actual: 18.0m\n\u2022 Setbacks required: Front \u2265 6m, Rear \u2265 5m, Side \u2265 5m\n\u2022 Fire class: Medium-rise (NBC Pt.4 \u00a73.6)\n\u2022 Lift mandatory: YES (>15m / >4 floors)\n\u2022 Required parking: 42 ECS  |  Rainwater harvesting: MANDATORY",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 3,
+      "groundCoverage": 50,
+      "openSpace": 50,
+      "maxHeight": 24,
+      "setbacks": {
+        "front": 6,
+        "rearSide": 7
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 3,
+      "groundCoverageLimit": 50,
+      "openSpaceMinimum": 50,
+      "maxHeightLimit": 24,
+      "setbacks": {
+        "front": 6,
+        "rearSide": 7
+      },
+      "maxFootprintArea": 832.5,
+      "maxBuiltUpArea": 4995,
+      "minOpenSpaceArea": 832.5,
+      "maxEnvelopeVolume": 19980,
+      "theoreticalFloors": 6,
+      "useType": "residential",
+      "siteArea": 1665
+    }
+  },
+  "HYD-BRD-13": {
+    "compliant": true,
+    "score": 100,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (9m) on road 9m: front setback \u2265 3m, rear \u2265 1m, side \u2265 0m. Site dimensions (8m \u00d7 12m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 2 ECS \u2014 Residential: 2 ECS (1/100 sqm of 140 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~25 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 2 and Coverage 75% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 3m, rear/side \u2265 4m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "COMPLIANT \u2014 FAR: 1.53/2 | Coverage: 53.9%/75% | Open: 46.1% | Height: 9.0m | Road: 9m | Plot: 92 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 92 sqm, Use: residential, Abutting Road: 9m):\n\u2022 FAR limit (GHMC GO 168): 2  |  Actual: 1.53\n\u2022 Ground coverage limit (GHMC GO 168): 75%  |  Actual: 53.9%\n\u2022 Open space minimum (GHMC GO 168): 25%  |  Actual: 46.1%\n\u2022 Permissible height ceiling for 9m road: 15m  |  Actual: 9.0m\n\u2022 Setbacks required: Front \u2265 3m, Rear \u2265 1m, Side \u2265 0m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 2 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 2,
+      "groundCoverage": 75,
+      "openSpace": 25,
+      "maxHeight": 15,
+      "setbacks": {
+        "front": 3,
+        "rearSide": 4
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 2,
+      "groundCoverageLimit": 75,
+      "openSpaceMinimum": 25,
+      "maxHeightLimit": 15,
+      "setbacks": {
+        "front": 3,
+        "rearSide": 4
+      },
+      "maxFootprintArea": 68.63,
+      "maxBuiltUpArea": 183,
+      "minOpenSpaceArea": 22.88,
+      "maxEnvelopeVolume": 1029.38,
+      "theoreticalFloors": 2,
+      "useType": "residential",
+      "siteArea": 91.5
+    }
+  },
+  "HYD-BRD-14": {
+    "compliant": false,
+    "score": 85,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Front Setback Violation (9m massing)",
+        "description": "Provided front setback 1.48m is below required 1.50m for road width 6m on a 198 sqm plot.",
+        "severity": "critical"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 3 ECS \u2014 Residential: 3 ECS (1/100 sqm of 296 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~38 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 1.75 and Coverage 70% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 1.5m, rear/side \u2265 3m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 90,
+    "zoningSummary": "1 critical violation(s) \u2014 FAR: 1.50/1.75 | Coverage: 51.9%/70% | Open: 48.1% | Height: 9.0m | Road: 6m | Plot: 198 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 198 sqm, Use: residential, Abutting Road: 6m):\n\u2022 FAR limit (GHMC GO 168): 1.75  |  Actual: 1.50\n\u2022 Ground coverage limit (GHMC GO 168): 70%  |  Actual: 51.9%\n\u2022 Open space minimum (GHMC GO 168): 30%  |  Actual: 48.1%\n\u2022 Permissible height ceiling for 6m road: 10m  |  Actual: 9.0m\n\u2022 Setbacks required: Front \u2265 1.5m, Rear \u2265 1.5m, Side \u2265 1m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 3 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 1.75,
+      "groundCoverage": 70,
+      "openSpace": 30,
+      "maxHeight": 10,
+      "setbacks": {
+        "front": 1.5,
+        "rearSide": 3
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 1.75,
+      "groundCoverageLimit": 70,
+      "openSpaceMinimum": 30,
+      "maxHeightLimit": 10,
+      "setbacks": {
+        "front": 1.5,
+        "rearSide": 3
+      },
+      "maxFootprintArea": 138.25,
+      "maxBuiltUpArea": 345.63,
+      "minOpenSpaceArea": 59.25,
+      "maxEnvelopeVolume": 1382.5,
+      "theoreticalFloors": 2,
+      "useType": "residential",
+      "siteArea": 197.5
+    }
+  },
+  "HYD-BRD-15": {
+    "compliant": true,
+    "score": 100,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (15m) on road 9m: front setback \u2265 3m, rear \u2265 3.5m, side \u2265 3.5m. Site dimensions (16m \u00d7 19m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 4 ECS \u2014 Residential: 4 ECS (1/100 sqm of 373 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~50 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 2 and Coverage 65% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 3m, rear/side \u2265 4m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "COMPLIANT \u2014 FAR: 1.25/2 | Coverage: 31.7%/65% | Open: 68.3% | Height: 14.9m | Road: 9m | Plot: 299 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 299 sqm, Use: residential, Abutting Road: 9m):\n\u2022 FAR limit (GHMC GO 168): 2  |  Actual: 1.25\n\u2022 Ground coverage limit (GHMC GO 168): 65%  |  Actual: 31.7%\n\u2022 Open space minimum (GHMC GO 168): 35%  |  Actual: 68.3%\n\u2022 Permissible height ceiling for 9m road: 15m  |  Actual: 14.9m\n\u2022 Setbacks required: Front \u2265 3m, Rear \u2265 3.5m, Side \u2265 3.5m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 4 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 2,
+      "groundCoverage": 65,
+      "openSpace": 35,
+      "maxHeight": 15,
+      "setbacks": {
+        "front": 3,
+        "rearSide": 4
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 2,
+      "groundCoverageLimit": 65,
+      "openSpaceMinimum": 35,
+      "maxHeightLimit": 15,
+      "setbacks": {
+        "front": 3,
+        "rearSide": 4
+      },
+      "maxFootprintArea": 194.35,
+      "maxBuiltUpArea": 598,
+      "minOpenSpaceArea": 104.65,
+      "maxEnvelopeVolume": 2915.25,
+      "theoreticalFloors": 3,
+      "useType": "residential",
+      "siteArea": 299
+    }
+  },
+  "HYD-BRD-16": {
+    "compliant": false,
+    "score": 72,
+    "violations": [
+      {
+        "code": "NBC 2016 Pt.3 \u00a74.1 / GHMC GO 168 \u2014 FAR Exceeded",
+        "description": "FAR 2.51 exceeds the 2.5 limit for residential use (plot 366 sqm, road 15m) by 0.01. Formula: Total Covered Area \u00f7 Plot Area. Basement parking, staircases, and ducts are excluded. Reduce built-up area by 5 sqm or apply for FAR variance.",
+        "severity": "critical"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (12m) on road 15m: front setback \u2265 4.5m, rear \u2265 3.5m, side \u2265 3.5m. Site dimensions (14m \u00d7 25m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 10 ECS \u2014 Residential: 10 ECS (1/100 sqm of 921 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~125 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.9 Sec.2 \u2014 Rainwater Harvesting",
+        "description": "Plot area 366 sqm exceeds 300 sqm threshold. Rainwater harvesting is MANDATORY. Pre-design reserve: 1 recharge pit per 100 sqm of roofed area, or underground storage sized for 20mm/hour rainfall. Interior plumbing deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 2.5 and Coverage 60% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 4.5m, rear/side \u2265 5m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "1 critical violation(s) \u2014 FAR: 2.51/2.5 | Coverage: 34.9%/60% | Open: 65.1% | Height: 12.0m | Road: 15m | Plot: 366 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 366 sqm, Use: residential, Abutting Road: 15m):\n\u2022 FAR limit (GHMC GO 168): 2.5  |  Actual: 2.51\n\u2022 Ground coverage limit (GHMC GO 168): 60%  |  Actual: 34.9%\n\u2022 Open space minimum (GHMC GO 168): 40%  |  Actual: 65.1%\n\u2022 Permissible height ceiling for 15m road: 18m  |  Actual: 12.0m\n\u2022 Setbacks required: Front \u2265 4.5m, Rear \u2265 3.5m, Side \u2265 3.5m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 10 ECS  |  Rainwater harvesting: MANDATORY",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 2.5,
+      "groundCoverage": 60,
+      "openSpace": 40,
+      "maxHeight": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 2.5,
+      "groundCoverageLimit": 60,
+      "openSpaceMinimum": 40,
+      "maxHeightLimit": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      },
+      "maxFootprintArea": 219.84,
+      "maxBuiltUpArea": 916,
+      "minOpenSpaceArea": 146.56,
+      "maxEnvelopeVolume": 3957.12,
+      "theoreticalFloors": 4,
+      "useType": "residential",
+      "siteArea": 366.4
+    }
+  },
+  "HYD-BRD-17": {
+    "compliant": true,
+    "score": 93,
+    "violations": [
+      {
+        "code": "NBC 2016 Pt.3 \u00a74.2 \u2014 Ground Coverage Advisory",
+        "description": "Ground coverage 54.7% is near the 55% limit for this plot size. Adequate open-to-sky areas and ventilation shafts are recommended.",
+        "severity": "info"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Open Space Advisory",
+        "description": "Open space 45.3% meets the 45% minimum but is near the limit for comfortable habitable density. Consider additional courtyards or landscape buffers.",
+        "severity": "info"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (12m) on road 9m: front setback \u2265 3.5m, rear \u2265 3.5m, side \u2265 3.5m. Site dimensions (24m \u00d7 42m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 17 ECS \u2014 Residential: 17 ECS (1/100 sqm of 1,629 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~213 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.9 Sec.2 \u2014 Rainwater Harvesting",
+        "description": "Plot area 999 sqm exceeds 300 sqm threshold. Rainwater harvesting is MANDATORY. Pre-design reserve: 1 recharge pit per 100 sqm of roofed area, or underground storage sized for 20mm/hour rainfall. Interior plumbing deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 2 and Coverage 55% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 3.5m, rear/side \u2265 4m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "COMPLIANT \u2014 FAR: 1.63/2 | Coverage: 54.7%/55% | Open: 45.3% | Height: 12.0m | Road: 9m | Plot: 999 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 999 sqm, Use: residential, Abutting Road: 9m):\n\u2022 FAR limit (GHMC GO 168): 2  |  Actual: 1.63\n\u2022 Ground coverage limit (GHMC GO 168): 55%  |  Actual: 54.7%\n\u2022 Open space minimum (GHMC GO 168): 45%  |  Actual: 45.3%\n\u2022 Permissible height ceiling for 9m road: 15m  |  Actual: 12.0m\n\u2022 Setbacks required: Front \u2265 3.5m, Rear \u2265 3.5m, Side \u2265 3.5m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 17 ECS  |  Rainwater harvesting: MANDATORY",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 2,
+      "groundCoverage": 55,
+      "openSpace": 45,
+      "maxHeight": 15,
+      "setbacks": {
+        "front": 3.5,
+        "rearSide": 4
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 2,
+      "groundCoverageLimit": 55,
+      "openSpaceMinimum": 45,
+      "maxHeightLimit": 15,
+      "setbacks": {
+        "front": 3.5,
+        "rearSide": 4
+      },
+      "maxFootprintArea": 549.67,
+      "maxBuiltUpArea": 1998.8,
+      "minOpenSpaceArea": 449.73,
+      "maxEnvelopeVolume": 8245.05,
+      "theoreticalFloors": 3,
+      "useType": "residential",
+      "siteArea": 999.4
+    }
+  },
+  "HYD-BRD-18": {
+    "compliant": false,
+    "score": 80,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Side Setback Violation (15m massing)",
+        "description": "Provided side setback 3.98m is below required 4.00m for height 15m on a 1121 sqm plot.",
+        "severity": "critical"
+      },
+      {
+        "code": "NBC 2016 Pt.3 \u00a73.15 \u2014 Lift Provision (Massing Impact)",
+        "description": "Building height 15m / 5 floors exceeds lift threshold (>15m or >4 floors). Pre-design massing impact: reserve ~5 sqm of core footprint per block (exact shaft count and staircase widths deferred to detail design).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 23 ECS \u2014 Residential: 23 ECS (1/100 sqm of 2,213 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~288 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.9 Sec.2 \u2014 Rainwater Harvesting",
+        "description": "Plot area 1,121 sqm exceeds 300 sqm threshold. Rainwater harvesting is MANDATORY. Pre-design reserve: 1 recharge pit per 100 sqm of roofed area, or underground storage sized for 20mm/hour rainfall. Interior plumbing deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 2.5 and Coverage 50% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 4.5m, rear/side \u2265 5m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 90,
+    "zoningSummary": "1 critical violation(s) \u2014 FAR: 1.97/2.5 | Coverage: 41.6%/50% | Open: 58.4% | Height: 15.0m | Road: 12m | Plot: 1,121 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 1,121 sqm, Use: residential, Abutting Road: 12m):\n\u2022 FAR limit (GHMC GO 168): 2.5  |  Actual: 1.97\n\u2022 Ground coverage limit (GHMC GO 168): 50%  |  Actual: 41.6%\n\u2022 Open space minimum (GHMC GO 168): 50%  |  Actual: 58.4%\n\u2022 Permissible height ceiling for 12m road: 18m  |  Actual: 15.0m\n\u2022 Setbacks required: Front \u2265 4.5m, Rear \u2265 4m, Side \u2265 4m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: YES (>15m / >4 floors)\n\u2022 Required parking: 23 ECS  |  Rainwater harvesting: MANDATORY",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 2.5,
+      "groundCoverage": 50,
+      "openSpace": 50,
+      "maxHeight": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 2.5,
+      "groundCoverageLimit": 50,
+      "openSpaceMinimum": 50,
+      "maxHeightLimit": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      },
+      "maxFootprintArea": 560.5,
+      "maxBuiltUpArea": 2802.5,
+      "minOpenSpaceArea": 560.5,
+      "maxEnvelopeVolume": 10089,
+      "theoreticalFloors": 5,
+      "useType": "residential",
+      "siteArea": 1121
+    }
+  },
+  "HYD-BRD-19": {
+    "compliant": true,
+    "score": 100,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (9m) on road 12m: front setback \u2265 4.5m, rear \u2265 1m, side \u2265 0m. Site dimensions (7m \u00d7 12m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 2 ECS \u2014 Residential: 2 ECS (1/100 sqm of 102 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~25 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 2.5 and Coverage 75% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 4.5m, rear/side \u2265 5m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "COMPLIANT \u2014 FAR: 1.20/2.5 | Coverage: 40.1%/75% | Open: 59.9% | Height: 9.0m | Road: 12m | Plot: 85 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 85 sqm, Use: residential, Abutting Road: 12m):\n\u2022 FAR limit (GHMC GO 168): 2.5  |  Actual: 1.20\n\u2022 Ground coverage limit (GHMC GO 168): 75%  |  Actual: 40.1%\n\u2022 Open space minimum (GHMC GO 168): 25%  |  Actual: 59.9%\n\u2022 Permissible height ceiling for 12m road: 18m  |  Actual: 9.0m\n\u2022 Setbacks required: Front \u2265 4.5m, Rear \u2265 1m, Side \u2265 0m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 2 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 2.5,
+      "groundCoverage": 75,
+      "openSpace": 25,
+      "maxHeight": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 2.5,
+      "groundCoverageLimit": 75,
+      "openSpaceMinimum": 25,
+      "maxHeightLimit": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      },
+      "maxFootprintArea": 63.75,
+      "maxBuiltUpArea": 212.5,
+      "minOpenSpaceArea": 21.25,
+      "maxEnvelopeVolume": 1147.5,
+      "theoreticalFloors": 3,
+      "useType": "residential",
+      "siteArea": 85
+    }
+  },
+  "HYD-BRD-20": {
+    "compliant": false,
+    "score": 75,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (10m) on road 7.5m: front setback \u2265 1.5m, rear \u2265 3m, side \u2265 3m. Site dimensions (10m \u00d7 13m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Height Exceeds Road Width Limit",
+        "description": "Building height 10.1m exceeds the 10.0m statutory ceiling for an abutting road width of 7.5m.",
+        "severity": "critical"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 1 ECS \u2014 Residential: 1 ECS (1/100 sqm of 87 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~13 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 1.75 and Coverage 70% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 1.5m, rear/side \u2265 3m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "1 critical violation(s) \u2014 FAR: 0.65/1.75 | Coverage: 21.7%/70% | Open: 78.3% | Height: 10.1m | Road: 7.5m | Plot: 133 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 133 sqm, Use: residential, Abutting Road: 7.5m):\n\u2022 FAR limit (GHMC GO 168): 1.75  |  Actual: 0.65\n\u2022 Ground coverage limit (GHMC GO 168): 70%  |  Actual: 21.7%\n\u2022 Open space minimum (GHMC GO 168): 30%  |  Actual: 78.3%\n\u2022 Permissible height ceiling for 7.5m road: 10m  |  Actual: 10.1m\n\u2022 Setbacks required: Front \u2265 1.5m, Rear \u2265 3m, Side \u2265 3m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 1 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 1.75,
+      "groundCoverage": 70,
+      "openSpace": 30,
+      "maxHeight": 10,
+      "setbacks": {
+        "front": 1.5,
+        "rearSide": 3
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 1.75,
+      "groundCoverageLimit": 70,
+      "openSpaceMinimum": 30,
+      "maxHeightLimit": 10,
+      "setbacks": {
+        "front": 1.5,
+        "rearSide": 3
+      },
+      "maxFootprintArea": 93.38,
+      "maxBuiltUpArea": 233.45,
+      "minOpenSpaceArea": 40.02,
+      "maxEnvelopeVolume": 933.8,
+      "theoreticalFloors": 2,
+      "useType": "residential",
+      "siteArea": 133.4
+    }
+  },
+  "HYD-NCP-01": {
+    "compliant": false,
+    "score": 66,
+    "violations": [
+      {
+        "code": "NBC 2016 Pt.3 \u00a74.1 / GHMC GO 168 \u2014 FAR Exceeded",
+        "description": "FAR 2.48 exceeds the 1.75 limit for residential use (plot 86 sqm, road 6m) by 0.73. Formula: Total Covered Area \u00f7 Plot Area. Basement parking, staircases, and ducts are excluded. Reduce built-up area by 63 sqm or apply for FAR variance.",
+        "severity": "critical"
+      },
+      {
+        "code": "NBC 2016 Pt.3 \u00a74.2 \u2014 Ground Coverage Advisory",
+        "description": "Ground coverage 74.2% is near the 75% limit for this plot size. Adequate open-to-sky areas and ventilation shafts are recommended.",
+        "severity": "info"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Open Space Advisory",
+        "description": "Open space 25.8% meets the 25% minimum but is near the limit for comfortable habitable density. Consider additional courtyards or landscape buffers.",
+        "severity": "info"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (9m) on road 6m: front setback \u2265 1.5m, rear \u2265 1m, side \u2265 0m. Site dimensions (8m \u00d7 11m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 3 ECS \u2014 Residential: 3 ECS (1/100 sqm of 213 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~38 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.8 \u00a72.1 \u2014 Ventilation Risk (Massing Level)",
+        "description": "Ground coverage 74.2% leaves limited perimeter for facade openings. Pre-design massing action: reduce coverage or introduce internal courtyards so total facade perimeter can yield openings \u2265 1/10 floor area. Interior room layouts deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 1.75 and Coverage 75% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 1.5m, rear/side \u2265 3m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 76.90315052508751,
+    "zoningSummary": "1 critical violation(s) \u2014 FAR: 2.48/1.75 | Coverage: 74.2%/75% | Open: 25.8% | Height: 9.0m | Road: 6m | Plot: 86 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 86 sqm, Use: residential, Abutting Road: 6m):\n\u2022 FAR limit (GHMC GO 168): 1.75  |  Actual: 2.48\n\u2022 Ground coverage limit (GHMC GO 168): 75%  |  Actual: 74.2%\n\u2022 Open space minimum (GHMC GO 168): 25%  |  Actual: 25.8%\n\u2022 Permissible height ceiling for 6m road: 10m  |  Actual: 9.0m\n\u2022 Setbacks required: Front \u2265 1.5m, Rear \u2265 1m, Side \u2265 0m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 3 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 1.75,
+      "groundCoverage": 75,
+      "openSpace": 25,
+      "maxHeight": 10,
+      "setbacks": {
+        "front": 1.5,
+        "rearSide": 3
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 1.75,
+      "groundCoverageLimit": 75,
+      "openSpaceMinimum": 25,
+      "maxHeightLimit": 10,
+      "setbacks": {
+        "front": 1.5,
+        "rearSide": 3
+      },
+      "maxFootprintArea": 64.28,
+      "maxBuiltUpArea": 149.98,
+      "minOpenSpaceArea": 21.43,
+      "maxEnvelopeVolume": 642.75,
+      "theoreticalFloors": 2,
+      "useType": "residential",
+      "siteArea": 85.7
+    }
+  },
+  "HYD-NCP-02": {
+    "compliant": false,
+    "score": 45,
+    "violations": [
+      {
+        "code": "NBC 2016 Pt.3 \u00a74.2 / GHMC GO 168 \u2014 Ground Coverage Exceeded",
+        "description": "Ground coverage 89.64% exceeds the 70% GHMC limit for a 168 sqm residential plot by 19.64%. Reduce footprint area by 33 sqm. Open-to-sky courtyards, podium gardens, and stilts count as open space.",
+        "severity": "critical"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Insufficient Open Space",
+        "description": "Open space 10.4% is below the required 30% minimum for this 168 sqm plot (51 sqm required). Open-to-sky courts, pools, landscape areas at grade, and roof gardens (up to 50% credit) may be included in this calculation.",
+        "severity": "critical"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Footprint Outside Setback Envelope",
+        "description": "Proposed footprint 150.9 sqm exceeds buildable envelope (110.6 sqm) defined by provided setbacks.",
+        "severity": "critical"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 3 ECS \u2014 Residential: 3 ECS (1/100 sqm of 254 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~38 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.8 \u00a72.1 \u2014 Ventilation Risk (Massing Level)",
+        "description": "Ground coverage 89.6% leaves limited perimeter for facade openings. Pre-design massing action: reduce coverage or introduce internal courtyards so total facade perimeter can yield openings \u2265 1/10 floor area. Interior room layouts deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 1.75 and Coverage 70% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 1.5m, rear/side \u2265 3m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 48.43467933491688,
+    "zoningSummary": "3 critical violation(s) \u2014 FAR: 1.51/1.75 | Coverage: 89.6%/70% | Open: 10.4% | Height: 9.0m | Road: 6m | Plot: 168 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 168 sqm, Use: residential, Abutting Road: 6m):\n\u2022 FAR limit (GHMC GO 168): 1.75  |  Actual: 1.51\n\u2022 Ground coverage limit (GHMC GO 168): 70%  |  Actual: 89.6%\n\u2022 Open space minimum (GHMC GO 168): 30%  |  Actual: 10.4%\n\u2022 Permissible height ceiling for 6m road: 10m  |  Actual: 9.0m\n\u2022 Setbacks required: Front \u2265 1.5m, Rear \u2265 1.5m, Side \u2265 1m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 3 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 1.75,
+      "groundCoverage": 70,
+      "openSpace": 30,
+      "maxHeight": 10,
+      "setbacks": {
+        "front": 1.5,
+        "rearSide": 3
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 1.75,
+      "groundCoverageLimit": 70,
+      "openSpaceMinimum": 30,
+      "maxHeightLimit": 10,
+      "setbacks": {
+        "front": 1.5,
+        "rearSide": 3
+      },
+      "maxFootprintArea": 117.88,
+      "maxBuiltUpArea": 294.7,
+      "minOpenSpaceArea": 50.52,
+      "maxEnvelopeVolume": 1178.8,
+      "theoreticalFloors": 2,
+      "useType": "residential",
+      "siteArea": 168.4
+    }
+  },
+  "HYD-NCP-03": {
+    "compliant": false,
+    "score": 70,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Rear Setback Violation (9m massing)",
+        "description": "Provided rear setback 1.01m is below required 2.00m for height 9m on a 294 sqm plot.",
+        "severity": "critical"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Side Setback Violation (9m massing)",
+        "description": "Provided side setback 0.80m is below required 1.50m for height 9m on a 294 sqm plot.",
+        "severity": "critical"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 5 ECS \u2014 Residential: 5 ECS (1/100 sqm of 413 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~63 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 2.5 and Coverage 65% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 4.5m, rear/side \u2265 5m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 90,
+    "zoningSummary": "2 critical violation(s) \u2014 FAR: 1.41/2.5 | Coverage: 49.3%/65% | Open: 50.7% | Height: 9.0m | Road: 12m | Plot: 294 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 294 sqm, Use: residential, Abutting Road: 12m):\n\u2022 FAR limit (GHMC GO 168): 2.5  |  Actual: 1.41\n\u2022 Ground coverage limit (GHMC GO 168): 65%  |  Actual: 49.3%\n\u2022 Open space minimum (GHMC GO 168): 35%  |  Actual: 50.7%\n\u2022 Permissible height ceiling for 12m road: 18m  |  Actual: 9.0m\n\u2022 Setbacks required: Front \u2265 4.5m, Rear \u2265 2m, Side \u2265 1.5m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 5 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 2.5,
+      "groundCoverage": 65,
+      "openSpace": 35,
+      "maxHeight": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 2.5,
+      "groundCoverageLimit": 65,
+      "openSpaceMinimum": 35,
+      "maxHeightLimit": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      },
+      "maxFootprintArea": 190.97,
+      "maxBuiltUpArea": 734.5,
+      "minOpenSpaceArea": 102.83,
+      "maxEnvelopeVolume": 3437.46,
+      "theoreticalFloors": 3,
+      "useType": "residential",
+      "siteArea": 293.8
+    }
+  },
+  "HYD-NCP-04": {
+    "compliant": false,
+    "score": 70,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (20m) on road 12m: front setback \u2265 4.5m, rear \u2265 5m, side \u2265 5m. Site dimensions (17m \u00d7 25m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Height Exceeds Road Width Limit",
+        "description": "Building height 19.8m exceeds the 18.0m statutory ceiling for an abutting road width of 12m.",
+        "severity": "critical"
+      },
+      {
+        "code": "NBC 2016 Pt.3 \u00a73.15 \u2014 Lift Provision (Massing Impact)",
+        "description": "Building height 20m / 6 floors exceeds lift threshold (>15m or >4 floors). Pre-design massing impact: reserve ~5 sqm of core footprint per block (exact shaft count and staircase widths deferred to detail design).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 6 ECS \u2014 Residential: 6 ECS (1/100 sqm of 543 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~75 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.9 Sec.2 \u2014 Rainwater Harvesting",
+        "description": "Plot area 419 sqm exceeds 300 sqm threshold. Rainwater harvesting is MANDATORY. Pre-design reserve: 1 recharge pit per 100 sqm of roofed area, or underground storage sized for 20mm/hour rainfall. Interior plumbing deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 2.5 and Coverage 60% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 4.5m, rear/side \u2265 5m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "1 critical violation(s) \u2014 FAR: 1.30/2.5 | Coverage: 21.7%/60% | Open: 78.3% | Height: 19.8m | Road: 12m | Plot: 419 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 419 sqm, Use: residential, Abutting Road: 12m):\n\u2022 FAR limit (GHMC GO 168): 2.5  |  Actual: 1.30\n\u2022 Ground coverage limit (GHMC GO 168): 60%  |  Actual: 21.7%\n\u2022 Open space minimum (GHMC GO 168): 40%  |  Actual: 78.3%\n\u2022 Permissible height ceiling for 12m road: 18m  |  Actual: 19.8m\n\u2022 Setbacks required: Front \u2265 4.5m, Rear \u2265 5m, Side \u2265 5m\n\u2022 Fire class: Medium-rise (NBC Pt.4 \u00a73.6)\n\u2022 Lift mandatory: YES (>15m / >4 floors)\n\u2022 Required parking: 6 ECS  |  Rainwater harvesting: MANDATORY",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 2.5,
+      "groundCoverage": 60,
+      "openSpace": 40,
+      "maxHeight": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 2.5,
+      "groundCoverageLimit": 60,
+      "openSpaceMinimum": 40,
+      "maxHeightLimit": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      },
+      "maxFootprintArea": 251.1,
+      "maxBuiltUpArea": 1046.25,
+      "minOpenSpaceArea": 167.4,
+      "maxEnvelopeVolume": 4519.8,
+      "theoreticalFloors": 4,
+      "useType": "residential",
+      "siteArea": 418.5
+    }
+  },
+  "HYD-NCP-05": {
+    "compliant": false,
+    "score": 47,
+    "violations": [
+      {
+        "code": "NBC 2016 Pt.3 \u00a74.2 / GHMC GO 168 \u2014 Ground Coverage Exceeded",
+        "description": "Ground coverage 62.12% exceeds the 55% GHMC limit for a 895 sqm residential plot by 7.12%. Reduce footprint area by 64 sqm. Open-to-sky courtyards, podium gardens, and stilts count as open space.",
+        "severity": "critical"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Insufficient Open Space",
+        "description": "Open space 37.9% is below the required 45% minimum for this 895 sqm plot (403 sqm required). Open-to-sky courts, pools, landscape areas at grade, and roof gardens (up to 50% credit) may be included in this calculation.",
+        "severity": "critical"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Footprint Outside Setback Envelope",
+        "description": "Proposed footprint 555.8 sqm exceeds buildable envelope (470.9 sqm) defined by provided setbacks.",
+        "severity": "critical"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 17 ECS \u2014 Residential: 17 ECS (1/100 sqm of 1,609 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~213 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.9 Sec.2 \u2014 Rainwater Harvesting",
+        "description": "Plot area 895 sqm exceeds 300 sqm threshold. Rainwater harvesting is MANDATORY. Pre-design reserve: 1 recharge pit per 100 sqm of roofed area, or underground storage sized for 20mm/hour rainfall. Interior plumbing deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 2 and Coverage 55% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 3.5m, rear/side \u2265 4m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 81.45137491616364,
+    "zoningSummary": "3 critical violation(s) \u2014 FAR: 1.80/2 | Coverage: 62.1%/55% | Open: 37.9% | Height: 12.0m | Road: 9m | Plot: 895 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 895 sqm, Use: residential, Abutting Road: 9m):\n\u2022 FAR limit (GHMC GO 168): 2  |  Actual: 1.80\n\u2022 Ground coverage limit (GHMC GO 168): 55%  |  Actual: 62.1%\n\u2022 Open space minimum (GHMC GO 168): 45%  |  Actual: 37.9%\n\u2022 Permissible height ceiling for 9m road: 15m  |  Actual: 12.0m\n\u2022 Setbacks required: Front \u2265 3.5m, Rear \u2265 3.5m, Side \u2265 3.5m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 17 ECS  |  Rainwater harvesting: MANDATORY",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 2,
+      "groundCoverage": 55,
+      "openSpace": 45,
+      "maxHeight": 15,
+      "setbacks": {
+        "front": 3.5,
+        "rearSide": 4
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 2,
+      "groundCoverageLimit": 55,
+      "openSpaceMinimum": 45,
+      "maxHeightLimit": 15,
+      "setbacks": {
+        "front": 3.5,
+        "rearSide": 4
+      },
+      "maxFootprintArea": 492.03,
+      "maxBuiltUpArea": 1789.2,
+      "minOpenSpaceArea": 402.57,
+      "maxEnvelopeVolume": 7380.45,
+      "theoreticalFloors": 3,
+      "useType": "residential",
+      "siteArea": 894.6
+    }
+  },
+  "HYD-NCP-06": {
+    "compliant": false,
+    "score": 60,
+    "violations": [
+      {
+        "code": "NBC 2016 Pt.3 \u00a74.1 / GHMC GO 168 \u2014 FAR Exceeded",
+        "description": "FAR 4.51 exceeds the 3.5 limit for residential use (plot 1902 sqm, road 30m) by 1.01. Formula: Total Covered Area \u00f7 Plot Area. Basement parking, staircases, and ducts are excluded. Reduce built-up area by 1,917 sqm or apply for FAR variance.",
+        "severity": "critical"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (36m) on road 30m: front setback \u2265 9m, rear \u2265 9m, side \u2265 9m. Site dimensions (35m \u00d7 55m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.4 \u00a73.7 \u2014 High-Rise Threshold",
+        "description": "Height 36.0m classifies this as HIGH-RISE (>24m). At pre-design stage: confirm AAI NOC (airport proximity), structural wind analysis per IS 875 Part 3, and consult GHMC high-rise committee. Interior fire/life-safety details deferred to detail design.",
+        "severity": "warning"
+      },
+      {
+        "code": "NBC 2016 Pt.3 \u00a73.15 \u2014 Lift Provision (Massing Impact)",
+        "description": "Building height 36m / 15 floors exceeds lift threshold (>15m or >4 floors). Pre-design massing impact: reserve ~5 sqm of core footprint per block (exact shaft count and staircase widths deferred to detail design).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 86 ECS \u2014 Residential: 86 ECS (1/100 sqm of 8,576 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~1,075 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "warning"
+      },
+      {
+        "code": "NBC 2016 Pt.9 Sec.2 \u2014 Rainwater Harvesting",
+        "description": "Plot area 1,902 sqm exceeds 300 sqm threshold. Rainwater harvesting is MANDATORY. Pre-design reserve: 1 recharge pit per 100 sqm of roofed area, or underground storage sized for 20mm/hour rainfall. Interior plumbing deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 3.5 and Coverage 50% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 9m, rear/side \u2265 9m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 92,
+    "zoningSummary": "1 critical violation(s) \u2014 FAR: 4.51/3.5 | Coverage: 31.9%/50% | Open: 68.1% | Height: 36.0m | Road: 30m | Plot: 1,902 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 1,902 sqm, Use: residential, Abutting Road: 30m):\n\u2022 FAR limit (GHMC GO 168): 3.5  |  Actual: 4.51\n\u2022 Ground coverage limit (GHMC GO 168): 50%  |  Actual: 31.9%\n\u2022 Open space minimum (GHMC GO 168): 50%  |  Actual: 68.1%\n\u2022 Permissible height ceiling for 30m road: 45m  |  Actual: 36.0m\n\u2022 Setbacks required: Front \u2265 9m, Rear \u2265 9m, Side \u2265 9m\n\u2022 Fire class: HIGH-RISE (NBC Pt.4 \u00a73.7)\n\u2022 Lift mandatory: YES (>15m / >4 floors)\n\u2022 Required parking: 86 ECS  |  Rainwater harvesting: MANDATORY",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 3.5,
+      "groundCoverage": 50,
+      "openSpace": 50,
+      "maxHeight": 45,
+      "setbacks": {
+        "front": 9,
+        "rearSide": 9
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 3.5,
+      "groundCoverageLimit": 50,
+      "openSpaceMinimum": 50,
+      "maxHeightLimit": 45,
+      "setbacks": {
+        "front": 9,
+        "rearSide": 9
+      },
+      "maxFootprintArea": 951.15,
+      "maxBuiltUpArea": 6658.05,
+      "minOpenSpaceArea": 951.15,
+      "maxEnvelopeVolume": 42801.75,
+      "theoreticalFloors": 7,
+      "useType": "residential",
+      "siteArea": 1902.3
+    }
+  },
+  "HYD-NCP-07": {
+    "compliant": false,
+    "score": 45,
+    "violations": [
+      {
+        "code": "NBC 2016 Pt.3 \u00a74.2 / GHMC GO 168 \u2014 Ground Coverage Exceeded",
+        "description": "Ground coverage 92.10% exceeds the 75% GHMC limit for a 92 sqm residential plot by 17.10%. Reduce footprint area by 16 sqm. Open-to-sky courtyards, podium gardens, and stilts count as open space.",
+        "severity": "critical"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Insufficient Open Space",
+        "description": "Open space 7.9% is below the required 25% minimum for this 92 sqm plot (23 sqm required). Open-to-sky courts, pools, landscape areas at grade, and roof gardens (up to 50% credit) may be included in this calculation.",
+        "severity": "critical"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Footprint Outside Setback Envelope",
+        "description": "Proposed footprint 84.5 sqm exceeds buildable envelope (74.1 sqm) defined by provided setbacks.",
+        "severity": "critical"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 2 ECS \u2014 Residential: 2 ECS (1/100 sqm of 143 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~25 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.8 \u00a72.1 \u2014 Ventilation Risk (Massing Level)",
+        "description": "Ground coverage 92.1% leaves limited perimeter for facade openings. Pre-design massing action: reduce coverage or introduce internal courtyards so total facade perimeter can yield openings \u2265 1/10 floor area. Interior room layouts deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 1.75 and Coverage 75% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 1.5m, rear/side \u2265 3m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 45.47437295528899,
+    "zoningSummary": "3 critical violation(s) \u2014 FAR: 1.56/1.75 | Coverage: 92.1%/75% | Open: 7.9% | Height: 9.0m | Road: 7.5m | Plot: 92 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 92 sqm, Use: residential, Abutting Road: 7.5m):\n\u2022 FAR limit (GHMC GO 168): 1.75  |  Actual: 1.56\n\u2022 Ground coverage limit (GHMC GO 168): 75%  |  Actual: 92.1%\n\u2022 Open space minimum (GHMC GO 168): 25%  |  Actual: 7.9%\n\u2022 Permissible height ceiling for 7.5m road: 10m  |  Actual: 9.0m\n\u2022 Setbacks required: Front \u2265 1.5m, Rear \u2265 1m, Side \u2265 0m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 2 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 1.75,
+      "groundCoverage": 75,
+      "openSpace": 25,
+      "maxHeight": 10,
+      "setbacks": {
+        "front": 1.5,
+        "rearSide": 3
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 1.75,
+      "groundCoverageLimit": 75,
+      "openSpaceMinimum": 25,
+      "maxHeightLimit": 10,
+      "setbacks": {
+        "front": 1.5,
+        "rearSide": 3
+      },
+      "maxFootprintArea": 68.78,
+      "maxBuiltUpArea": 160.48,
+      "minOpenSpaceArea": 22.93,
+      "maxEnvelopeVolume": 687.75,
+      "theoreticalFloors": 2,
+      "useType": "residential",
+      "siteArea": 91.7
+    }
+  },
+  "HYD-NCP-08": {
+    "compliant": false,
+    "score": 70,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Rear Setback Violation (9m massing)",
+        "description": "Provided rear setback 0.86m is below required 1.50m for height 9m on a 156 sqm plot.",
+        "severity": "critical"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Side Setback Violation (9m massing)",
+        "description": "Provided side setback 0.24m is below required 1.00m for height 9m on a 156 sqm plot.",
+        "severity": "critical"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 3 ECS \u2014 Residential: 3 ECS (1/100 sqm of 219 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~38 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 1.75 and Coverage 70% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 1.5m, rear/side \u2265 3m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 89.07899807321772,
+    "zoningSummary": "2 critical violation(s) \u2014 FAR: 1.41/1.75 | Coverage: 55.8%/70% | Open: 44.2% | Height: 9.0m | Road: 6m | Plot: 156 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 156 sqm, Use: residential, Abutting Road: 6m):\n\u2022 FAR limit (GHMC GO 168): 1.75  |  Actual: 1.41\n\u2022 Ground coverage limit (GHMC GO 168): 70%  |  Actual: 55.8%\n\u2022 Open space minimum (GHMC GO 168): 30%  |  Actual: 44.2%\n\u2022 Permissible height ceiling for 6m road: 10m  |  Actual: 9.0m\n\u2022 Setbacks required: Front \u2265 1.5m, Rear \u2265 1.5m, Side \u2265 1m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 3 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 1.75,
+      "groundCoverage": 70,
+      "openSpace": 30,
+      "maxHeight": 10,
+      "setbacks": {
+        "front": 1.5,
+        "rearSide": 3
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 1.75,
+      "groundCoverageLimit": 70,
+      "openSpaceMinimum": 30,
+      "maxHeightLimit": 10,
+      "setbacks": {
+        "front": 1.5,
+        "rearSide": 3
+      },
+      "maxFootprintArea": 108.99,
+      "maxBuiltUpArea": 272.47,
+      "minOpenSpaceArea": 46.71,
+      "maxEnvelopeVolume": 1089.9,
+      "theoreticalFloors": 2,
+      "useType": "residential",
+      "siteArea": 155.7
+    }
+  },
+  "HYD-NCP-09": {
+    "compliant": false,
+    "score": 43,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Rear Setback Violation (18m massing)",
+        "description": "Provided rear setback 2.57m is below required 5.00m for height 18m on a 207 sqm plot.",
+        "severity": "critical"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Side Setback Violation (18m massing)",
+        "description": "Provided side setback 2.01m is below required 5.00m for height 18m on a 207 sqm plot.",
+        "severity": "critical"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Height Exceeds Road Width Limit",
+        "description": "Building height 18.0m exceeds the 15.0m statutory ceiling for an abutting road width of 9m.",
+        "severity": "critical"
+      },
+      {
+        "code": "NBC 2016 Pt.3 \u00a73.15 \u2014 Lift Provision (Massing Impact)",
+        "description": "Building height 18m / 6 floors exceeds lift threshold (>15m or >4 floors). Pre-design massing impact: reserve ~5 sqm of core footprint per block (exact shaft count and staircase widths deferred to detail design).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 3 ECS \u2014 Residential: 3 ECS (1/100 sqm of 259 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~38 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 2 and Coverage 65% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 3m, rear/side \u2265 4m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 90,
+    "zoningSummary": "3 critical violation(s) \u2014 FAR: 1.25/2 | Coverage: 39.5%/65% | Open: 60.5% | Height: 18.0m | Road: 9m | Plot: 207 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 207 sqm, Use: residential, Abutting Road: 9m):\n\u2022 FAR limit (GHMC GO 168): 2  |  Actual: 1.25\n\u2022 Ground coverage limit (GHMC GO 168): 65%  |  Actual: 39.5%\n\u2022 Open space minimum (GHMC GO 168): 35%  |  Actual: 60.5%\n\u2022 Permissible height ceiling for 9m road: 15m  |  Actual: 18.0m\n\u2022 Setbacks required: Front \u2265 3m, Rear \u2265 5m, Side \u2265 5m\n\u2022 Fire class: Medium-rise (NBC Pt.4 \u00a73.6)\n\u2022 Lift mandatory: YES (>15m / >4 floors)\n\u2022 Required parking: 3 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 2,
+      "groundCoverage": 65,
+      "openSpace": 35,
+      "maxHeight": 15,
+      "setbacks": {
+        "front": 3,
+        "rearSide": 4
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 2,
+      "groundCoverageLimit": 65,
+      "openSpaceMinimum": 35,
+      "maxHeightLimit": 15,
+      "setbacks": {
+        "front": 3,
+        "rearSide": 4
+      },
+      "maxFootprintArea": 134.29,
+      "maxBuiltUpArea": 413.2,
+      "minOpenSpaceArea": 72.31,
+      "maxEnvelopeVolume": 2014.35,
+      "theoreticalFloors": 3,
+      "useType": "residential",
+      "siteArea": 206.6
+    }
+  },
+  "HYD-NCP-10": {
+    "compliant": false,
+    "score": 47,
+    "violations": [
+      {
+        "code": "NBC 2016 Pt.3 \u00a74.2 / GHMC GO 168 \u2014 Ground Coverage Exceeded",
+        "description": "Ground coverage 68.25% exceeds the 60% GHMC limit for a 490 sqm residential plot by 8.25%. Reduce footprint area by 40 sqm. Open-to-sky courtyards, podium gardens, and stilts count as open space.",
+        "severity": "critical"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Insufficient Open Space",
+        "description": "Open space 31.8% is below the required 40% minimum for this 490 sqm plot (196 sqm required). Open-to-sky courts, pools, landscape areas at grade, and roof gardens (up to 50% credit) may be included in this calculation.",
+        "severity": "critical"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Footprint Outside Setback Envelope",
+        "description": "Proposed footprint 334.2 sqm exceeds buildable envelope (248.3 sqm) defined by provided setbacks.",
+        "severity": "critical"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 8 ECS \u2014 Residential: 8 ECS (1/100 sqm of 731 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~100 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.9 Sec.2 \u2014 Rainwater Harvesting",
+        "description": "Plot area 490 sqm exceeds 300 sqm threshold. Rainwater harvesting is MANDATORY. Pre-design reserve: 1 recharge pit per 100 sqm of roofed area, or underground storage sized for 20mm/hour rainfall. Interior plumbing deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 1.75 and Coverage 60% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 3m, rear/side \u2265 3m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 74.10496222176843,
+    "zoningSummary": "3 critical violation(s) \u2014 FAR: 1.49/1.75 | Coverage: 68.2%/60% | Open: 31.8% | Height: 9.0m | Road: 7.5m | Plot: 490 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 490 sqm, Use: residential, Abutting Road: 7.5m):\n\u2022 FAR limit (GHMC GO 168): 1.75  |  Actual: 1.49\n\u2022 Ground coverage limit (GHMC GO 168): 60%  |  Actual: 68.2%\n\u2022 Open space minimum (GHMC GO 168): 40%  |  Actual: 31.8%\n\u2022 Permissible height ceiling for 7.5m road: 10m  |  Actual: 9.0m\n\u2022 Setbacks required: Front \u2265 3m, Rear \u2265 3m, Side \u2265 2m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 8 ECS  |  Rainwater harvesting: MANDATORY",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 1.75,
+      "groundCoverage": 60,
+      "openSpace": 40,
+      "maxHeight": 10,
+      "setbacks": {
+        "front": 3,
+        "rearSide": 3
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 1.75,
+      "groundCoverageLimit": 60,
+      "openSpaceMinimum": 40,
+      "maxHeightLimit": 10,
+      "setbacks": {
+        "front": 3,
+        "rearSide": 3
+      },
+      "maxFootprintArea": 293.82,
+      "maxBuiltUpArea": 856.98,
+      "minOpenSpaceArea": 195.88,
+      "maxEnvelopeVolume": 2938.2,
+      "theoreticalFloors": 2,
+      "useType": "residential",
+      "siteArea": 489.7
+    }
+  },
+  "HYD-NCP-11": {
+    "compliant": false,
+    "score": 66,
+    "violations": [
+      {
+        "code": "NBC 2016 Pt.3 \u00a74.1 / GHMC GO 168 \u2014 FAR Exceeded",
+        "description": "FAR 2.41 exceeds the 2 limit for residential use (plot 974 sqm, road 9m) by 0.41. Formula: Total Covered Area \u00f7 Plot Area. Basement parking, staircases, and ducts are excluded. Reduce built-up area by 399 sqm or apply for FAR variance.",
+        "severity": "critical"
+      },
+      {
+        "code": "NBC 2016 Pt.3 \u00a74.2 \u2014 Ground Coverage Advisory",
+        "description": "Ground coverage 54.4% is near the 55% limit for this plot size. Adequate open-to-sky areas and ventilation shafts are recommended.",
+        "severity": "info"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Open Space Advisory",
+        "description": "Open space 45.6% meets the 45% minimum but is near the limit for comfortable habitable density. Consider additional courtyards or landscape buffers.",
+        "severity": "info"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (12m) on road 9m: front setback \u2265 3.5m, rear \u2265 3.5m, side \u2265 3.5m. Site dimensions (24m \u00d7 41m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.3 \u00a73.15 \u2014 Lift Provision (Massing Impact)",
+        "description": "Building height 12m / 5 floors exceeds lift threshold (>15m or >4 floors). Pre-design massing impact: reserve ~5 sqm of core footprint per block (exact shaft count and staircase widths deferred to detail design).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 24 ECS \u2014 Residential: 24 ECS (1/100 sqm of 2,348 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~300 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.9 Sec.2 \u2014 Rainwater Harvesting",
+        "description": "Plot area 974 sqm exceeds 300 sqm threshold. Rainwater harvesting is MANDATORY. Pre-design reserve: 1 recharge pit per 100 sqm of roofed area, or underground storage sized for 20mm/hour rainfall. Interior plumbing deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 2 and Coverage 55% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 3.5m, rear/side \u2265 4m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "1 critical violation(s) \u2014 FAR: 2.41/2 | Coverage: 54.4%/55% | Open: 45.6% | Height: 12.0m | Road: 9m | Plot: 974 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 974 sqm, Use: residential, Abutting Road: 9m):\n\u2022 FAR limit (GHMC GO 168): 2  |  Actual: 2.41\n\u2022 Ground coverage limit (GHMC GO 168): 55%  |  Actual: 54.4%\n\u2022 Open space minimum (GHMC GO 168): 45%  |  Actual: 45.6%\n\u2022 Permissible height ceiling for 9m road: 15m  |  Actual: 12.0m\n\u2022 Setbacks required: Front \u2265 3.5m, Rear \u2265 3.5m, Side \u2265 3.5m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: YES (>15m / >4 floors)\n\u2022 Required parking: 24 ECS  |  Rainwater harvesting: MANDATORY",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 2,
+      "groundCoverage": 55,
+      "openSpace": 45,
+      "maxHeight": 15,
+      "setbacks": {
+        "front": 3.5,
+        "rearSide": 4
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 2,
+      "groundCoverageLimit": 55,
+      "openSpaceMinimum": 45,
+      "maxHeightLimit": 15,
+      "setbacks": {
+        "front": 3.5,
+        "rearSide": 4
+      },
+      "maxFootprintArea": 535.92,
+      "maxBuiltUpArea": 1948.8,
+      "minOpenSpaceArea": 438.48,
+      "maxEnvelopeVolume": 8038.8,
+      "theoreticalFloors": 3,
+      "useType": "residential",
+      "siteArea": 974.4
+    }
+  },
+  "HYD-NCP-12": {
+    "compliant": false,
+    "score": 45,
+    "violations": [
+      {
+        "code": "NBC 2016 Pt.3 \u00a74.2 / GHMC GO 168 \u2014 Ground Coverage Exceeded",
+        "description": "Ground coverage 61.40% exceeds the 50% GHMC limit for a 1022 sqm residential plot by 11.40%. Reduce footprint area by 116 sqm. Open-to-sky courtyards, podium gardens, and stilts count as open space.",
+        "severity": "critical"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Insufficient Open Space",
+        "description": "Open space 38.6% is below the required 50% minimum for this 1022 sqm plot (511 sqm required). Open-to-sky courts, pools, landscape areas at grade, and roof gardens (up to 50% credit) may be included in this calculation.",
+        "severity": "critical"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Footprint Outside Setback Envelope",
+        "description": "Proposed footprint 627.3 sqm exceeds buildable envelope (557.6 sqm) defined by provided setbacks.",
+        "severity": "critical"
+      },
+      {
+        "code": "NBC 2016 Pt.3 \u00a73.15 \u2014 Lift Provision (Massing Impact)",
+        "description": "Building height 15m / 5 floors exceeds lift threshold (>15m or >4 floors). Pre-design massing impact: reserve ~5 sqm of core footprint per block (exact shaft count and staircase widths deferred to detail design).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 23 ECS \u2014 Residential: 23 ECS (1/100 sqm of 2,213 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~288 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.9 Sec.2 \u2014 Rainwater Harvesting",
+        "description": "Plot area 1,022 sqm exceeds 300 sqm threshold. Rainwater harvesting is MANDATORY. Pre-design reserve: 1 recharge pit per 100 sqm of roofed area, or underground storage sized for 20mm/hour rainfall. Interior plumbing deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 2.5 and Coverage 50% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 4.5m, rear/side \u2265 5m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 82.32396985416463,
+    "zoningSummary": "3 critical violation(s) \u2014 FAR: 2.17/2.5 | Coverage: 61.4%/50% | Open: 38.6% | Height: 15.0m | Road: 12m | Plot: 1,022 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 1,022 sqm, Use: residential, Abutting Road: 12m):\n\u2022 FAR limit (GHMC GO 168): 2.5  |  Actual: 2.17\n\u2022 Ground coverage limit (GHMC GO 168): 50%  |  Actual: 61.4%\n\u2022 Open space minimum (GHMC GO 168): 50%  |  Actual: 38.6%\n\u2022 Permissible height ceiling for 12m road: 18m  |  Actual: 15.0m\n\u2022 Setbacks required: Front \u2265 4.5m, Rear \u2265 4m, Side \u2265 4m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: YES (>15m / >4 floors)\n\u2022 Required parking: 23 ECS  |  Rainwater harvesting: MANDATORY",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 2.5,
+      "groundCoverage": 50,
+      "openSpace": 50,
+      "maxHeight": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 2.5,
+      "groundCoverageLimit": 50,
+      "openSpaceMinimum": 50,
+      "maxHeightLimit": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      },
+      "maxFootprintArea": 510.85,
+      "maxBuiltUpArea": 2554.25,
+      "minOpenSpaceArea": 510.85,
+      "maxEnvelopeVolume": 9195.3,
+      "theoreticalFloors": 5,
+      "useType": "residential",
+      "siteArea": 1021.7
+    }
+  },
+  "HYD-NCP-13": {
+    "compliant": false,
+    "score": 85,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Rear Setback Violation (3m massing)",
+        "description": "Provided rear setback 0.40m is below required 1.00m for height 3m on a 60 sqm plot.",
+        "severity": "critical"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 1 ECS \u2014 Residential: 1 ECS (1/100 sqm of 17 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~13 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 2.5 and Coverage 75% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 4.5m, rear/side \u2265 5m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 90,
+    "zoningSummary": "1 critical violation(s) \u2014 FAR: 0.28/2.5 | Coverage: 28.6%/75% | Open: 71.4% | Height: 3.0m | Road: 12m | Plot: 60 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 60 sqm, Use: residential, Abutting Road: 12m):\n\u2022 FAR limit (GHMC GO 168): 2.5  |  Actual: 0.28\n\u2022 Ground coverage limit (GHMC GO 168): 75%  |  Actual: 28.6%\n\u2022 Open space minimum (GHMC GO 168): 25%  |  Actual: 71.4%\n\u2022 Permissible height ceiling for 12m road: 18m  |  Actual: 3.0m\n\u2022 Setbacks required: Front \u2265 4.5m, Rear \u2265 1m, Side \u2265 0m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 1 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 2.5,
+      "groundCoverage": 75,
+      "openSpace": 25,
+      "maxHeight": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 2.5,
+      "groundCoverageLimit": 75,
+      "openSpaceMinimum": 25,
+      "maxHeightLimit": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      },
+      "maxFootprintArea": 45.23,
+      "maxBuiltUpArea": 150.75,
+      "minOpenSpaceArea": 15.08,
+      "maxEnvelopeVolume": 814.05,
+      "theoreticalFloors": 3,
+      "useType": "residential",
+      "siteArea": 60.3
+    }
+  },
+  "HYD-NCP-14": {
+    "compliant": false,
+    "score": 43,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Rear Setback Violation (18m massing)",
+        "description": "Provided rear setback 2.32m is below required 5.00m for height 18m on a 187 sqm plot.",
+        "severity": "critical"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Side Setback Violation (18m massing)",
+        "description": "Provided side setback 1.34m is below required 5.00m for height 18m on a 187 sqm plot.",
+        "severity": "critical"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Height Exceeds Road Width Limit",
+        "description": "Building height 18.0m exceeds the 15.0m statutory ceiling for an abutting road width of 9m.",
+        "severity": "critical"
+      },
+      {
+        "code": "NBC 2016 Pt.3 \u00a73.15 \u2014 Lift Provision (Massing Impact)",
+        "description": "Building height 18m / 6 floors exceeds lift threshold (>15m or >4 floors). Pre-design massing impact: reserve ~5 sqm of core footprint per block (exact shaft count and staircase widths deferred to detail design).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 3 ECS \u2014 Residential: 3 ECS (1/100 sqm of 278 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~38 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 2 and Coverage 70% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 3m, rear/side \u2265 4m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 90,
+    "zoningSummary": "3 critical violation(s) \u2014 FAR: 1.49/2 | Coverage: 47.0%/70% | Open: 53.0% | Height: 18.0m | Road: 9m | Plot: 187 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 187 sqm, Use: residential, Abutting Road: 9m):\n\u2022 FAR limit (GHMC GO 168): 2  |  Actual: 1.49\n\u2022 Ground coverage limit (GHMC GO 168): 70%  |  Actual: 47.0%\n\u2022 Open space minimum (GHMC GO 168): 30%  |  Actual: 53.0%\n\u2022 Permissible height ceiling for 9m road: 15m  |  Actual: 18.0m\n\u2022 Setbacks required: Front \u2265 3m, Rear \u2265 5m, Side \u2265 5m\n\u2022 Fire class: Medium-rise (NBC Pt.4 \u00a73.6)\n\u2022 Lift mandatory: YES (>15m / >4 floors)\n\u2022 Required parking: 3 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 2,
+      "groundCoverage": 70,
+      "openSpace": 30,
+      "maxHeight": 15,
+      "setbacks": {
+        "front": 3,
+        "rearSide": 4
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 2,
+      "groundCoverageLimit": 70,
+      "openSpaceMinimum": 30,
+      "maxHeightLimit": 15,
+      "setbacks": {
+        "front": 3,
+        "rearSide": 4
+      },
+      "maxFootprintArea": 131.11,
+      "maxBuiltUpArea": 374.6,
+      "minOpenSpaceArea": 56.19,
+      "maxEnvelopeVolume": 1966.65,
+      "theoreticalFloors": 2,
+      "useType": "residential",
+      "siteArea": 187.3
+    }
+  },
+  "HYD-NCP-15": {
+    "compliant": false,
+    "score": 85,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Footprint Outside Setback Envelope",
+        "description": "Proposed footprint 136.7 sqm exceeds buildable envelope (101.7 sqm) defined by provided setbacks.",
+        "severity": "critical"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 4 ECS \u2014 Residential: 4 ECS (1/100 sqm of 352 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~50 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 2.5 and Coverage 65% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 4.5m, rear/side \u2265 5m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 90,
+    "zoningSummary": "1 critical violation(s) \u2014 FAR: 1.32/2.5 | Coverage: 51.1%/65% | Open: 48.9% | Height: 9.0m | Road: 15m | Plot: 268 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 268 sqm, Use: residential, Abutting Road: 15m):\n\u2022 FAR limit (GHMC GO 168): 2.5  |  Actual: 1.32\n\u2022 Ground coverage limit (GHMC GO 168): 65%  |  Actual: 51.1%\n\u2022 Open space minimum (GHMC GO 168): 35%  |  Actual: 48.9%\n\u2022 Permissible height ceiling for 15m road: 18m  |  Actual: 9.0m\n\u2022 Setbacks required: Front \u2265 4.5m, Rear \u2265 2m, Side \u2265 1.5m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 4 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 2.5,
+      "groundCoverage": 65,
+      "openSpace": 35,
+      "maxHeight": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 2.5,
+      "groundCoverageLimit": 65,
+      "openSpaceMinimum": 35,
+      "maxHeightLimit": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      },
+      "maxFootprintArea": 174.01,
+      "maxBuiltUpArea": 669.25,
+      "minOpenSpaceArea": 93.7,
+      "maxEnvelopeVolume": 3132.09,
+      "theoreticalFloors": 3,
+      "useType": "residential",
+      "siteArea": 267.7
+    }
+  },
+  "HYD-NCP-16": {
+    "compliant": false,
+    "score": 70,
+    "violations": [
+      {
+        "code": "NBC 2016 Pt.3 \u00a74.1 / GHMC GO 168 \u2014 FAR Exceeded",
+        "description": "FAR 3.40 exceeds the 2.5 limit for residential use (plot 309 sqm, road 12m) by 0.90. Formula: Total Covered Area \u00f7 Plot Area. Basement parking, staircases, and ducts are excluded. Reduce built-up area by 277 sqm or apply for FAR variance.",
+        "severity": "critical"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Setback Requirement",
+        "description": "For the tallest massing (12m) on road 12m: front setback \u2265 4.5m, rear \u2265 3.5m, side \u2265 3.5m. Site dimensions (17m \u00d7 19m) appear sufficient. Verify actual position in layout.",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.3 \u00a73.15 \u2014 Lift Provision (Massing Impact)",
+        "description": "Building height 12m / 11 floors exceeds lift threshold (>15m or >4 floors). Pre-design massing impact: reserve ~5 sqm of core footprint per block (exact shaft count and staircase widths deferred to detail design).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 11 ECS \u2014 Residential: 11 ECS (1/100 sqm of 1,051 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~138 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.9 Sec.2 \u2014 Rainwater Harvesting",
+        "description": "Plot area 309 sqm exceeds 300 sqm threshold. Rainwater harvesting is MANDATORY. Pre-design reserve: 1 recharge pit per 100 sqm of roofed area, or underground storage sized for 20mm/hour rainfall. Interior plumbing deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 2.5 and Coverage 60% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 4.5m, rear/side \u2265 5m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 100,
+    "zoningSummary": "1 critical violation(s) \u2014 FAR: 3.40/2.5 | Coverage: 32.7%/60% | Open: 67.3% | Height: 12.0m | Road: 12m | Plot: 309 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 309 sqm, Use: residential, Abutting Road: 12m):\n\u2022 FAR limit (GHMC GO 168): 2.5  |  Actual: 3.40\n\u2022 Ground coverage limit (GHMC GO 168): 60%  |  Actual: 32.7%\n\u2022 Open space minimum (GHMC GO 168): 40%  |  Actual: 67.3%\n\u2022 Permissible height ceiling for 12m road: 18m  |  Actual: 12.0m\n\u2022 Setbacks required: Front \u2265 4.5m, Rear \u2265 3.5m, Side \u2265 3.5m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: YES (>15m / >4 floors)\n\u2022 Required parking: 11 ECS  |  Rainwater harvesting: MANDATORY",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 2.5,
+      "groundCoverage": 60,
+      "openSpace": 40,
+      "maxHeight": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 2.5,
+      "groundCoverageLimit": 60,
+      "openSpaceMinimum": 40,
+      "maxHeightLimit": 18,
+      "setbacks": {
+        "front": 4.5,
+        "rearSide": 5
+      },
+      "maxFootprintArea": 185.64,
+      "maxBuiltUpArea": 773.5,
+      "minOpenSpaceArea": 123.76,
+      "maxEnvelopeVolume": 3341.52,
+      "theoreticalFloors": 4,
+      "useType": "residential",
+      "siteArea": 309.4
+    }
+  },
+  "HYD-NCP-17": {
+    "compliant": false,
+    "score": 42,
+    "violations": [
+      {
+        "code": "NBC 2016 Pt.3 \u00a74.2 / GHMC GO 168 \u2014 Ground Coverage Exceeded",
+        "description": "Ground coverage 70.06% exceeds the 55% GHMC limit for a 963 sqm residential plot by 15.06%. Reduce footprint area by 145 sqm. Open-to-sky courtyards, podium gardens, and stilts count as open space.",
+        "severity": "critical"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Insufficient Open Space",
+        "description": "Open space 29.9% is below the required 45% minimum for this 963 sqm plot (433 sqm required). Open-to-sky courts, pools, landscape areas at grade, and roof gardens (up to 50% credit) may be included in this calculation.",
+        "severity": "critical"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Footprint Outside Setback Envelope",
+        "description": "Proposed footprint 674.8 sqm exceeds buildable envelope (571.3 sqm) defined by provided setbacks.",
+        "severity": "critical"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 17 ECS \u2014 Residential: 17 ECS (1/100 sqm of 1,614 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~213 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Pt.9 Sec.2 \u2014 Rainwater Harvesting",
+        "description": "Plot area 963 sqm exceeds 300 sqm threshold. Rainwater harvesting is MANDATORY. Pre-design reserve: 1 recharge pit per 100 sqm of roofed area, or underground storage sized for 20mm/hour rainfall. Interior plumbing deferred.",
+        "severity": "warning"
+      },
+      {
+        "code": "NBC 2016 Pt.8 \u00a72.1 \u2014 Ventilation Risk (Massing Level)",
+        "description": "Ground coverage 70.1% leaves limited perimeter for facade openings. Pre-design massing action: reduce coverage or introduce internal courtyards so total facade perimeter can yield openings \u2265 1/10 floor area. Interior room layouts deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 2 and Coverage 55% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 3.5m, rear/side \u2265 4m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 71.92524916943522,
+    "zoningSummary": "3 critical violation(s) \u2014 FAR: 1.68/2 | Coverage: 70.1%/55% | Open: 29.9% | Height: 12.0m | Road: 9m | Plot: 963 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 963 sqm, Use: residential, Abutting Road: 9m):\n\u2022 FAR limit (GHMC GO 168): 2  |  Actual: 1.68\n\u2022 Ground coverage limit (GHMC GO 168): 55%  |  Actual: 70.1%\n\u2022 Open space minimum (GHMC GO 168): 45%  |  Actual: 29.9%\n\u2022 Permissible height ceiling for 9m road: 15m  |  Actual: 12.0m\n\u2022 Setbacks required: Front \u2265 3.5m, Rear \u2265 3.5m, Side \u2265 3.5m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 17 ECS  |  Rainwater harvesting: MANDATORY",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 2,
+      "groundCoverage": 55,
+      "openSpace": 45,
+      "maxHeight": 15,
+      "setbacks": {
+        "front": 3.5,
+        "rearSide": 4
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 2,
+      "groundCoverageLimit": 55,
+      "openSpaceMinimum": 45,
+      "maxHeightLimit": 15,
+      "setbacks": {
+        "front": 3.5,
+        "rearSide": 4
+      },
+      "maxFootprintArea": 529.76,
+      "maxBuiltUpArea": 1926.4,
+      "minOpenSpaceArea": 433.44,
+      "maxEnvelopeVolume": 7946.4,
+      "theoreticalFloors": 3,
+      "useType": "residential",
+      "siteArea": 963.2
+    }
+  },
+  "HYD-NCP-18": {
+    "compliant": false,
+    "score": 60,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Rear Setback Violation (24m massing)",
+        "description": "Provided rear setback 2.45m is below required 7.00m for height 24m on a 1896 sqm plot.",
+        "severity": "critical"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Side Setback Violation (24m massing)",
+        "description": "Provided side setback 3.13m is below required 7.00m for height 24m on a 1896 sqm plot.",
+        "severity": "critical"
+      },
+      {
+        "code": "NBC 2016 Pt.3 \u00a73.15 \u2014 Lift Provision (Massing Impact)",
+        "description": "Building height 24m / 8 floors exceeds lift threshold (>15m or >4 floors). Pre-design massing impact: reserve ~5 sqm of core footprint per block (exact shaft count and staircase widths deferred to detail design).",
+        "severity": "info"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 52 ECS \u2014 Residential: 52 ECS (1/100 sqm of 5,180 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~650 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "warning"
+      },
+      {
+        "code": "NBC 2016 Pt.9 Sec.2 \u2014 Rainwater Harvesting",
+        "description": "Plot area 1,896 sqm exceeds 300 sqm threshold. Rainwater harvesting is MANDATORY. Pre-design reserve: 1 recharge pit per 100 sqm of roofed area, or underground storage sized for 20mm/hour rainfall. Interior plumbing deferred.",
+        "severity": "warning"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 3.5 and Coverage 50% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 9m, rear/side \u2265 9m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 90,
+    "zoningSummary": "2 critical violation(s) \u2014 FAR: 2.73/3.5 | Coverage: 35.9%/50% | Open: 64.1% | Height: 24.0m | Road: 24m | Plot: 1,896 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 1,896 sqm, Use: residential, Abutting Road: 24m):\n\u2022 FAR limit (GHMC GO 168): 3.5  |  Actual: 2.73\n\u2022 Ground coverage limit (GHMC GO 168): 50%  |  Actual: 35.9%\n\u2022 Open space minimum (GHMC GO 168): 50%  |  Actual: 64.1%\n\u2022 Permissible height ceiling for 24m road: 30m  |  Actual: 24.0m\n\u2022 Setbacks required: Front \u2265 9m, Rear \u2265 7m, Side \u2265 7m\n\u2022 Fire class: Medium-rise (NBC Pt.4 \u00a73.6)\n\u2022 Lift mandatory: YES (>15m / >4 floors)\n\u2022 Required parking: 52 ECS  |  Rainwater harvesting: MANDATORY",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 3.5,
+      "groundCoverage": 50,
+      "openSpace": 50,
+      "maxHeight": 30,
+      "setbacks": {
+        "front": 9,
+        "rearSide": 9
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 3.5,
+      "groundCoverageLimit": 50,
+      "openSpaceMinimum": 50,
+      "maxHeightLimit": 30,
+      "setbacks": {
+        "front": 9,
+        "rearSide": 9
+      },
+      "maxFootprintArea": 948.05,
+      "maxBuiltUpArea": 6636.35,
+      "minOpenSpaceArea": 948.05,
+      "maxEnvelopeVolume": 28441.5,
+      "theoreticalFloors": 7,
+      "useType": "residential",
+      "siteArea": 1896.1
+    }
+  },
+  "HYD-NCP-19": {
+    "compliant": false,
+    "score": 45,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Rear Setback Violation (12m massing)",
+        "description": "Provided rear setback 1.74m is below required 3.50m for height 12m on a 92 sqm plot.",
+        "severity": "critical"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Side Setback Violation (12m massing)",
+        "description": "Provided side setback 0.36m is below required 3.50m for height 12m on a 92 sqm plot.",
+        "severity": "critical"
+      },
+      {
+        "code": "GHMC GO 168 \u2014 Height Exceeds Road Width Limit",
+        "description": "Building height 12.0m exceeds the 10.0m statutory ceiling for an abutting road width of 7.5m.",
+        "severity": "critical"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 2 ECS \u2014 Residential: 2 ECS (1/100 sqm of 132 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~25 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 1.75 and Coverage 75% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 1.5m, rear/side \u2265 3m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 86.93506493506494,
+    "zoningSummary": "3 critical violation(s) \u2014 FAR: 1.43/1.75 | Coverage: 57.6%/75% | Open: 42.4% | Height: 12.0m | Road: 7.5m | Plot: 92 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 92 sqm, Use: residential, Abutting Road: 7.5m):\n\u2022 FAR limit (GHMC GO 168): 1.75  |  Actual: 1.43\n\u2022 Ground coverage limit (GHMC GO 168): 75%  |  Actual: 57.6%\n\u2022 Open space minimum (GHMC GO 168): 25%  |  Actual: 42.4%\n\u2022 Permissible height ceiling for 7.5m road: 10m  |  Actual: 12.0m\n\u2022 Setbacks required: Front \u2265 1.5m, Rear \u2265 3.5m, Side \u2265 3.5m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 2 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 1.75,
+      "groundCoverage": 75,
+      "openSpace": 25,
+      "maxHeight": 10,
+      "setbacks": {
+        "front": 1.5,
+        "rearSide": 3
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 1.75,
+      "groundCoverageLimit": 75,
+      "openSpaceMinimum": 25,
+      "maxHeightLimit": 10,
+      "setbacks": {
+        "front": 1.5,
+        "rearSide": 3
+      },
+      "maxFootprintArea": 69.3,
+      "maxBuiltUpArea": 161.7,
+      "minOpenSpaceArea": 23.1,
+      "maxEnvelopeVolume": 693,
+      "theoreticalFloors": 2,
+      "useType": "residential",
+      "siteArea": 92.4
+    }
+  },
+  "HYD-NCP-20": {
+    "compliant": false,
+    "score": 85,
+    "violations": [
+      {
+        "code": "GHMC GO 168 \u2014 Footprint Outside Setback Envelope",
+        "description": "Proposed footprint 90.4 sqm exceeds buildable envelope (73.3 sqm) defined by provided setbacks.",
+        "severity": "critical"
+      },
+      {
+        "code": "NBC 2016 Annex B \u2014 Parking (ECS) \u2014 Pre-design",
+        "description": "Required parking: 3 ECS \u2014 Residential: 3 ECS (1/100 sqm of 225 sqm) + Commercial: 0 ECS (1/50 sqm of 0 sqm). Pre-design massing implication: ~38 sqm parking footprint per level (basement parking excluded from FAR per GHMC GO 168).",
+        "severity": "info"
+      }
+    ],
+    "recommendations": [
+      "Stay below FAR 1.75 and Coverage 70% for this residential site.",
+      "Provide basement parking to meet ECS requirements without consuming FAR.",
+      "Reserve setbacks: front \u2265 1.5m, rear/side \u2265 3m for the target height.",
+      "Install rainwater harvesting system as mandated by NBC 2016 Part 9."
+    ],
+    "solarExposure": 83.8404255319149,
+    "zoningSummary": "1 critical violation(s) \u2014 FAR: 1.49/1.75 | Coverage: 60.1%/70% | Open: 39.9% | Height: 9.0m | Road: 7.5m | Plot: 150 sqm",
+    "rulesSummary": "GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: 150 sqm, Use: residential, Abutting Road: 7.5m):\n\u2022 FAR limit (GHMC GO 168): 1.75  |  Actual: 1.49\n\u2022 Ground coverage limit (GHMC GO 168): 70%  |  Actual: 60.1%\n\u2022 Open space minimum (GHMC GO 168): 30%  |  Actual: 39.9%\n\u2022 Permissible height ceiling for 7.5m road: 10m  |  Actual: 9.0m\n\u2022 Setbacks required: Front \u2265 1.5m, Rear \u2265 1.5m, Side \u2265 1m\n\u2022 Fire class: Low-rise (\u226415m)\n\u2022 Lift mandatory: Not required\n\u2022 Required parking: 3 ECS  |  Rainwater harvesting: Not required",
+    "dominantType": "residential",
+    "dynamicLimits": {
+      "far": 1.75,
+      "groundCoverage": 70,
+      "openSpace": 30,
+      "maxHeight": 10,
+      "setbacks": {
+        "front": 1.5,
+        "rearSide": 3
+      }
+    },
+    "maxEnvelope": {
+      "farLimit": 1.75,
+      "groundCoverageLimit": 70,
+      "openSpaceMinimum": 30,
+      "maxHeightLimit": 10,
+      "setbacks": {
+        "front": 1.5,
+        "rearSide": 3
+      },
+      "maxFootprintArea": 105.28,
+      "maxBuiltUpArea": 263.2,
+      "minOpenSpaceArea": 45.12,
+      "maxEnvelopeVolume": 1052.8,
+      "theoreticalFloors": 2,
+      "useType": "residential",
+      "siteArea": 150.4
+    }
+  }
+}

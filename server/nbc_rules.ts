@@ -2,7 +2,7 @@
  * NBC 2016 Rule Engine
  * National Building Code of India 2016 + GHMC Development Control Regulations
  * Reference: NBC 2016 Part 3 (DCR), Part 4 (Fire), Part 8 (Services), Annex B (Parking)
- *            GHMC GO Ms. No. 168 (2012) — plot-area-based coverage limits
+ *            GHMC GO Ms. No. 168 (2012) — plot-area-based coverage limits, setbacks, FAR
  *            GHMC GO Ms. No. 670 (2007) — FAR schedule
  *
  * Rules are DETERMINISTIC. AI must NOT override violations or final score.
@@ -23,55 +23,147 @@ export interface NbcRuleResult {
   rulesSummary: string;
 }
 
-// ─── NBC 2016 Part 3 + GHMC GO 168: Height vs Setbacks (metres) ──────────────
-// Source: NBC 2016 Appendix H read with GHMC Hyderabad regulations
-const SETBACK_TABLE = [
-  { maxHeight:  7, front: 1.5, rearSide: 1.5 },
-  { maxHeight: 10, front: 3.0, rearSide: 1.5 },
-  { maxHeight: 12, front: 4.5, rearSide: 3.0 },
-  { maxHeight: 15, front: 5.0, rearSide: 3.0 },
-  { maxHeight: 18, front: 5.0, rearSide: 5.0 },
-  { maxHeight: 21, front: 6.0, rearSide: 5.0 },
-  { maxHeight: 24, front: 7.0, rearSide: 5.0 },
-  { maxHeight: 30, front: 8.0, rearSide: 7.0 },
-  { maxHeight: 999, front: 9.0, rearSide: 9.0 },
+// ─── Hyderabad GHMC / TS-bPASS / G.O. Ms. No. 168 (2012) Regulations ────────
+// Each table is upper_bound_exclusive: value < maxArea / maxRoadWidth / maxHeight
+
+// Table 1 — Plot-area-based setbacks for buildings up to 10 m height (metres)
+const SETBACK_BY_PLOT_AREA: Array<{ maxArea: number; front: number; rear: number; side: number }> = [
+  { maxArea: 100.0,   front: 1.5, rear: 1.0, side: 0.0 },
+  { maxArea: 200.0,   front: 1.5, rear: 1.5, side: 1.0 },
+  { maxArea: 300.0,   front: 2.0, rear: 2.0, side: 1.5 },
+  { maxArea: 400.0,   front: 3.0, rear: 2.0, side: 2.0 },
+  { maxArea: 500.0,   front: 3.0, rear: 3.0, side: 2.0 },
+  { maxArea: 750.0,   front: 3.0, rear: 3.0, side: 2.5 },
+  { maxArea: 1000.0,  front: 3.5, rear: 3.0, side: 3.0 },
+  { maxArea: Infinity,front: 4.5, rear: 3.5, side: 3.5 },
 ];
 
-function getRequiredSetbacks(heightM: number): { front: number; rearSide: number } {
-  for (const row of SETBACK_TABLE) {
-    if (heightM <= row.maxHeight) return { front: row.front, rearSide: row.rearSide };
+// Table 2 — Front setback governed by the abutting road width (metres)
+const FRONT_SETBACK_BY_ROAD_WIDTH: Array<{ maxRoadWidth: number; front: number }> = [
+  { maxRoadWidth: 9.0,      front: 1.5 },
+  { maxRoadWidth: 12.0,     front: 3.0 },
+  { maxRoadWidth: 18.0,     front: 4.5 },
+  { maxRoadWidth: 24.0,     front: 6.0 },
+  { maxRoadWidth: Infinity, front: 9.0 },
+];
+
+// Table 3 — Side/rear setback escalation with building height (metres)
+const SIDE_REAR_SETBACK_BY_HEIGHT: Array<{ maxHeight: number; setback: number }> = [
+  { maxHeight: 10.0,     setback: 0.0 }, // governed solely by plot-area bracket
+  { maxHeight: 12.0,     setback: 3.0 },
+  { maxHeight: 15.0,     setback: 3.5 },
+  { maxHeight: 18.0,     setback: 4.0 },
+  { maxHeight: 21.0,     setback: 5.0 },
+  { maxHeight: 24.0,     setback: 6.0 },
+  { maxHeight: 27.0,     setback: 7.0 },
+  { maxHeight: 30.0,     setback: 8.0 },
+  { maxHeight: Infinity, setback: 9.0 },
+];
+
+// Table 4 — Maximum permissible height by abutting road width (metres)
+const MAX_HEIGHT_BY_ROAD_WIDTH: Array<{ maxRoadWidth: number; height: number }> = [
+  { maxRoadWidth: 9.0,      height: 10.0 },
+  { maxRoadWidth: 12.0,     height: 15.0 },
+  { maxRoadWidth: 18.0,     height: 18.0 },
+  { maxRoadWidth: 24.0,     height: 24.0 },
+  { maxRoadWidth: 30.0,     height: 30.0 },
+  { maxRoadWidth: Infinity, height: 45.0 },
+];
+
+// Table 5 — Permissible ground coverage by plot area (percent of plot)
+const GROUND_COVERAGE_BY_PLOT_AREA: Array<{ maxArea: number; coverage: number }> = [
+  { maxArea: 100.0,    coverage: 75.0 },
+  { maxArea: 200.0,    coverage: 70.0 },
+  { maxArea: 300.0,    coverage: 65.0 },
+  { maxArea: 500.0,    coverage: 60.0 },
+  { maxArea: 1000.0,   coverage: 55.0 },
+  { maxArea: Infinity, coverage: 50.0 },
+];
+
+// Table 6 — Permissible FAR by abutting road width (residential)
+const FAR_BY_ROAD_WIDTH: Array<{ maxRoadWidth: number; far: number }> = [
+  { maxRoadWidth: 9.0,      far: 1.75 },
+  { maxRoadWidth: 12.0,     far: 2.00 },
+  { maxRoadWidth: 18.0,     far: 2.50 },
+  { maxRoadWidth: 24.0,     far: 3.00 },
+  { maxRoadWidth: Infinity, far: 3.50 },
+];
+
+function getRequiredSetbacks(plotArea: number, roadWidth: number, heightM: number): { front: number; rear: number; side: number } {
+  let bracket = SETBACK_BY_PLOT_AREA[SETBACK_BY_PLOT_AREA.length - 1];
+  for (const b of SETBACK_BY_PLOT_AREA) {
+    if (plotArea < b.maxArea) {
+      bracket = b;
+      break;
+    }
   }
-  return { front: 9.0, rearSide: 9.0 };
+
+  let roadFront = 9.0;
+  for (const r of FRONT_SETBACK_BY_ROAD_WIDTH) {
+    if (roadWidth < r.maxRoadWidth) {
+      roadFront = r.front;
+      break;
+    }
+  }
+
+  let heightSide = 9.0;
+  for (const h of SIDE_REAR_SETBACK_BY_HEIGHT) {
+    if (heightM < h.maxHeight) {
+      heightSide = h.setback;
+      break;
+    }
+  }
+
+  return {
+    front: Math.max(bracket.front, roadFront),
+    rear: Math.max(bracket.rear, heightSide),
+    side: Math.max(bracket.side, heightSide),
+  };
 }
 
-// ─── GHMC GO 168: Plot-area-based Ground Coverage limits ──────────────────────
 function getGroundCoverageLimit(siteArea: number, type: string): number {
   if (type === "commercial" || type === "office" || type === "hotel") return 60;
   if (type === "industrial") return 50;
   // Residential / mixed-use — GHMC plot-size schedule
-  if (siteArea < 100)  return 75;
-  if (siteArea < 300)  return 70;
-  if (siteArea < 500)  return 60;
-  if (siteArea < 1000) return 55;
-  return 50;
+  for (const row of GROUND_COVERAGE_BY_PLOT_AREA) {
+    if (siteArea < row.maxArea) return row.coverage;
+  }
+  return 50.0;
 }
 
-// ─── GHMC GO 670: FAR schedule by use ─────────────────────────────────────────
-// (road-width-based FAR not computed here as road width isn't in the input;
-//  conservative site-level defaults are used)
-function getFarLimit(type: string, siteArea: number): number {
+function getFarLimit(type: string, siteArea: number, roadWidth = 12.0): number {
   if (type === "commercial" || type === "office") return 3.0;
   if (type === "industrial") return 1.5;
   if (type === "hotel") return 2.5;
   if (type === "mixed_use") return 2.5;
-  // Residential
-  if (siteArea >= 5000) return 2.25; // group housing
-  return 2.0;
+  // Residential: scale by road width per GHMC G.O. Ms. 168 Table 6
+  for (const row of FAR_BY_ROAD_WIDTH) {
+    if (roadWidth < row.maxRoadWidth) return row.far;
+  }
+  return 3.5;
+}
+
+function getMaxHeightLimit(roadWidth = 12.0): number {
+  for (const row of MAX_HEIGHT_BY_ROAD_WIDTH) {
+    if (roadWidth < row.maxRoadWidth) return row.height;
+  }
+  return 45.0;
 }
 
 export interface ComplianceInput {
   siteArea: number;
-  siteDimensions?: { width: number; depth: number }; // metres, from polygon bounding box
+  roadWidth?: number;
+  siteDimensions?: {
+    width: number;
+    depth: number;
+    roadWidth?: number;
+    providedSetbacks?: {
+      front?: number;
+      rear?: number;
+      side1?: number;
+      side2?: number;
+    };
+  };
   massings: Array<{
     type: string;
     width: number;
@@ -88,6 +180,7 @@ export interface ComplianceInput {
     totalBuiltUp: number;
     maxHeight: number;
     massingCount: number;
+    roadWidth?: number;
   };
   sunHour?: number;
 }
@@ -97,17 +190,19 @@ export function runNbcRuleEngine(input: ComplianceInput): NbcRuleResult {
   const violations: NbcViolation[] = [];
   let deductions = 0;
 
+  const roadWidth = input.roadWidth ?? siteDimensions?.roadWidth ?? metrics?.roadWidth ?? 12.0;
   const dominantType = getDominantType(massings);
-  const farLimit = getFarLimit(dominantType, siteArea);
+  const farLimit = getFarLimit(dominantType, siteArea, roadWidth);
   const coverageLimit = getGroundCoverageLimit(siteArea, dominantType);
+  const minOpenSpace = Math.max(0, 100.0 - coverageLimit);
 
   // ─── 1. FAR CHECK ──────────────────────────────────────────────────────────
-  // NBC 2016 Part 3 §4.1 | GHMC GO 670
+  // NBC 2016 Part 3 §4.1 | GHMC GO 168 / GO 670 (road-width calibrated)
   if (metrics.far > farLimit + 0.01) {
     const overBy = (metrics.far - farLimit).toFixed(2);
     violations.push({
-      code: "NBC 2016 Pt.3 §4.1 / GHMC GO 670 — FAR Exceeded",
-      description: `FAR ${metrics.far.toFixed(2)} exceeds the ${farLimit} limit for ${dominantType} use (plot ${Math.round(siteArea)} sqm) by ${overBy}. ` +
+      code: "NBC 2016 Pt.3 §4.1 / GHMC GO 168 — FAR Exceeded",
+      description: `FAR ${metrics.far.toFixed(2)} exceeds the ${farLimit} limit for ${dominantType} use (plot ${Math.round(siteArea)} sqm, road ${roadWidth}m) by ${overBy}. ` +
         `Formula: Total Covered Area ÷ Plot Area. Basement parking, staircases, and ducts are excluded. ` +
         `Reduce built-up area by ${Math.round((metrics.far - farLimit) * siteArea).toLocaleString()} sqm or apply for FAR variance.`,
       severity: "critical",
@@ -125,11 +220,11 @@ export function runNbcRuleEngine(input: ComplianceInput): NbcRuleResult {
 
   // ─── 2. GROUND COVERAGE ────────────────────────────────────────────────────
   // NBC 2016 Part 3 §4.2 | GHMC GO 168 (plot-size-based)
-  if (metrics.groundCoverage > coverageLimit + 0.5) {
-    const overBy = (metrics.groundCoverage - coverageLimit).toFixed(1);
+  if (metrics.groundCoverage > coverageLimit + 0.01) {
+    const overBy = (metrics.groundCoverage - coverageLimit).toFixed(2);
     violations.push({
       code: "NBC 2016 Pt.3 §4.2 / GHMC GO 168 — Ground Coverage Exceeded",
-      description: `Ground coverage ${metrics.groundCoverage.toFixed(1)}% exceeds the ${coverageLimit}% GHMC limit for a ${Math.round(siteArea)} sqm ${dominantType} plot by ${overBy}%. ` +
+      description: `Ground coverage ${metrics.groundCoverage.toFixed(2)}% exceeds the ${coverageLimit}% GHMC limit for a ${Math.round(siteArea)} sqm ${dominantType} plot by ${overBy}%. ` +
         `Reduce footprint area by ${Math.round((metrics.groundCoverage - coverageLimit) / 100 * siteArea).toLocaleString()} sqm. ` +
         `Open-to-sky courtyards, podium gardens, and stilts count as open space.`,
       severity: "critical",
@@ -145,74 +240,139 @@ export function runNbcRuleEngine(input: ComplianceInput): NbcRuleResult {
   }
 
   // ─── 3. OPEN SPACE ─────────────────────────────────────────────────────────
-  // NBC 2016 Part 3 §4.3: Minimum 30% open space on any plot
-  if (metrics.openSpace < 30 - 0.5) {
+  // GHMC GO 168: Open space must satisfy (100% - Ground Coverage limit)
+  // Plots under 300 sqm have permissible coverage 65-75%, so open space requirement is 25-35%.
+  if (metrics.openSpace < minOpenSpace - 0.01) {
     violations.push({
-      code: "NBC 2016 Pt.3 §4.3 — Insufficient Open Space",
-      description: `Open space ${metrics.openSpace.toFixed(1)}% is below the mandatory 30% minimum (${Math.round(0.3 * siteArea).toLocaleString()} sqm required). ` +
+      code: "GHMC GO 168 — Insufficient Open Space",
+      description: `Open space ${metrics.openSpace.toFixed(1)}% is below the required ${minOpenSpace}% minimum for this ${Math.round(siteArea)} sqm plot (${Math.round((minOpenSpace / 100) * siteArea).toLocaleString()} sqm required). ` +
         `Open-to-sky courts, pools, landscape areas at grade, and roof gardens (up to 50% credit) may be included in this calculation.`,
       severity: "critical",
     });
     deductions += 15;
-  } else if (metrics.openSpace < 35) {
+  } else if (metrics.openSpace < minOpenSpace + 5) {
     violations.push({
-      code: "NBC 2016 Pt.3 §4.3 — Open Space Advisory",
-      description: `Open space ${metrics.openSpace.toFixed(1)}% meets the 30% minimum but is below the recommended 35% for comfortable habitable density. Consider additional courtyards or landscape buffers.`,
+      code: "GHMC GO 168 — Open Space Advisory",
+      description: `Open space ${metrics.openSpace.toFixed(1)}% meets the ${minOpenSpace}% minimum but is near the limit for comfortable habitable density. Consider additional courtyards or landscape buffers.`,
       severity: "info",
     });
     deductions += 2;
   }
 
-  // ─── 4. SETBACK CHECK (HEIGHT-BASED) ───────────────────────────────────────
-  // NBC 2016 Part 3 Table 1 + GHMC GO 168
-  // Only flag a CLEAR violation when site dimensions show the massing cannot physically
-  // accommodate the required setbacks even if centred optimally.
+  // ─── 4. SETBACK CHECK (MULTI-FACTOR GHMC GO 168) ───────────────────────────
+  // Evaluates front setback by road width/plot bracket, rear/side by height/plot bracket.
   const maxH = metrics.maxHeight;
-  const { front: reqFront, rearSide: reqRear } = getRequiredSetbacks(maxH);
+  const { front: reqFront, rear: reqRear, side: reqSide } = getRequiredSetbacks(siteArea, roadWidth, maxH);
   let setbackViolated = false;
 
-  if (siteDimensions && siteDimensions.width > 0 && siteDimensions.depth > 0) {
-    // Check each massing against available clearance given site bounding box
+  const ps = siteDimensions?.providedSetbacks;
+  if (ps) {
     for (const m of massings) {
-      const { front: mReqFront, rearSide: mReqRear } = getRequiredSetbacks(m.height);
-      const clearW = (siteDimensions.width - m.width) / 2;
-      const clearD = (siteDimensions.depth - m.depth) / 2;
+      const { front: mReqFront, rear: mReqRear, side: mReqSide } = getRequiredSetbacks(siteArea, roadWidth, m.height);
+      const minSideProvided = Math.min(ps.side1 ?? Infinity, ps.side2 ?? Infinity);
 
-      if (clearW < mReqRear || clearD < mReqFront) {
-        const minClear = Math.min(clearW, clearD).toFixed(1);
+      if (ps.front !== undefined && ps.front < mReqFront - 0.001) {
         violations.push({
-          code: `NBC 2016 Pt.3 Table 1 — Setback Violation (${m.height.toFixed(0)}m massing)`,
-          description: `A ${m.width.toFixed(0)}m × ${m.depth.toFixed(0)}m × ${m.height.toFixed(0)}m block leaves only ~${minClear}m of clearance on the tightest side ` +
-            `but requires front ≥ ${mReqFront}m and rear/side ≥ ${mReqRear}m. ` +
-            `Reduce massing width/depth or move it inward. ` +
+          code: `GHMC GO 168 — Front Setback Violation (${m.height.toFixed(0)}m massing)`,
+          description: `Provided front setback ${ps.front.toFixed(2)}m is below required ${mReqFront.toFixed(2)}m for road width ${roadWidth}m on a ${Math.round(siteArea)} sqm plot.`,
+          severity: "critical",
+        });
+        deductions += 15;
+        setbackViolated = true;
+      }
+      if (ps.rear !== undefined && ps.rear < mReqRear - 0.001) {
+        violations.push({
+          code: `GHMC GO 168 — Rear Setback Violation (${m.height.toFixed(0)}m massing)`,
+          description: `Provided rear setback ${ps.rear.toFixed(2)}m is below required ${mReqRear.toFixed(2)}m for height ${m.height.toFixed(0)}m on a ${Math.round(siteArea)} sqm plot.`,
+          severity: "critical",
+        });
+        deductions += 15;
+        setbackViolated = true;
+      }
+      if (minSideProvided !== Infinity && minSideProvided < mReqSide - 0.001) {
+        violations.push({
+          code: `GHMC GO 168 — Side Setback Violation (${m.height.toFixed(0)}m massing)`,
+          description: `Provided side setback ${minSideProvided.toFixed(2)}m is below required ${mReqSide.toFixed(2)}m for height ${m.height.toFixed(0)}m on a ${Math.round(siteArea)} sqm plot.`,
+          severity: "critical",
+        });
+        deductions += 15;
+        setbackViolated = true;
+      }
+      if (setbackViolated) break;
+    }
+
+    if (siteDimensions && siteDimensions.width > 0 && siteDimensions.depth > 0) {
+      const providedEnvW = Math.max(0, siteDimensions.width - (ps.side1 ?? 0) - (ps.side2 ?? 0));
+      const providedEnvD = Math.max(0, siteDimensions.depth - (ps.front ?? 0) - (ps.rear ?? 0));
+      const maxAllowedFootprint = providedEnvW * providedEnvD;
+      for (const m of massings) {
+        if (m.footprint > maxAllowedFootprint + 0.001) {
+          violations.push({
+            code: "GHMC GO 168 — Footprint Outside Setback Envelope",
+            description: `Proposed footprint ${m.footprint.toFixed(1)} sqm exceeds buildable envelope (${maxAllowedFootprint.toFixed(1)} sqm) defined by provided setbacks.`,
+            severity: "critical",
+          });
+          deductions += 15;
+          setbackViolated = true;
+          break;
+        }
+      }
+    }
+  } else if (siteDimensions && siteDimensions.width > 0 && siteDimensions.depth > 0) {
+    // Clearance-based fallback for massings placed in bounding box
+    for (const m of massings) {
+      const { front: mReqFront, rear: mReqRear, side: mReqSide } = getRequiredSetbacks(siteArea, roadWidth, m.height);
+      const totalDepthClearance = siteDimensions.depth - m.depth;
+      const totalWidthClearance = siteDimensions.width - m.width;
+
+      if (totalWidthClearance < 2 * mReqSide - 0.05 || totalDepthClearance < (mReqFront + mReqRear) - 0.05) {
+        const minClear = Math.min(totalWidthClearance / 2, totalDepthClearance / 2).toFixed(1);
+        violations.push({
+          code: `GHMC GO 168 — Setback Violation (${m.height.toFixed(0)}m massing)`,
+          description: `A ${m.width.toFixed(0)}m × ${m.depth.toFixed(0)}m × ${m.height.toFixed(0)}m block leaves insufficient clearance (leaves ~${minClear}m) ` +
+            `for mandatory front ≥ ${mReqFront}m, rear ≥ ${mReqRear}m, and side ≥ ${mReqSide}m setbacks. ` +
             `Site bounding box: ${siteDimensions.width.toFixed(0)}m × ${siteDimensions.depth.toFixed(0)}m.`,
           severity: "critical",
         });
         deductions += 15;
         setbackViolated = true;
-        break; // report once
+        break;
       }
     }
-    if (!setbackViolated) {
-      violations.push({
-        code: `NBC 2016 Pt.3 Table 1 — Setback Requirement`,
-        description: `For the tallest massing (${maxH.toFixed(0)}m): front setback ≥ ${reqFront}m, rear/side ≥ ${reqRear}m. ` +
-          `Site dimensions (${siteDimensions.width.toFixed(0)}m × ${siteDimensions.depth.toFixed(0)}m) appear sufficient. Verify actual position in layout.`,
-        severity: "info",
-      });
-    }
-  } else {
+  }
+
+  if (!setbackViolated) {
     violations.push({
-      code: `NBC 2016 Pt.3 Table 1 — Setback Requirement`,
-      description: `Buildings of ${maxH.toFixed(0)}m height require front setback ≥ ${reqFront}m and rear/side setback ≥ ${reqRear}m. Verify actual setbacks in your layout drawing.`,
+      code: `GHMC GO 168 — Setback Requirement`,
+      description: `For the tallest massing (${maxH.toFixed(0)}m) on road ${roadWidth}m: front setback ≥ ${reqFront}m, rear ≥ ${reqRear}m, side ≥ ${reqSide}m. ` +
+        (siteDimensions && siteDimensions.width > 0 ? `Site dimensions (${siteDimensions.width.toFixed(0)}m × ${siteDimensions.depth.toFixed(0)}m) appear sufficient. ` : "") +
+        `Verify actual position in layout.`,
       severity: "info",
     });
   }
 
-  // ─── 5. HEIGHT CLASSIFICATION (SITE-LEVEL, PRE-DESIGN) ─────────────────────
-  // This is macro zoning: 45m typical ceiling, 24m high-rise threshold.
-  // NOTE: Interior elements (sprinklers, staircases, fire lifts, fire exits)
-  //       are BANNED per pre-design constraint. Only macro height zoning reported.
+  // ─── 5. HEIGHT CLASSIFICATION & ROAD WIDTH LIMITS ──────────────────────────
+  const maxAllowedHeight = getMaxHeightLimit(roadWidth);
+  if (metrics.maxHeight > maxAllowedHeight + 0.05) {
+    violations.push({
+      code: "GHMC GO 168 — Height Exceeds Road Width Limit",
+      description: `Building height ${metrics.maxHeight.toFixed(1)}m exceeds the ${maxAllowedHeight.toFixed(1)}m statutory ceiling for an abutting road width of ${roadWidth}m.`,
+      severity: "critical",
+    });
+    deductions += 25;
+  }
+
+  const frontProvided = ps?.front ?? (siteDimensions && massings.length ? (siteDimensions.depth - massings[0].depth) / 2 : reqFront);
+  const angleCap = 1.5 * (roadWidth + frontProvided);
+  if (metrics.maxHeight > angleCap + 0.05) {
+    violations.push({
+      code: "GHMC GO 168 — Height Exceeds Road Angle Cap",
+      description: `Building height ${metrics.maxHeight.toFixed(1)}m exceeds the 1.5 × (road width + front setback) angular ceiling of ${angleCap.toFixed(1)}m.`,
+      severity: "critical",
+    });
+    deductions += 20;
+  }
+
   if (metrics.maxHeight > 24) {
     violations.push({
       code: "NBC 2016 Pt.4 §3.7 — High-Rise Threshold",
@@ -236,10 +396,6 @@ export function runNbcRuleEngine(input: ComplianceInput): NbcRuleResult {
   }
 
   // ─── 6. LIFT PROVISION (MACRO MASSING INDICATOR ONLY) ──────────────────────
-  // Pre-design: flag it only as a massing-volume impact. Lift shaft dimensions
-  // themselves are interior detail; deferred. We only report capacity headroom.
-  // (Kept because >15m height affects the FAR / number of storeys the user can
-  //  actually reach — it's a massing constraint, not a staircase layout.)
   const maxFloors = massings.length > 0 ? Math.max(...massings.map(m => m.floors)) : 0;
   if (metrics.maxHeight > 15 || maxFloors > 4) {
     const shaftSqm = massings.length * 2.5 * 2.0; // rough: 2.5m × 2m per lift shaft
@@ -254,8 +410,6 @@ export function runNbcRuleEngine(input: ComplianceInput): NbcRuleResult {
   }
 
   // ─── 7. INTER-BUILDING DISTANCE (PRE-DESIGN MASSING) ───────────────────────
-  // NBC 2016 Part 3 §4.4: Distance between buildings ≥ H/2 (H = height of taller block)
-  // Site-level: constrains how massings can be arranged; this is macro layout.
   if (massings.length >= 2) {
     const tallestH = Math.max(...massings.map(m => m.height));
     const minGap = tallestH / 2;
@@ -268,14 +422,7 @@ export function runNbcRuleEngine(input: ComplianceInput): NbcRuleResult {
     });
   }
 
-  // ─── 8. STAIRCASE WIDTH (DEFERRED PER PRE-DESIGN RULE) ─────────────────────
-  // BANNED LOGIC: staircase widths are interior / post-design detail.
-  // Code block intentionally removed. We skip this rule entirely in pre-design mode.
-
-  // ─── 9. PARKING REQUIREMENT (PRE-DESIGN, FAR IMPACT) ────────────────────────
-  // NBC 2016 Annex B: 1 ECS per 100 sqm residential, 1 ECS per 50 sqm commercial
-  // Important at pre-design because basement parking area affects FAR calculation
-  // and excavation volume.
+  // ─── 8. PARKING REQUIREMENT (PRE-DESIGN, FAR IMPACT) ────────────────────────
   const resBuiltUp = massings.filter(m => m.type === "residential" || m.type === "mixed_use").reduce((s, m) => s + m.builtUp, 0);
   const commBuiltUp = massings.filter(m => m.type === "commercial" || m.type === "office" || m.type === "hotel").reduce((s, m) => s + m.builtUp, 0);
   const requiredECS = Math.ceil(resBuiltUp / 100) + Math.ceil(commBuiltUp / 50);
@@ -293,9 +440,7 @@ export function runNbcRuleEngine(input: ComplianceInput): NbcRuleResult {
     if (requiredECS > 30) deductions += 5;
   }
 
-  // ─── 10. RAINWATER HARVESTING (PRE-DESIGN SITE CONSTRAINT) ──────────────────
-  // NBC 2016 Part 9 Sec.2: Mandatory for plots > 300 sqm
-  // Site-level: affects open-space layout (recharge pits, tanks).
+  // ─── 9. RAINWATER HARVESTING (PRE-DESIGN SITE CONSTRAINT) ──────────────────
   if (siteArea > 300) {
     violations.push({
       code: "NBC 2016 Pt.9 Sec.2 — Rainwater Harvesting",
@@ -307,10 +452,7 @@ export function runNbcRuleEngine(input: ComplianceInput): NbcRuleResult {
     deductions += 3;
   }
 
-  // ─── 11. VENTILATION & NATURAL LIGHT (MACRO MASSING) ───────────────────────
-  // NBC 2016 Part 8 §2.1: Openings ≥ 1/10th of floor area for habitable rooms
-  // Pre-design: only flag when GROUND COVERAGE is so high that the per-floor
-  // perimeter can't physically satisfy this. Interior room-by-room is banned.
+  // ─── 10. VENTILATION & NATURAL LIGHT (MACRO MASSING) ───────────────────────
   if (metrics.groundCoverage > 70) {
     violations.push({
       code: "NBC 2016 Pt.8 §2.1 — Ventilation Risk (Massing Level)",
@@ -338,15 +480,16 @@ export function runNbcRuleEngine(input: ComplianceInput): NbcRuleResult {
 
   const siteSqm = Math.round(siteArea).toLocaleString();
   const zoningSummary = compliant
-    ? `COMPLIANT — FAR: ${metrics.far.toFixed(2)}/${farLimit} | Coverage: ${metrics.groundCoverage.toFixed(1)}%/${coverageLimit}% | Open: ${metrics.openSpace.toFixed(1)}% | Height: ${metrics.maxHeight.toFixed(1)}m | Plot: ${siteSqm} sqm`
-    : `${criticals.length} critical violation(s) — FAR: ${metrics.far.toFixed(2)}/${farLimit} | Coverage: ${metrics.groundCoverage.toFixed(1)}%/${coverageLimit}% | Open: ${metrics.openSpace.toFixed(1)}% | Height: ${metrics.maxHeight.toFixed(1)}m | Plot: ${siteSqm} sqm`;
+    ? `COMPLIANT — FAR: ${metrics.far.toFixed(2)}/${farLimit} | Coverage: ${metrics.groundCoverage.toFixed(1)}%/${coverageLimit}% | Open: ${metrics.openSpace.toFixed(1)}% | Height: ${metrics.maxHeight.toFixed(1)}m | Road: ${roadWidth}m | Plot: ${siteSqm} sqm`
+    : `${criticals.length} critical violation(s) — FAR: ${metrics.far.toFixed(2)}/${farLimit} | Coverage: ${metrics.groundCoverage.toFixed(1)}%/${coverageLimit}% | Open: ${metrics.openSpace.toFixed(1)}% | Height: ${metrics.maxHeight.toFixed(1)}m | Road: ${roadWidth}m | Plot: ${siteSqm} sqm`;
 
   const rulesSummary = `
-NBC 2016 + GHMC RULES APPLIED (Site: ${siteSqm} sqm, Use: ${dominantType}):
-• FAR limit: ${farLimit}  |  Actual: ${metrics.far.toFixed(2)}
+GHMC / TS-bPASS / NBC 2016 RULES APPLIED (Site: ${siteSqm} sqm, Use: ${dominantType}, Abutting Road: ${roadWidth}m):
+• FAR limit (GHMC GO 168): ${farLimit}  |  Actual: ${metrics.far.toFixed(2)}
 • Ground coverage limit (GHMC GO 168): ${coverageLimit}%  |  Actual: ${metrics.groundCoverage.toFixed(1)}%
-• Open space minimum: 30%  |  Actual: ${metrics.openSpace.toFixed(1)}%
-• Setbacks for ${metrics.maxHeight.toFixed(0)}m height: Front ≥ ${reqFront}m, Rear/Side ≥ ${reqRear}m
+• Open space minimum (GHMC GO 168): ${minOpenSpace}%  |  Actual: ${metrics.openSpace.toFixed(1)}%
+• Permissible height ceiling for ${roadWidth}m road: ${maxAllowedHeight}m  |  Actual: ${metrics.maxHeight.toFixed(1)}m
+• Setbacks required: Front ≥ ${reqFront}m, Rear ≥ ${reqRear}m, Side ≥ ${reqSide}m
 • Fire class: ${metrics.maxHeight > 24 ? "HIGH-RISE (NBC Pt.4 §3.7)" : metrics.maxHeight > 15 ? "Medium-rise (NBC Pt.4 §3.6)" : "Low-rise (≤15m)"}
 • Lift mandatory: ${metrics.maxHeight > 15 || maxFloors > 4 ? "YES (>15m / >4 floors)" : "Not required"}
 • Required parking: ${requiredECS} ECS  |  Rainwater harvesting: ${siteArea > 300 ? "MANDATORY" : "Not required"}
@@ -363,11 +506,6 @@ function getDominantType(massings: ComplianceInput["massings"]): string {
 }
 
 // ─── MAXIMUM COMPLIANT ENVELOPE CALCULATOR (PRE-DESIGN) ─────────────────────
-// Given a site, returns the theoretical maximum legally-buildable volume
-// WITHOUT violating FAR, Ground Coverage, Setbacks, or Height — so the user
-// knows the upper bound BEFORE placing any massings.
-// STRICTLY PRE-DESIGN: no interior elements, no room layouts, no stairs/fire.
-
 export interface MaxEnvelope {
   farLimit: number;
   groundCoverageLimit: number;
@@ -386,22 +524,22 @@ export interface MaxEnvelope {
   siteArea: number;
 }
 
-const ZONING_MAX_HEIGHT = 45; // GHMC typical ceiling; extreme advisory above this
-
 export function computeMaxEnvelope(params: {
   siteArea: number;
-  siteDimensions?: { width: number; depth: number };
-  useType?: "residential" | "commercial" | "office" | "hotel" | "industrial" | "mixed_use";
+  roadWidth?: number;
+  siteDimensions?: { width: number; depth: number; roadWidth?: number };
+  useType?: "residential" | "commercial" | "office" | "hotel" | "industrial" | "mixed_use" | string;
   customHeightLimit?: number;
 }): MaxEnvelope {
   const siteArea = Math.max(0, params.siteArea || 0);
+  const roadWidth = params.roadWidth ?? params.siteDimensions?.roadWidth ?? 12.0;
   const useType = params.useType || "residential";
 
-  const farLimit = getFarLimit(useType, siteArea);
+  const farLimit = getFarLimit(useType, siteArea, roadWidth);
   const groundCoverageLimit = getGroundCoverageLimit(siteArea, useType);
-  const openSpaceMinimum = 30;
-  const maxHeightLimit = params.customHeightLimit ?? ZONING_MAX_HEIGHT;
-  const setbacks = getRequiredSetbacks(maxHeightLimit);
+  const openSpaceMinimum = Math.max(0, 100.0 - groundCoverageLimit);
+  const maxHeightLimit = params.customHeightLimit ?? getMaxHeightLimit(roadWidth);
+  const setbacks = getRequiredSetbacks(siteArea, roadWidth, maxHeightLimit);
 
   const maxFootprintArea = (siteArea * groundCoverageLimit) / 100;
   const maxBuiltUpArea = siteArea * farLimit;
@@ -414,7 +552,7 @@ export function computeMaxEnvelope(params: {
     groundCoverageLimit,
     openSpaceMinimum,
     maxHeightLimit,
-    setbacks,
+    setbacks: { front: setbacks.front, rearSide: Math.max(setbacks.rear, setbacks.side) },
     maxFootprintArea: Math.round(maxFootprintArea * 100) / 100,
     maxBuiltUpArea: Math.round(maxBuiltUpArea * 100) / 100,
     minOpenSpaceArea: Math.round(minOpenSpaceArea * 100) / 100,

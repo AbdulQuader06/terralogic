@@ -1,0 +1,61 @@
+site_id,stratum,perturbed_rule,plot_area,plot_width,plot_depth,road_width,proposed_height,proposed_floors,proposed_footprint_area,proposed_built_up_area,front_setback,rear_setback,side1_setback,side2_setback,math_compliant,math_violations,app_compliant,app_score,app_critical_violations,app_warnings,verdict_matches_math,ai_recommendation_count
+HYD-CMP-01,compliant,none,97.1,7.29,13.32,12.0,9.0,3,35.21,105.63,5.44,1.61,0.9,0.66,True,,True,100.0,,,True,4
+HYD-CMP-02,compliant,none,198.5,10.35,19.18,9.0,9.0,3,96.1,288.3,3.87,2.2,1.31,1.56,True,,True,100.0,,,True,4
+HYD-CMP-03,compliant,none,270.8,12.04,22.49,7.5,9.0,3,136.13,382.52,2.3,2.37,2.06,1.82,True,,True,100.0,,,True,4
+HYD-CMP-04,compliant,none,351.8,14.94,23.55,7.5,9.0,3,167.57,477.57,3.99,2.45,2.33,2.64,True,,True,97.0,,Rainwater Harvesting,True,4
+HYD-CMP-05,compliant,none,548.8,19.44,28.23,18.0,18.0,6,135.82,814.92,6.45,5.3,5.49,5.54,True,,True,95.0,,Rainwater Harvesting,True,4
+HYD-CMP-06,compliant,none,1515.7,32.95,46.0,18.0,18.0,6,614.67,3503.62,6.31,5.98,5.96,5.99,True,,True,90.0,,Pre-design|Rainwater Harvesting,True,4
+HYD-CMP-07,compliant,none,72.0,6.79,10.6,7.5,9.0,3,34.86,104.58,2.17,1.68,0.8,0.72,True,,True,100.0,,,True,4
+HYD-CMP-08,compliant,none,145.3,10.96,13.26,7.5,9.0,3,62.56,187.68,2.38,2.48,1.41,1.95,True,,True,100.0,,,True,4
+HYD-CMP-09,compliant,none,245.6,13.35,18.4,12.0,9.0,3,87.24,261.72,5.45,2.97,2.29,2.14,True,,True,100.0,,,True,4
+HYD-CMP-10,compliant,none,487.2,20.42,23.86,12.0,15.0,5,160.84,763.99,4.98,4.6,4.65,4.3,True,,True,95.0,,Rainwater Harvesting,True,4
+HYD-CMP-11,compliant,none,594.9,18.02,33.01,15.0,15.0,5,200.0,1000.0,5.49,4.92,4.57,4.42,True,,True,95.0,,Rainwater Harvesting,True,4
+HYD-CMP-12,compliant,none,1102.8,24.8,44.47,18.0,18.0,6,407.2,2443.2,6.9,5.9,5.79,5.89,True,,True,95.0,,Rainwater Harvesting,True,4
+HYD-CMP-13,compliant,none,87.7,7.54,11.63,6.0,9.0,3,50.35,123.9,2.02,1.57,0.46,0.69,True,,True,100.0,,,True,4
+HYD-CMP-14,compliant,none,129.0,10.0,12.9,12.0,9.0,3,37.45,112.35,5.33,2.15,1.39,1.56,True,,True,100.0,,,True,4
+HYD-CMP-15,compliant,none,271.2,13.28,20.42,15.0,9.0,3,115.68,347.04,5.28,2.42,1.9,2.1,True,,True,100.0,,,True,4
+HYD-CMP-16,compliant,none,333.1,13.47,24.73,7.5,9.0,3,141.08,423.24,3.77,2.92,2.66,2.83,True,,True,97.0,,Rainwater Harvesting,True,4
+HYD-CMP-17,compliant,none,671.6,19.49,34.46,18.0,18.0,6,175.92,1055.52,6.51,5.65,5.94,5.5,True,,True,95.0,,Rainwater Harvesting,True,4
+HYD-CMP-18,compliant,none,1777.5,36.26,49.02,30.0,36.0,12,487.12,5116.05,9.42,9.96,9.78,9.71,True,,True,85.0,,High-Rise Threshold|Pre-design|Rainwater Harvesting,True,4
+HYD-CMP-19,compliant,none,73.8,7.99,9.24,7.5,9.0,3,33.21,99.63,2.25,1.94,0.79,0.49,True,,True,100.0,,,True,4
+HYD-CMP-20,compliant,none,180.9,12.01,15.06,12.0,9.0,3,67.93,203.79,5.46,2.0,1.32,1.57,True,,True,100.0,,,True,4
+HYD-BRD-01,borderline,FAR:inside,64.4,6.65,9.68,6.0,9.0,3,47.27,112.14,1.5,1.0,0.0,0.0,True,,True,88.0,,Ventilation Risk (Massing Level),True,4
+HYD-BRD-02,borderline,COVERAGE_VIA_SETBACK_ENVELOPE:outside,139.8,8.73,16.01,12.0,9.0,3,67.7,173.59,4.5,1.5,1.0,1.0,False,FOOTPRINT_OUTSIDE_SETBACK_ENVELOPE,False,85.0,Footprint Outside Setback Envelope,,True,4
+HYD-BRD-03,borderline,SETBACK_SIDE:inside,295.8,14.35,20.61,7.5,9.0,3,158.08,449.25,2.51,2.58,1.52,2.25,True,,True,100.0,,,True,4
+HYD-BRD-04,borderline,SETBACK_FRONT:outside,374.4,14.81,25.28,15.0,15.0,5,83.88,419.4,4.48,4.89,4.92,4.51,False,SETBACK_FRONT,False,80.0,Front Setback Violation (15m massing),Rainwater Harvesting,True,4
+HYD-BRD-05,borderline,HEIGHT:inside,932.6,25.62,36.4,12.0,17.9,5,442.44,2098.35,4.8,4.3,4.3,4.3,True,,True,95.0,,Rainwater Harvesting,True,4
+HYD-BRD-06,borderline,FAR:outside,1987.3,35.81,55.5,30.0,36.0,12,661.2,6990.33,9.0,9.0,9.0,9.0,False,FAR_EXCEEDED,False,60.0,FAR Exceeded,High-Rise Threshold|Pre-design|Rainwater Harvesting,True,4
+HYD-BRD-07,borderline,COVERAGE:inside,97.4,8.24,11.82,7.5,9.0,3,72.68,141.12,1.5,1.0,0.0,0.0,True,,True,91.0,,Ventilation Risk (Massing Level),True,4
+HYD-BRD-08,borderline,SETBACK_SIDE:outside,171.0,10.22,16.73,6.0,9.0,3,90.91,249.79,2.15,1.87,0.98,1.72,False,SETBACK_SIDE,False,85.0,Side Setback Violation (9m massing),,True,4
+HYD-BRD-09,borderline,SETBACK_FRONT:inside,290.1,15.13,19.17,7.5,9.0,3,159.15,461.35,2.02,2.48,2.24,1.82,True,,True,97.0,,,True,4
+HYD-BRD-10,borderline,HEIGHT:outside,321.1,16.01,20.06,12.0,18.1,6,52.81,316.86,4.8,5.3,5.3,5.3,False,HEIGHT_EXCEEDS_ROAD_WIDTH_LIMIT,False,70.0,Height Exceeds Road Width Limit,Rainwater Harvesting,True,4
+HYD-BRD-11,borderline,FAR:inside,898.5,25.04,35.88,9.0,12.0,4,489.23,1788.02,3.5,3.5,3.5,3.5,True,,True,90.0,,Rainwater Harvesting,True,4
+HYD-BRD-12,borderline,COVERAGE:outside,1665.0,33.69,49.42,18.0,18.0,6,836.66,4178.3,6.0,5.0,5.0,5.0,False,COVERAGE_EXCEEDED,False,55.0,Ground Coverage Exceeded|Insufficient Open Space,Pre-design|Rainwater Harvesting,True,4
+HYD-BRD-13,borderline,SETBACK_SIDE:inside,91.5,7.55,12.12,9.0,9.0,3,49.28,140.45,3.35,1.58,0.02,0.34,True,,True,100.0,,,True,4
+HYD-BRD-14,borderline,SETBACK_FRONT:outside,197.5,10.44,18.92,6.0,9.0,3,102.53,296.21,1.48,2.3,1.63,1.9,False,SETBACK_FRONT,False,85.0,Front Setback Violation (9m massing),,True,4
+HYD-BRD-15,borderline,HEIGHT:inside,299.0,15.65,19.11,9.0,14.9,4,94.75,373.05,3.3,3.8,3.8,3.8,True,,True,100.0,,,True,4
+HYD-BRD-16,borderline,FAR:outside,366.4,14.38,25.48,15.0,12.0,4,127.71,920.58,4.5,3.5,3.5,3.5,False,FAR_EXCEEDED|BUILTUP_EXCEEDS_FOOTPRINT_X_FLOORS,False,72.0,FAR Exceeded,Rainwater Harvesting,True,4
+HYD-BRD-17,borderline,COVERAGE:inside,999.4,23.53,42.47,9.0,12.0,4,546.92,1628.56,3.5,3.5,3.5,3.5,True,,True,93.0,,Rainwater Harvesting,True,4
+HYD-BRD-18,borderline,SETBACK_SIDE:outside,1121.0,28.17,39.79,12.0,15.0,5,465.8,2212.55,5.36,4.83,3.98,4.39,False,SETBACK_SIDE,False,80.0,Side Setback Violation (15m massing),Rainwater Harvesting,True,4
+HYD-BRD-19,borderline,SETBACK_FRONT:inside,85.0,7.08,12.01,12.0,9.0,3,34.07,102.21,4.52,1.91,0.33,0.52,True,,True,100.0,,,True,4
+HYD-BRD-20,borderline,HEIGHT:outside,133.4,10.48,12.73,7.5,10.1,3,29.01,87.03,1.8,3.3,3.3,3.3,False,HEIGHT_EXCEEDS_ROAD_WIDTH_LIMIT,False,75.0,Height Exceeds Road Width Limit,,True,4
+HYD-NCP-01,non_compliant,FAR:violated,85.7,8.12,10.55,6.0,9.0,4,63.63,212.78,1.5,1.0,0.0,0.0,False,FAR_EXCEEDED,False,66.0,FAR Exceeded,Ventilation Risk (Massing Level),True,4
+HYD-NCP-02,non_compliant,COVERAGE:violated,168.4,9.73,17.31,6.0,9.0,3,150.95,253.82,1.5,1.5,1.0,1.0,False,COVERAGE_EXCEEDED|FOOTPRINT_OUTSIDE_SETBACK_ENVELOPE,False,45.0,Ground Coverage Exceeded|Insufficient Open Space|Footprint Outside Setback Envelope,Ventilation Risk (Massing Level),True,4
+HYD-NCP-03,non_compliant,SETBACK:violated,293.8,12.96,22.67,12.0,9.0,3,144.85,412.82,5.36,1.01,0.8,2.05,False,SETBACK_REAR|SETBACK_SIDE,False,70.0,Rear Setback Violation (9m massing)|Side Setback Violation (9m massing),,True,4
+HYD-NCP-04,non_compliant,HEIGHT:violated,418.5,16.99,24.63,12.0,19.8,6,90.99,542.53,4.8,5.3,5.3,5.3,False,HEIGHT_EXCEEDS_ROAD_WIDTH_LIMIT,False,70.0,Height Exceeds Road Width Limit,Rainwater Harvesting,True,4
+HYD-NCP-05,non_compliant,ENVELOPE:violated,894.6,24.96,35.84,9.0,12.0,4,555.76,1609.1,3.98,3.93,3.99,4.11,False,COVERAGE_EXCEEDED|FOOTPRINT_OUTSIDE_SETBACK_ENVELOPE,False,47.0,Ground Coverage Exceeded|Insufficient Open Space|Footprint Outside Setback Envelope,Rainwater Harvesting,True,4
+HYD-NCP-06,non_compliant,FAR:violated,1902.3,34.61,54.96,30.0,36.0,15,607.77,8575.5,9.0,9.0,9.0,9.0,False,FAR_EXCEEDED,False,60.0,FAR Exceeded,High-Rise Threshold|Pre-design|Rainwater Harvesting,True,4
+HYD-NCP-07,non_compliant,COVERAGE:violated,91.7,7.06,12.99,7.5,9.0,3,84.46,143.06,1.5,1.0,0.0,0.0,False,COVERAGE_EXCEEDED|FOOTPRINT_OUTSIDE_SETBACK_ENVELOPE,False,45.0,Ground Coverage Exceeded|Insufficient Open Space|Footprint Outside Setback Envelope,Ventilation Risk (Massing Level),True,4
+HYD-NCP-08,non_compliant,SETBACK:violated,155.7,9.56,16.29,6.0,9.0,3,86.83,219.18,2.18,0.86,0.24,1.98,False,SETBACK_REAR|SETBACK_SIDE,False,70.0,Rear Setback Violation (9m massing)|Side Setback Violation (9m massing),,True,4
+HYD-NCP-09,non_compliant,HEIGHT:violated,206.6,10.77,19.18,9.0,18.0,6,81.6,258.61,3.33,2.57,2.49,2.01,False,SETBACK_REAR|SETBACK_SIDE|HEIGHT_EXCEEDS_ROAD_WIDTH_LIMIT,False,43.0,Rear Setback Violation (18m massing)|Side Setback Violation (18m massing)|Height Exceeds Road Width Limit,,True,4
+HYD-NCP-10,non_compliant,ENVELOPE:violated,489.7,16.54,29.61,7.5,9.0,3,334.2,731.45,3.85,3.81,2.32,2.91,False,COVERAGE_EXCEEDED|FOOTPRINT_OUTSIDE_SETBACK_ENVELOPE,False,47.0,Ground Coverage Exceeded|Insufficient Open Space|Footprint Outside Setback Envelope,Rainwater Harvesting,True,4
+HYD-NCP-11,non_compliant,FAR:violated,974.4,23.72,41.08,9.0,12.0,5,530.56,2348.29,3.5,3.5,3.5,3.5,False,FAR_EXCEEDED,False,66.0,FAR Exceeded,Rainwater Harvesting,True,4
+HYD-NCP-12,non_compliant,COVERAGE:violated,1021.7,27.01,37.83,12.0,15.0,5,627.29,2212.79,4.5,4.0,4.0,4.0,False,COVERAGE_EXCEEDED|FOOTPRINT_OUTSIDE_SETBACK_ENVELOPE,False,45.0,Ground Coverage Exceeded|Insufficient Open Space|Footprint Outside Setback Envelope,Rainwater Harvesting,True,4
+HYD-NCP-13,non_compliant,SETBACK:violated,60.3,7.28,8.28,12.0,3.0,1,17.22,16.98,5.13,0.4,0.0,0.89,False,SETBACK_REAR,False,85.0,Rear Setback Violation (3m massing),,True,4
+HYD-NCP-14,non_compliant,HEIGHT:violated,187.3,11.2,16.72,9.0,18.0,6,87.96,278.39,3.56,2.32,1.58,1.34,False,SETBACK_REAR|SETBACK_SIDE|HEIGHT_EXCEEDS_ROAD_WIDTH_LIMIT,False,43.0,Rear Setback Violation (18m massing)|Side Setback Violation (18m massing)|Height Exceeds Road Width Limit,,True,4
+HYD-NCP-15,non_compliant,ENVELOPE:violated,267.7,12.51,21.4,15.0,9.0,3,136.7,352.12,5.41,2.85,2.31,2.46,False,FOOTPRINT_OUTSIDE_SETBACK_ENVELOPE,False,85.0,Footprint Outside Setback Envelope,,True,4
+HYD-NCP-16,non_compliant,FAR:violated,309.4,16.53,18.72,12.0,12.0,11,101.14,1050.66,4.5,3.5,3.5,3.5,False,FAR_EXCEEDED,False,70.0,FAR Exceeded,Rainwater Harvesting,True,4
+HYD-NCP-17,non_compliant,COVERAGE:violated,963.2,26.12,36.88,9.0,12.0,4,674.84,1614.15,3.5,3.5,3.5,3.5,False,COVERAGE_EXCEEDED|FOOTPRINT_OUTSIDE_SETBACK_ENVELOPE,False,42.0,Ground Coverage Exceeded|Insufficient Open Space|Footprint Outside Setback Envelope,Rainwater Harvesting|Ventilation Risk (Massing Level),True,4
+HYD-NCP-18,non_compliant,SETBACK:violated,1896.1,34.91,54.31,24.0,24.0,8,681.58,5180.01,9.77,2.45,3.13,7.65,False,SETBACK_REAR|SETBACK_SIDE,False,60.0,Rear Setback Violation (24m massing)|Side Setback Violation (24m massing),Pre-design|Rainwater Harvesting,True,4
+HYD-NCP-19,non_compliant,HEIGHT:violated,92.4,7.39,12.5,7.5,12.0,4,53.18,131.72,2.5,1.74,0.36,0.46,False,SETBACK_REAR|SETBACK_SIDE|HEIGHT_EXCEEDS_ROAD_WIDTH_LIMIT,False,45.0,Rear Setback Violation (12m massing)|Side Setback Violation (12m massing)|Height Exceeds Road Width Limit,,True,4
+HYD-NCP-20,non_compliant,ENVELOPE:violated,150.4,10.71,14.04,7.5,9.0,3,90.44,224.84,2.45,2.3,1.38,1.44,False,FOOTPRINT_OUTSIDE_SETBACK_ENVELOPE,False,85.0,Footprint Outside Setback Envelope,,True,4
